@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "task": "sovereign-rds-control-plane",
+  "production_authenticity": {
+    "current_state_evidence_required": false,
+    "stateful_dataset_exemption": {
+      "approved": true,
+      "approved_by": "creation-controller",
+      "reason": "The sovereign RDS control plane persists operational metadata in PostgreSQL 16 through /app/rds/bin/generate-estate and runtime APIs rather than a static SQLite business seed. The production generator deterministically materializes 14,800 primary records across db_instances, wal_archives, db_snapshots, and event_outbox rows inside the compose lab schema. A separate 10k-row relational shadow corpus would not exercise lifecycle fencing, WAL/PITR windows, parameter apply modes, replica promotion, Multi-AZ lease/VIP failover, or transactional outbox semantics that the verifier grades through the public Python entrypoints."
+    },
+    "domain_state_model": [
+      "DBInstance lifecycle status and storage allocation metadata",
+      "WAL archive timelines, sequence continuity, and PITR restorable windows",
+      "parameter group dynamic vs pending-reboot apply state",
+      "replica replication lag, LSN catch-up, and write-lease ownership",
+      "Multi-AZ failover leases, health probes, and VIP routing evidence",
+      "EventBridge outbox rows, subscription filters, and delivery audit trail",
+      "transaction checkpoints and restart-skip recovery state",
+      "deterministic /app/rds/out readiness and snapshot digests"
+    ],
+    "reachability_evidence": "All graded state is created, mutated, queried, and reported through /app/rds/bin/rdsd, /app/rds/bin/rds-worker, /app/rds/bin/rdsctl, and /app/rds/bin/generate-estate against the PostgreSQL 16 control-plane schema under environment/rds/db/migrations."
+  },
+  "status": "PRODUCER_EVIDENCE_ONLY_NOT_Q6_APPROVAL"
+}

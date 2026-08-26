@@ -1,0 +1,183 @@
+{
+  "acceptance_predicates": {},
+  "authority": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "policy_versions": {},
+    "task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+    "task_id": "sovereign-rds-control-plane"
+  },
+  "evidence": {
+    "authorized_evidence_classes": [
+      "CONTROL_PLANE_POLICY",
+      "PRIVATE_CREATION_DESIGN",
+      "PUBLIC_REFERENCE",
+      "SOLVER_VISIBLE_TASK"
+    ],
+    "evidence_required": [
+      "root-cause clusters",
+      "causal/interdependency edges",
+      "partial-fix traps",
+      "behavioral surfaces"
+    ],
+    "excluded_evidence_classes": [
+      "CI_RUNTIME_EVIDENCE",
+      "CURRENT_REVIEW_PACKET",
+      "DURABLE_SESSION_STATE",
+      "FINAL_PACKAGE_EVIDENCE",
+      "MODEL_TRIAL_EVIDENCE",
+      "PRIOR_REVIEW_RESULTS",
+      "SOLUTION_ORACLE",
+      "VERIFIER_PRIVATE"
+    ],
+    "mandatory_exact_reads": [
+      ".terminus/agents/CREATION_PIPELINE.md",
+      ".terminus/agents/CREATOR_AGENT_REGISTRY.md",
+      ".terminus/agents/CREATOR_PROMPTS.md"
+    ],
+    "retrieval_mode": "FILTERED_HYBRID"
+  },
+  "ignored_input_count": 36,
+  "inputs": {
+    "optional": {},
+    "required": {
+      "APPROVED_OPERATIONAL_REQUIREMENTS": [
+        "Accept `ModifyDBInstance` only when status is `AVAILABLE`. Allocated storage must strictly increase; equal or smaller targets are rejected.",
+        "Reject `DeleteDBInstance` when `DeletionProtection` is true, even if `FinalDBSnapshotIdentifier` is set.",
+        "On reboot, reload config and apply pending static parameters; clear `PendingRebootParameters` only after boot-time validation succeeds.",
+        "Ingest WAL archives with timeline/sequence continuity (flag gaps). For PITR, bind base backup LSN/timeline, partially replay WAL to the target time, and accept targets only when `EarliestRestorableTime <= target <= LatestRestorableTime`.",
+        "Apply dynamic parameters immediately; mark static ones `pending-reboot`. Merge overrides into family defaults. `ResetDBParameterGroup` sets attached instances to `parameter_group_status=pending-reboot` and `PendingRebootParameters=true`.",
+        "Before `PromoteReadReplica`, require `replication_lag_bytes <= MaximumAllowedLagBytes` (10485760) and LSN catch-up, revoke the old primary write lease, and atomically swap writer/reader endpoints (promotion does not perform floating-VIP ARP).",
+        "Before Multi-AZ failover, acquire a leader lease with TTL fencing. Drive health from direct DB TCP reachability (ignore control-plane pool lag alone). On floating VIP migration, flush routes and send gratuitous ARP; record migration evidence per the failover contract.",
+        "Enqueue EventBridge outbox rows in the same DB transaction as instance state changes. Match subscriptions by `SourceType` and event category. Use deterministic `EventIdentifier` hashes; write `event_delivery_audit` after max retries.",
+        "Write durable transaction checkpoints for instance state transitions and, on restart, skip already-completed checkpointed operations.",
+        "Enforce account, region, and `tenant_id` isolation on describe/list projections.",
+        "Publish `/app/rds/out/rds-snapshot.json` (canonical sorted keys + `report_digest`), `/app/rds/out/instances.jsonl`, `/app/rds/out/events.jsonl`, and `/app/rds/out/health.json` with stable UTF-8 encoding and deterministic ordering."
+      ],
+      "APPROVED_WORK_PACKAGE": {
+        "id": "WP1_SOVEREIGN_RDS_CONTROL_PLANE",
+        "objective": "Complete a Go and Python sovereign RDS-compatible control plane that manages database instance lifecycles, WAL-backed point-in-time recovery (PITR), parameter group dynamic vs pending-reboot fencing, read replica stream promotion, multi-AZ failover fencing, and EventBridge-style event outbox notifications.",
+        "persona": "A cloud platform engineer building an on-premise sovereign database control plane replacing AWS RDS.",
+        "scope_exclusions": [
+          "Terraform resource provisioning (stackyard-terraform-control-plane)",
+          "Low-level storage engine MVCC or WAL format implementation (stonevault)",
+          "L4 network load balancing / proxying (sovereign-l4-load-balancer)",
+          "Backup vault policy enforcement (aws-backup-restore-assurance-plane)",
+          "Logical CDC log capture or applying (tenant-catalog-logical-cdc-plane)",
+          "Live AWS RDS API calls or external cloud access"
+        ]
+      },
+      "CLEAN_SYSTEM_ARCHITECTURE": {
+        "COMPONENT_GRAPH": [
+          "RDS control plane API daemon (rdsd) with HTTP endpoints for DBInstances, DBParameterGroups, DBSnapshots, and EventSubscriptions",
+          "Control plane CLI (rdsctl) for operator commands and automated management",
+          "Instance lifecycle orchestrator (provisioning, modifying, stopping, starting, rebooting, deleting)",
+          "WAL archive collector and PITR recovery target synthesizer",
+          "Parameter group manager with dynamic/static parameter application classification",
+          "Replica topology manager and streaming replication lag monitor",
+          "Failover coordinator with leader election, lease fencing, and VIP migration",
+          "Event outbox processor with subscription filter engine",
+          "Deterministic RDS state and telemetry fixture generator",
+          "Local offline RDS protocol simulator for end-to-end testing"
+        ],
+        "DATA_VOLUME_PLAN": "Generate 14,800 deterministic primary records across DB instances, parameter groups, WAL manifests, snapshots, events, failover logs, and metrics.",
+        "ENTRYPOINTS": [
+          "/app/rds/bin/rdsd",
+          "/app/rds/bin/rds-worker",
+          "/app/rds/bin/rdsctl",
+          "/app/rds/bin/generate-estate"
+        ],
+        "PRODUCTION_CHARACTERISTICS": [
+          "RDS-compatible instance lifecycle API",
+          "WAL archive and PITR synthesis",
+          "parameter dynamic vs pending-reboot fencing",
+          "replica promotion lag/LSN fencing",
+          "Multi-AZ lease/VIP failover",
+          "transactional event outbox",
+          "deterministic published digests",
+          "crash/restart checkpoint recovery"
+        ],
+        "SCALE_FIT": "Target 4,500-7,000 reachable canonical environment LOC; generated estate data, tests, solution, docs, comments, blanks, and duplicate filler do not count.",
+        "SOLVER_VISIBLE_DOC_PLAN": [
+          "environment/rds/docs/architecture.md",
+          "environment/rds/docs/failover-replica-contract.md",
+          "environment/rds/docs/operator-contract.md",
+          "environment/rds/docs/parameter-group-contract.md",
+          "environment/rds/docs/pitr-wal-contract.md"
+        ],
+        "STATE_MODEL": "PostgreSQL 16 for control plane metadata, instance state, parameter groups, snapshot manifests, WAL segments, event outbox, leases, and audit trail."
+      },
+      "CREATION_PROFILE": "large_system_strict"
+    }
+  },
+  "invocation_id": "inv_e1239aed4ce0cf66eb0396ffa8ee4461f3474a230b01acba878f0843a8b6d24b",
+  "learning": {
+    "context_hash": "sha256:307e06b6be8eee79e941256cc80e7b4b8e6d8edb9a73269dbba59257a864107b",
+    "lessons": [],
+    "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+    "raw_feedback_exposed": false,
+    "raw_historical_findings_exposed": false,
+    "registry_heads": {
+      "feedback": "sha256:8dd19b0617b094661caf5fe0a5b30e437703843b5f05ce63a7a75586710575c6",
+      "findings": "GENESIS",
+      "lessons": "GENESIS",
+      "patterns": "GENESIS",
+      "remediations": "GENESIS"
+    },
+    "remediations": []
+  },
+  "missing_required_inputs": [],
+  "output_contract": {
+    "allowed_status_values": [
+      "DESIGN_READY",
+      "SCENARIO_TOO_SMALL",
+      "BLOCKED"
+    ],
+    "deterministic_validators": [
+      ".terminus/validate_defect_topology.py <task>"
+    ],
+    "optional_fields": [],
+    "persisted_artifacts": [
+      ".terminus/designs/<task>.json"
+    ],
+    "required_fields": [
+      "profile",
+      "root_cause_clusters",
+      "defects",
+      "causal_edges",
+      "behavioral_surfaces",
+      "organic_f2p_surface_assessment"
+    ],
+    "semantic_reviewers": [
+      "Task Architect",
+      "Complexity Governor"
+    ]
+  },
+  "readiness": "READY",
+  "retrieval": {
+    "query": null,
+    "retrieved_chars": 0,
+    "retrieved_context": [],
+    "status": "NOT_REQUESTED"
+  },
+  "routing": {
+    "failure_routes": {
+      "ARCHITECTURE_GAP": "Creation Controller -> SYSTEM_ARCHITECTURE",
+      "HIDDEN_KNOWLEDGE": "A3 Defect Topology Designer -> expose legitimate solver-visible contract or remove defect",
+      "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH"
+    },
+    "stale_on": [
+      "work-package change",
+      "architecture change",
+      "material operational requirement change"
+    ],
+    "success_transition": "ENVIRONMENT_BUILD"
+  },
+  "schema_version": "1.0",
+  "stage": {
+    "lifecycle": "creation",
+    "owner": "A3 Defect Topology Designer",
+    "role_class": "PRODUCER",
+    "role_id": "A3_DEFECT_TOPOLOGY_DESIGNER",
+    "stage_id": "DEFECT_TOPOLOGY"
+  }
+}

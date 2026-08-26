@@ -1,0 +1,56 @@
+{
+  "schema_version": "1.0",
+  "invocation_id": "inv_3fbc95e559061677251f439f248c9f7f871f121c2a34856f7124682e1c6b60e1",
+  "output_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+  "evidence_refs": [
+    {
+      "kind": "COMMIT",
+      "ref": "commit:df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe"
+    },
+    {
+      "kind": "COMMIT",
+      "ref": "commit:80f30305a5d92128e780ee16a2227e2c195a68c8"
+    }
+  ],
+  "status": "ARCHITECTURE_READY",
+  "outputs": {
+    "COMPONENT_GRAPH": [
+      "RDS control plane API daemon (rdsd) with HTTP endpoints for DBInstances, DBParameterGroups, DBSnapshots, and EventSubscriptions",
+      "Control plane CLI (rdsctl) for operator commands and automated management",
+      "Instance lifecycle orchestrator (provisioning, modifying, stopping, starting, rebooting, deleting)",
+      "WAL archive collector and PITR recovery target synthesizer",
+      "Parameter group manager with dynamic/static parameter application classification",
+      "Replica topology manager and streaming replication lag monitor",
+      "Failover coordinator with leader election, lease fencing, and VIP migration",
+      "Event outbox processor with subscription filter engine",
+      "Deterministic RDS state and telemetry fixture generator",
+      "Local offline RDS protocol simulator for end-to-end testing"
+    ],
+    "ENTRYPOINTS": [
+      "/app/rds/bin/rdsd",
+      "/app/rds/bin/rds-worker",
+      "/app/rds/bin/rdsctl",
+      "/app/rds/bin/generate-estate"
+    ],
+    "STATE_MODEL": "PostgreSQL 16 for control plane metadata, instance state, parameter groups, snapshot manifests, WAL segments, event outbox, leases, and audit trail.",
+    "SOLVER_VISIBLE_DOC_PLAN": [
+      "environment/rds/docs/architecture.md",
+      "environment/rds/docs/failover-replica-contract.md",
+      "environment/rds/docs/operator-contract.md",
+      "environment/rds/docs/parameter-group-contract.md",
+      "environment/rds/docs/pitr-wal-contract.md"
+    ],
+    "PRODUCTION_CHARACTERISTICS": [
+      "RDS-compatible instance lifecycle API",
+      "WAL archive and PITR synthesis",
+      "parameter dynamic vs pending-reboot fencing",
+      "replica promotion lag/LSN fencing",
+      "Multi-AZ lease/VIP failover",
+      "transactional event outbox",
+      "deterministic published digests",
+      "crash/restart checkpoint recovery"
+    ],
+    "SCALE_FIT": "Target 4,500-7,000 reachable canonical environment LOC; generated estate data, tests, solution, docs, comments, blanks, and duplicate filler do not count.",
+    "DATA_VOLUME_PLAN": "Generate 14,800 deterministic primary records across DB instances, parameter groups, WAL manifests, snapshots, events, failover logs, and metrics."
+  }
+}

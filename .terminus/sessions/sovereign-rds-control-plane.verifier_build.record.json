@@ -1,0 +1,516 @@
+{
+  "ledger_event": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "event_id": "evt_3e668eaf8aac77b64d9c10428020d4897800d7ae4c61c6f250e64a4719116bd4",
+    "input_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+    "invocation_id": "inv_1bc94ca237e5f2b760233a119f4da7049c6e26497bbab28631bb73e350aa9560",
+    "output_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+    "previous_event_id": "evt_844973e62fb6481d9812c38cf06c618b46d2e95e562dbdb055406febfb2b0938",
+    "record_hash": "sha256:8b74a76a202873b7778956f6e38fd42090575d913c4ba9a1b493363f8715e83b",
+    "record_id": "rec_61ff88040b4b5deef25c6689575ab149744f26a93adc5fe467a0111305fd2887",
+    "record_path": ".terminus/executions/sovereign-rds-control-plane/inv_1bc94ca237e5f2b760233a119f4da7049c6e26497bbab28631bb73e350aa9560.result.json",
+    "schema_version": "1.0",
+    "sequence": 7,
+    "stage_id": "VERIFIER_BUILD",
+    "task_id": "sovereign-rds-control-plane"
+  },
+  "record": {
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+      "task_id": "sovereign-rds-control-plane"
+    },
+    "disposition": "ADVANCE",
+    "evidence_refs": [
+      {
+        "content_hash": "sha256:1e950e0ea5f6ce34ff813202df633c1eea7a948d3eaaa7fed4c8ebad3524e380",
+        "kind": "COMMIT",
+        "ref": "commit:df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe"
+      },
+      {
+        "content_hash": "sha256:c37bd949c992df182829e7bb88d59b45b704d28e5a97c3bcdea3311ade49c29d",
+        "kind": "COMMIT",
+        "ref": "commit:80f30305a5d92128e780ee16a2227e2c195a68c8"
+      }
+    ],
+    "invocation_id": "inv_1bc94ca237e5f2b760233a119f4da7049c6e26497bbab28631bb73e350aa9560",
+    "invocation_snapshot": {
+      "acceptance_predicates": {},
+      "authority": {
+        "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+        "policy_versions": {},
+        "task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+        "task_id": "sovereign-rds-control-plane"
+      },
+      "evidence": {
+        "authorized_evidence_classes": [
+          "CI_RUNTIME_EVIDENCE",
+          "CONTROL_PLANE_POLICY",
+          "PRIVATE_CREATION_DESIGN",
+          "SOLVER_VISIBLE_TASK"
+        ],
+        "evidence_required": [
+          "requirement-to-test map",
+          "behavioral scenario families",
+          "F2P/P2P classification",
+          "test independence"
+        ],
+        "excluded_evidence_classes": [
+          "CURRENT_REVIEW_PACKET",
+          "DURABLE_SESSION_STATE",
+          "FINAL_PACKAGE_EVIDENCE",
+          "MODEL_TRIAL_EVIDENCE",
+          "PRIOR_REVIEW_RESULTS",
+          "PUBLIC_REFERENCE",
+          "SOLUTION_ORACLE",
+          "VERIFIER_PRIVATE"
+        ],
+        "mandatory_exact_reads": [
+          "TERMINUS_3_AI_INSTRUCTIONS.md",
+          ".terminus/agents/CREATION_PIPELINE.md",
+          ".terminus/agents/CREATOR_PROMPTS.md"
+        ],
+        "retrieval_mode": "FILTERED_HYBRID"
+      },
+      "ignored_input_count": 37,
+      "inputs": {
+        "optional": {},
+        "required": {
+          "BEHAVIORAL_SURFACES": [
+            "DBInstance modification requests enforce status = AVAILABLE before processing changes",
+            "Allocated storage changes validate new size is strictly greater than current allocated storage",
+            "DeletionProtection = true rejects DeleteDBInstance calls regardless of final snapshot settings",
+            "RebootDBInstance with pending static parameters reloads configuration and applies parameters",
+            "WAL segment ingestion validates sequence continuity, timeline ID, and flags archive gaps",
+            "Point-in-Time Recovery synthesizes exact target timestamp using partial WAL replay",
+            "Snapshot restore validates redo_lsn and timeline_id compatibility with base backup",
+            "RestoreDBInstanceToPointInTime enforces target timestamp within restorable retention window",
+            "ModifyDBParameterGroup with static parameters sets PendingRebootParameters without immediate apply",
+            "DBParameterGroup merges instance-specific parameter overrides with default family parameters",
+            "PendingRebootParameters flag is cleared only after all modified static parameters pass boot validation",
+            "ResetDBParameterGroup sets instance parameter_group_status to pending-reboot",
+            "PromoteReadReplica checks replication lag is within MaximumAllowedLagBytes and not UNKNOWN",
+            "Replica promotion waits for flush_lsn to reach primary write_lsn before declaring primary",
+            "Replica promotion revokes write lease on old primary to prevent split-brain dual primary",
+            "Replica promotion updates read and write endpoints atomically in DNS/routing table",
+            "Automatic Multi-AZ failover requires lease expiration or leader lease acquisition before failover",
+            "Multi-AZ failover fencing prevents standby promotion while former primary lease is valid",
+            "Health probe evaluator distinguishes direct instance port probe from control plane DB connection pool lag",
+            "VIP migration during failover flushes route tables and issues gratuitous ARP announcements",
+            "Outbox events are enqueued inside the same database transaction as instance state changes",
+            "EventBridge subscriptions filter events by SourceType and SourceIdentifier correctly",
+            "Event notification retries reuse deterministic EventIdentifier hashes to prevent duplicates",
+            "Failed event deliveries record failure evidence in event_delivery_audit on max retries",
+            "Instance status transitions write atomic transaction WAL checkpoints before DB commit",
+            "Control plane restart checks transaction checkpoints to skip completed operations and PITR restores",
+            "Instance describe and list APIs enforce multi-tenant account, region, and tenant_id isolation",
+            "State snapshot reports format canonical JSON with sorted keys for stable SHA-256 digest calculation",
+            "Readiness status reports READY only when all instances, replication links, and outbox queues are healthy",
+            "Identical control plane runs produce identical report digests"
+          ],
+          "SOLVER_VISIBLE_CONTRACTS": [
+            ".terminus/contracts/sovereign-rds-control-plane/solver-visible-requirements.json",
+            "environment/rds/docs/architecture.md",
+            "environment/rds/docs/failover-replica-contract.md",
+            "environment/rds/docs/operator-contract.md",
+            "environment/rds/docs/parameter-group-contract.md",
+            "environment/rds/docs/pitr-wal-contract.md"
+          ],
+          "SOLVER_VISIBLE_REQUIREMENTS": [
+            "Accept `ModifyDBInstance` only when status is `AVAILABLE`. Allocated storage must strictly increase; equal or smaller targets are rejected.",
+            "Reject `DeleteDBInstance` when `DeletionProtection` is true, even if `FinalDBSnapshotIdentifier` is set.",
+            "On reboot, reload config and apply pending static parameters; clear `PendingRebootParameters` only after boot-time validation succeeds.",
+            "Ingest WAL archives with timeline/sequence continuity (flag gaps). For PITR, bind base backup LSN/timeline, partially replay WAL to the target time, and accept targets only when `EarliestRestorableTime <= target <= LatestRestorableTime`.",
+            "Apply dynamic parameters immediately; mark static ones `pending-reboot`. Merge overrides into family defaults. `ResetDBParameterGroup` sets attached instances to `parameter_group_status=pending-reboot` and `PendingRebootParameters=true`.",
+            "Before `PromoteReadReplica`, require `replication_lag_bytes <= MaximumAllowedLagBytes` (10485760) and LSN catch-up, revoke the old primary write lease, and atomically swap writer/reader endpoints (promotion does not perform floating-VIP ARP).",
+            "Before Multi-AZ failover, acquire a leader lease with TTL fencing. Drive health from direct DB TCP reachability (ignore control-plane pool lag alone). On floating VIP migration, flush routes and send gratuitous ARP; record migration evidence per the failover contract.",
+            "Enqueue EventBridge outbox rows in the same DB transaction as instance state changes. Match subscriptions by `SourceType` and event category. Use deterministic `EventIdentifier` hashes; write `event_delivery_audit` after max retries.",
+            "Write durable transaction checkpoints for instance state transitions and, on restart, skip already-completed checkpointed operations.",
+            "Enforce account, region, and `tenant_id` isolation on describe/list projections.",
+            "Publish `/app/rds/out/rds-snapshot.json` (canonical sorted keys + `report_digest`), `/app/rds/out/instances.jsonl`, `/app/rds/out/events.jsonl`, and `/app/rds/out/health.json` with stable UTF-8 encoding and deterministic ordering."
+          ]
+        }
+      },
+      "invocation_id": "inv_1bc94ca237e5f2b760233a119f4da7049c6e26497bbab28631bb73e350aa9560",
+      "learning": {
+        "context_hash": "sha256:307e06b6be8eee79e941256cc80e7b4b8e6d8edb9a73269dbba59257a864107b",
+        "lessons": [],
+        "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+        "raw_feedback_exposed": false,
+        "raw_historical_findings_exposed": false,
+        "registry_heads": {
+          "feedback": "sha256:8dd19b0617b094661caf5fe0a5b30e437703843b5f05ce63a7a75586710575c6",
+          "findings": "GENESIS",
+          "lessons": "GENESIS",
+          "patterns": "GENESIS",
+          "remediations": "GENESIS"
+        },
+        "remediations": []
+      },
+      "missing_required_inputs": [],
+      "output_contract": {
+        "allowed_status_values": [
+          "VERIFIER_READY",
+          "REQUIREMENT_GAP",
+          "SCENARIO_TOO_SMALL",
+          "BLOCKED"
+        ],
+        "deterministic_validators": [
+          "verifier lint/static checks",
+          ".terminus/validate_task_complexity.py <task>"
+        ],
+        "optional_fields": [
+          "STARTER_EMPIRICAL_STATUS",
+          "ORACLE_EMPIRICAL_STATUS",
+          "SOLVER_LOGIC_REIMPLEMENTATION_RISK"
+        ],
+        "persisted_artifacts": [
+          "<task>/tests/",
+          ".terminus/designs/<task>-test-map.json"
+        ],
+        "required_fields": [
+          "REQUIREMENT_TEST_MATRIX",
+          "F2P_COUNT",
+          "P2P_COUNT",
+          "EDGE_BOUNDARY_COVERAGE",
+          "NEGATIVE_FAILURE_COVERAGE",
+          "ORGANIC_COUNT_JUSTIFICATION",
+          "TEST_INDEPENDENCE"
+        ],
+        "semantic_reviewers": [
+          "Q2 Verifier Coverage Repairer",
+          "Verifier Engineer"
+        ]
+      },
+      "readiness": "READY",
+      "retrieval": {
+        "query": null,
+        "retrieved_chars": 0,
+        "retrieved_context": [],
+        "status": "NOT_REQUESTED"
+      },
+      "routing": {
+        "failure_routes": {
+          "DUPLICATE_OR_WEAK_TEST": "A5 Verifier Author / Q2 Verifier Coverage Repairer",
+          "REQUIREMENT_GAP": "Q1 Spec Gap Repairer / contract owner",
+          "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH"
+        },
+        "stale_on": [
+          "solver-visible requirement change",
+          "referenced contract change",
+          "behavioral surface change",
+          "verifier change"
+        ],
+        "success_transition": "HUMAN_WRITING_RESEARCH"
+      },
+      "schema_version": "1.0",
+      "stage": {
+        "lifecycle": "creation",
+        "owner": "A5 Verifier Author",
+        "role_class": "PRODUCER",
+        "role_id": "A5_VERIFIER_AUTHOR",
+        "stage_id": "VERIFIER_BUILD"
+      }
+    },
+    "outputs": {
+      "EDGE_BOUNDARY_COVERAGE": "PITR windows, WAL gaps, lag UNKNOWN, lease TTL, pending-reboot boot rejection",
+      "F2P_COUNT": 30,
+      "NEGATIVE_FAILURE_COVERAGE": "protected delete, shrink storage, cross-tenant leak, duplicate EventIdentifier",
+      "ORGANIC_COUNT_JUSTIFICATION": "34 tests = 30 F2P + 4 P2P mapped to distinct requirement families; complexity PASS",
+      "P2P_COUNT": 4,
+      "REQUIREMENT_TEST_MATRIX": ".terminus/designs/sovereign-rds-control-plane-test-map.json",
+      "TEST_INDEPENDENCE": "pytest asserts published artifacts and control-plane state independently of oracle layout"
+    },
+    "record_id": "rec_61ff88040b4b5deef25c6689575ab149744f26a93adc5fe467a0111305fd2887",
+    "role_id": "A5_VERIFIER_AUTHOR",
+    "schema_version": "1.0",
+    "stage_id": "VERIFIER_BUILD",
+    "status": "VERIFIER_READY",
+    "task_lineage": {
+      "input_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+      "output_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+      "task_changed": false
+    },
+    "transition": {
+      "action": "ADVANCE",
+      "requires_state_validation": false,
+      "target": "HUMAN_WRITING_RESEARCH",
+      "target_kind": "STAGE"
+    },
+    "validation": {
+      "acceptance_predicates_satisfied": true,
+      "evidence_binding_satisfied": true,
+      "evidence_refs_count": 2,
+      "invocation_identity_valid": true,
+      "invocation_policy_valid": true,
+      "output_keys_valid": true,
+      "required_outputs_satisfied": true,
+      "retrieval_context_authorized": true,
+      "status_legal": true,
+      "task_commit_change_authorized": true,
+      "task_lineage_valid": true
+    }
+  },
+  "remediation_updates": [],
+  "state": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "derived_from": {
+      "freshness_overlay_hash": null,
+      "record_ids": [
+        "rec_15c440a653cf913033e1338857122b34bbf8d46587e150ebfe93d14984bf2013",
+        "rec_3cba1e5377933d9ac569217c94d5866aa181b92f14e8ecec978273e8a4a604ba",
+        "rec_61ff88040b4b5deef25c6689575ab149744f26a93adc5fe467a0111305fd2887",
+        "rec_6f031c75471a90b460fe2c58dbb520fa308fc81e1b1e470b17b53e84b0d5b9c9",
+        "rec_73acde27c0b9ea5238228f258a1925330c8d7ac0216253baa44e8ac86ec1c638",
+        "rec_ade2cdfec4e0bbd45fa20f1414955b84f60c42f5d1c87497ad14d551d465cb6f",
+        "rec_c8267b8c2fdbb8045ec3b901ecb6475983fc8a8a89640a25248e217a83213f8d"
+      ]
+    },
+    "ledger_event_count": 7,
+    "ledger_head_event_id": "evt_3e668eaf8aac77b64d9c10428020d4897800d7ae4c61c6f250e64a4719116bd4",
+    "lineage": {
+      "bootstrap_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+      "current_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+      "recorded_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+      "status": "CURRENT"
+    },
+    "next": {
+      "action": "INVOKE_STAGE",
+      "optional_inputs": [
+        "APPROVED_EXTERNAL_DATASET_CACHE",
+        "CURRENT_STATE_CLAIMS"
+      ],
+      "owner": "A6 Human Writing Researcher",
+      "primary_role_id": "A6_HUMAN_WRITING_RESEARCHER",
+      "required_inputs": [
+        "APPROVED_WORK_PACKAGE",
+        "CURRENT_TIME_BUDGET",
+        "SOLVER_VISIBLE_REQUIREMENTS"
+      ],
+      "stage_id": "HUMAN_WRITING_RESEARCH"
+    },
+    "nodes": [
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+        "invocation_id": "inv_0873419deefb34b5359b41d6f5e453752c563989fe92f29f776cd873d7d59afa",
+        "ledger_event_id": "evt_0d34df9d3b86906bbeb214f8d7b20bf53be30e1f55450735c77b531edb901c73",
+        "node_id": "RULE_RESOLUTION",
+        "node_kind": "STAGE",
+        "output_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+        "reason": "validated ADVANCE record reaches WORK_PACKAGE_RESEARCH",
+        "record_id": "rec_c8267b8c2fdbb8045ec3b901ecb6475983fc8a8a89640a25248e217a83213f8d",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+        "invocation_id": "inv_1fa17743c7ce53cf9500379c1ca012b305ebc4bcfc835282ef8dd6c8633b639e",
+        "ledger_event_id": "evt_19de55e985016509f17f02c6f6a6bd91b0ca939b15ea3e8e43f031aec9f2dd84",
+        "node_id": "WORK_PACKAGE_RESEARCH",
+        "node_kind": "STAGE",
+        "output_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+        "reason": "validated ADVANCE record reaches SYSTEM_ARCHITECTURE",
+        "record_id": "rec_3cba1e5377933d9ac569217c94d5866aa181b92f14e8ecec978273e8a4a604ba",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+        "invocation_id": "inv_3fbc95e559061677251f439f248c9f7f871f121c2a34856f7124682e1c6b60e1",
+        "ledger_event_id": "evt_5d65f5fff267e968a0fbac5dc10df0d3e4b9c37e7ff4d554a127954c13ea8a9c",
+        "node_id": "SYSTEM_ARCHITECTURE",
+        "node_kind": "STAGE",
+        "output_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+        "reason": "validated ADVANCE record reaches DEFECT_TOPOLOGY",
+        "record_id": "rec_73acde27c0b9ea5238228f258a1925330c8d7ac0216253baa44e8ac86ec1c638",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+        "invocation_id": "inv_e1239aed4ce0cf66eb0396ffa8ee4461f3474a230b01acba878f0843a8b6d24b",
+        "ledger_event_id": "evt_120f182f538568fb8b8d4bc6d02b78b93c70cdf7a4f12cf1bbcb9dffa8a06ef3",
+        "node_id": "DEFECT_TOPOLOGY",
+        "node_kind": "STAGE",
+        "output_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+        "reason": "validated ADVANCE record reaches ENVIRONMENT_BUILD",
+        "record_id": "rec_15c440a653cf913033e1338857122b34bbf8d46587e150ebfe93d14984bf2013",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+        "invocation_id": "inv_0b9a141d5244be8d902dd6190b8d3a62f6118e38bb1174fb8157f296c490b8b5",
+        "ledger_event_id": "evt_757754d91c0c371449e2dbb0f14f23d9b5bca48cc098fd3a968446253ada48bc",
+        "node_id": "ENVIRONMENT_BUILD",
+        "node_kind": "STAGE",
+        "output_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+        "reason": "validated ADVANCE record reaches REFERENCE_SOLUTION",
+        "record_id": "rec_6f031c75471a90b460fe2c58dbb520fa308fc81e1b1e470b17b53e84b0d5b9c9",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+        "invocation_id": "inv_11ac831e15fae915b7f1d14047adeb1a0095014aa22d6ddc0d9e020c4941a6ba",
+        "ledger_event_id": "evt_844973e62fb6481d9812c38cf06c618b46d2e95e562dbdb055406febfb2b0938",
+        "node_id": "REFERENCE_SOLUTION",
+        "node_kind": "STAGE",
+        "output_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+        "reason": "validated ADVANCE record reaches VERIFIER_BUILD",
+        "record_id": "rec_ade2cdfec4e0bbd45fa20f1414955b84f60c42f5d1c87497ad14d551d465cb6f",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+        "invocation_id": "inv_1bc94ca237e5f2b760233a119f4da7049c6e26497bbab28631bb73e350aa9560",
+        "ledger_event_id": "evt_3e668eaf8aac77b64d9c10428020d4897800d7ae4c61c6f250e64a4719116bd4",
+        "node_id": "VERIFIER_BUILD",
+        "node_kind": "STAGE",
+        "output_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+        "reason": "validated ADVANCE record reaches HUMAN_WRITING_RESEARCH",
+        "record_id": "rec_61ff88040b4b5deef25c6689575ab149744f26a93adc5fe467a0111305fd2887",
+        "status": "CURRENT"
+      },
+      {
+        "node_id": "HUMAN_WRITING_RESEARCH",
+        "node_kind": "STAGE",
+        "reason": "no execution-ledger event exists for this stage",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "INSTRUCTION_DRAFT",
+        "node_kind": "STAGE",
+        "reason": "upstream node HUMAN_WRITING_RESEARCH is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "SPEC_ALIGNMENT",
+        "node_kind": "STAGE",
+        "reason": "upstream node INSTRUCTION_DRAFT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "DOCUMENTATION_DRAFT",
+        "node_kind": "STAGE",
+        "reason": "upstream node SPEC_ALIGNMENT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "FORMAT_GATE",
+        "node_kind": "STAGE",
+        "reason": "upstream node DOCUMENTATION_DRAFT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "ASSEMBLY",
+        "node_kind": "STAGE",
+        "reason": "upstream node FORMAT_GATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "COMPLEXITY_GATE",
+        "node_kind": "STAGE",
+        "reason": "upstream node ASSEMBLY is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "RUNTIME_AUTHENTICITY",
+        "node_kind": "STAGE",
+        "reason": "upstream node COMPLEXITY_GATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "DETERMINISTIC_VALIDATION",
+        "node_kind": "STAGE",
+        "reason": "upstream node RUNTIME_AUTHENTICITY is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "FROZEN_CANDIDATE",
+        "node_kind": "STATE",
+        "reason": "state cannot be current while its predecessor chain is non-current",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "QUALITY_INTERLOCK",
+        "node_kind": "STAGE",
+        "reason": "upstream node FROZEN_CANDIDATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "PRE_LLMAJ",
+        "node_kind": "STAGE",
+        "reason": "upstream node QUALITY_INTERLOCK is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_GPT",
+        "node_kind": "STAGE",
+        "reason": "upstream node PRE_LLMAJ is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_CLAUDE",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_GPT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_AGGREGATE",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_CLAUDE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "HARBOR_LLMAJ",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_AGGREGATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "OFFICIAL_MODEL_TRIALS",
+        "node_kind": "STAGE",
+        "reason": "upstream node HARBOR_LLMAJ is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "TRIAL_ANALYSIS",
+        "node_kind": "STAGE",
+        "reason": "upstream node OFFICIAL_MODEL_TRIALS is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "DIFFICULTY_ASSESSMENT",
+        "node_kind": "STAGE",
+        "reason": "upstream node TRIAL_ANALYSIS is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "FINAL_REVIEW",
+        "node_kind": "STAGE",
+        "reason": "upstream node DIFFICULTY_ASSESSMENT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "SUBMISSION_READY",
+        "node_kind": "STAGE",
+        "reason": "upstream node FINAL_REVIEW is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      }
+    ],
+    "schema_version": "1.0",
+    "state_snapshot_id": "state_80b6d9257740b1519db35058139462a62d2e0ff8889744ec2f595019b9c80e71",
+    "summary": {
+      "BLOCKED": 0,
+      "CURRENT": 7,
+      "MISSING": 21,
+      "STALE": 0
+    },
+    "task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+    "task_id": "sovereign-rds-control-plane"
+  }
+}

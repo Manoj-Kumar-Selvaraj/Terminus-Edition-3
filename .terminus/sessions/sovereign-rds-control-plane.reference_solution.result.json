@@ -1,0 +1,63 @@
+{
+  "schema_version": "1.0",
+  "invocation_id": "inv_11ac831e15fae915b7f1d14047adeb1a0095014aa22d6ddc0d9e020c4941a6ba",
+  "output_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+  "evidence_refs": [
+    {
+      "kind": "COMMIT",
+      "ref": "commit:df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe"
+    },
+    {
+      "kind": "COMMIT",
+      "ref": "commit:80f30305a5d92128e780ee16a2227e2c195a68c8"
+    }
+  ],
+  "status": "IMPLEMENTED",
+  "outputs": {
+    "RESTORED_INVARIANTS": [
+      "AVAILABLE-only modifications and monotonic storage",
+      "DeletionProtection always enforced",
+      "WAL continuity and PITR window/LSN/timeline checks",
+      "static pending-reboot vs dynamic apply",
+      "replica lag/LSN promotion with old-primary fencing",
+      "lease-TTL Multi-AZ failover with direct-port probes",
+      "transactional outbox with deterministic EventIdentifier",
+      "sorted deterministic report digests"
+    ],
+    "FILES_CHANGED": [
+      "README.md",
+      "overlays/rds/app.py",
+      "overlays/rds/cli.py",
+      "overlays/rds/deletion_guard.py",
+      "overlays/rds/event_outbox.py",
+      "overlays/rds/event_subscription_engine.py",
+      "overlays/rds/evidence.py",
+      "overlays/rds/failover_coordinator.py",
+      "overlays/rds/instance_manager.py",
+      "overlays/rds/parameter_group.py",
+      "overlays/rds/parameter_group_orchestrator.py",
+      "overlays/rds/pitr_engine.py",
+      "overlays/rds/readiness.py",
+      "overlays/rds/replica_manager.py",
+      "overlays/rds/repository.py",
+      "overlays/rds/storage_evaluator.py",
+      "overlays/rds/wal_collector.py",
+      "overlays/rds/worker.py",
+      "publish_outputs.py",
+      "solve.sh"
+    ],
+    "RESTART_IDEMPOTENCY_BEHAVIOR": "checkpoint recovery skips completed operations and avoids duplicate PITR restores",
+    "DETERMINISM_NOTES": "publish_outputs uses stable schemas, ordering, encoding, and SHA-256 digests",
+    "PRESERVED_BEHAVIOR": [
+      "Keep public CLI entrypoints (rdsd, rds-worker, rdsctl) and HTTP API contracts stable",
+      "Keep output schemas at /app/output/rds-snapshot.json and database migrations intact",
+      "Use offline local RDS protocol lab and never require live AWS RDS API connectivity",
+      "Invalid API calls, forbidden parameter values, or unauthenticated requests must fail closed without corrupting state"
+    ],
+    "RISKS_FOR_INDEPENDENT_VERIFIER": [
+      "hidden F2P probes must fail on starter",
+      "P2P must remain green where classified",
+      "runtime authenticity profile still missing"
+    ]
+  }
+}

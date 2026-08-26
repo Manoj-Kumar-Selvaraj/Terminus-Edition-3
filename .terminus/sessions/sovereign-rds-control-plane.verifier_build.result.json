@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0",
+  "invocation_id": "inv_1bc94ca237e5f2b760233a119f4da7049c6e26497bbab28631bb73e350aa9560",
+  "output_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+  "evidence_refs": [
+    {
+      "kind": "COMMIT",
+      "ref": "commit:df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe"
+    },
+    {
+      "kind": "COMMIT",
+      "ref": "commit:80f30305a5d92128e780ee16a2227e2c195a68c8"
+    }
+  ],
+  "status": "VERIFIER_READY",
+  "outputs": {
+    "REQUIREMENT_TEST_MATRIX": ".terminus/designs/sovereign-rds-control-plane-test-map.json",
+    "F2P_COUNT": 30,
+    "P2P_COUNT": 4,
+    "EDGE_BOUNDARY_COVERAGE": "PITR windows, WAL gaps, lag UNKNOWN, lease TTL, pending-reboot boot rejection",
+    "NEGATIVE_FAILURE_COVERAGE": "protected delete, shrink storage, cross-tenant leak, duplicate EventIdentifier",
+    "ORGANIC_COUNT_JUSTIFICATION": "34 tests = 30 F2P + 4 P2P mapped to distinct requirement families; complexity PASS",
+    "TEST_INDEPENDENCE": "pytest asserts published artifacts and control-plane state independently of oracle layout"
+  }
+}

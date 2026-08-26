@@ -1,0 +1,306 @@
+{
+  "authority": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "policy_versions": {},
+    "task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+    "task_id": "sovereign-rds-control-plane"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:1e950e0ea5f6ce34ff813202df633c1eea7a948d3eaaa7fed4c8ebad3524e380",
+      "kind": "COMMIT",
+      "ref": "commit:df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe"
+    },
+    {
+      "content_hash": "sha256:c37bd949c992df182829e7bb88d59b45b704d28e5a97c3bcdea3311ade49c29d",
+      "kind": "COMMIT",
+      "ref": "commit:80f30305a5d92128e780ee16a2227e2c195a68c8"
+    }
+  ],
+  "invocation_id": "inv_0f9db30ac734cab7f4195465146eb6fd298be0fa955bc414a22c8c0b1f389bb8",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+      "task_id": "sovereign-rds-control-plane"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CONTROL_PLANE_POLICY",
+        "PUBLIC_REFERENCE",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "current dataset/catalog/domain-profile hashes",
+        "disjoint writer/reviewer calibration evidence",
+        "explicit external coverage state",
+        "validated task-writing profile"
+      ],
+      "excluded_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PRIVATE_CREATION_DESIGN",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/reviewers/HUMAN_WRITING_CALIBRATION.md",
+        ".terminus/reviewers/HUMAN_ENGINEERING_SOURCE_CORPUS.md",
+        ".terminus/reviewers/WRITING_EXAMPLE_BANK.md",
+        ".terminus/agents/HUMAN_WRITING_DATASET_POLICY.md",
+        ".terminus/agents/human_writing_stage_overlay.json",
+        ".terminus/human_writing/dataset_registry.json",
+        ".terminus/human_writing/domain_profiles.json",
+        ".terminus/agents/HUMAN_WRITING_RESEARCHER.md",
+        ".terminus/agents/HUMAN_WRITING_CORPUS_AGENT.md",
+        ".terminus/agents/CREATOR_PROMPTS.md"
+      ],
+      "retrieval_mode": "FILTERED_HYBRID"
+    },
+    "ignored_input_count": 37,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "APPROVED_WORK_PACKAGE": {
+          "id": "WP1_SOVEREIGN_RDS_CONTROL_PLANE",
+          "objective": "Complete a Go and Python sovereign RDS-compatible control plane that manages database instance lifecycles, WAL-backed point-in-time recovery (PITR), parameter group dynamic vs pending-reboot fencing, read replica stream promotion, multi-AZ failover fencing, and EventBridge-style event outbox notifications.",
+          "persona": "A cloud platform engineer building an on-premise sovereign database control plane replacing AWS RDS.",
+          "scope_exclusions": [
+            "Terraform resource provisioning (stackyard-terraform-control-plane)",
+            "Low-level storage engine MVCC or WAL format implementation (stonevault)",
+            "L4 network load balancing / proxying (sovereign-l4-load-balancer)",
+            "Backup vault policy enforcement (aws-backup-restore-assurance-plane)",
+            "Logical CDC log capture or applying (tenant-catalog-logical-cdc-plane)",
+            "Live AWS RDS API calls or external cloud access"
+          ]
+        },
+        "CURRENT_TIME_BUDGET": {
+          "enforcement": "ADVISORY_ONLY",
+          "guidance_seconds": 25200,
+          "hard_limit": null,
+          "policy_version": "1.1",
+          "quality_gates_may_be_skipped_for_time": false,
+          "time_extension_required": false
+        },
+        "SOLVER_VISIBLE_REQUIREMENTS": [
+          "Accept `ModifyDBInstance` only when status is `AVAILABLE`. Allocated storage must strictly increase; equal or smaller targets are rejected.",
+          "Reject `DeleteDBInstance` when `DeletionProtection` is true, even if `FinalDBSnapshotIdentifier` is set.",
+          "On reboot, reload config and apply pending static parameters; clear `PendingRebootParameters` only after boot-time validation succeeds.",
+          "Ingest WAL archives with timeline/sequence continuity (flag gaps). For PITR, bind base backup LSN/timeline, partially replay WAL to the target time, and accept targets only when `EarliestRestorableTime <= target <= LatestRestorableTime`.",
+          "Apply dynamic parameters immediately; mark static ones `pending-reboot`. Merge overrides into family defaults. `ResetDBParameterGroup` sets attached instances to `parameter_group_status=pending-reboot` and `PendingRebootParameters=true`.",
+          "Before `PromoteReadReplica`, require `replication_lag_bytes <= MaximumAllowedLagBytes` (10485760) and LSN catch-up, revoke the old primary write lease, and atomically swap writer/reader endpoints (promotion does not perform floating-VIP ARP).",
+          "Before Multi-AZ failover, acquire a leader lease with TTL fencing. Drive health from direct DB TCP reachability (ignore control-plane pool lag alone). On floating VIP migration, flush routes and send gratuitous ARP; record migration evidence per the failover contract.",
+          "Enqueue EventBridge outbox rows in the same DB transaction as instance state changes. Match subscriptions by `SourceType` and event category. Use deterministic `EventIdentifier` hashes; write `event_delivery_audit` after max retries.",
+          "Write durable transaction checkpoints for instance state transitions and, on restart, skip already-completed checkpointed operations.",
+          "Enforce account, region, and `tenant_id` isolation on describe/list projections.",
+          "Publish `/app/rds/out/rds-snapshot.json` (canonical sorted keys + `report_digest`), `/app/rds/out/instances.jsonl`, `/app/rds/out/events.jsonl`, and `/app/rds/out/health.json` with stable UTF-8 encoding and deterministic ordering."
+        ]
+      }
+    },
+    "invocation_id": "inv_0f9db30ac734cab7f4195465146eb6fd298be0fa955bc414a22c8c0b1f389bb8",
+    "learning": {
+      "context_hash": "sha256:307e06b6be8eee79e941256cc80e7b4b8e6d8edb9a73269dbba59257a864107b",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "sha256:8dd19b0617b094661caf5fe0a5b30e437703843b5f05ce63a7a75586710575c6",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "CALIBRATION_READY",
+        "INSUFFICIENT_SOURCE_DIVERSITY",
+        "SOURCE_QUALITY_BLOCKED",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [
+        ".terminus/human_writing/validate_calibration.py"
+      ],
+      "optional_fields": [
+        "CACHE_SOURCE_KEYS_USED",
+        "RAW_SOURCE_KEYS_USED_FOR_CONTAMINATION",
+        "DEGRADED_COVERAGE_APPROVAL",
+        "CURRENT_STATE_EVIDENCE_NOTES"
+      ],
+      "persisted_artifacts": [
+        ".terminus/research/<task>-dataset-calibration.json",
+        ".terminus/research/<task>-task-writing-profile.json"
+      ],
+      "required_fields": [
+        "DATASET_POLICY_VERSION",
+        "DATASET_REGISTRY_SHA256",
+        "SEED_CATALOG_SHA256",
+        "DOMAIN_PROFILES_SHA256",
+        "DOMAIN_PROFILE",
+        "CALIBRATION_PAIR_ID",
+        "WRITER_CALIBRATION_ID",
+        "REVIEWER_CALIBRATION_ID",
+        "WRITER_SAMPLE_IDS",
+        "REVIEWER_SAMPLE_IDS",
+        "WRITER_REVIEWER_SAMPLE_OVERLAP",
+        "EXTERNAL_DATASET_COVERAGE",
+        "TASK_WRITING_PROFILE"
+      ],
+      "semantic_reviewers": [
+        "Human Quality Reviewer"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "INSUFFICIENT_CALIBRATION": "A6 Human Writing Researcher",
+        "INSUFFICIENT_SOURCE_DIVERSITY": "A6 Human Writing Researcher -> bounded additional retrieval or explicit degraded-coverage decision",
+        "INVALID_CALIBRATION": "Creation Controller -> A6 Human Writing Researcher",
+        "SOURCE_QUALITY_BLOCKED": "Creation Controller -> source/provenance owner",
+        "UNSUPPORTED_CURRENT_STATE_CLAIM": "Instruction Writer / Environment Builder"
+      },
+      "stale_on": [
+        "material work-package change",
+        "instruction-policy change",
+        "human-writing calibration policy change",
+        "dataset registry change",
+        "seed catalog change",
+        "domain profile change",
+        "human-writing stage overlay change"
+      ],
+      "success_transition": "INSTRUCTION_DRAFT"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A6 Human Writing Researcher",
+      "role_class": "PRODUCER",
+      "role_id": "A6_HUMAN_WRITING_RESEARCHER",
+      "stage_id": "HUMAN_WRITING_RESEARCH"
+    }
+  },
+  "outputs": {
+    "CACHE_SOURCE_KEYS_USED": [],
+    "CALIBRATION_PAIR_ID": "hwpair-541bdfa4854b4c2b26fa",
+    "CURRENT_STATE_EVIDENCE_NOTES": [
+      "Deterministic local calibration pair hwpair-541bdfa4854b4c2b26fa for sovereign RDS control-plane domain.",
+      "No Oracle, private test, defect-topology, prior-review, or model-trial material used for solver-facing prose calibration."
+    ],
+    "DATASET_POLICY_VERSION": "1.2",
+    "DATASET_REGISTRY_SHA256": "05ece08c27414d265a2a238928e4c664295434620ffe957c8e88b5050c54645a",
+    "DEGRADED_COVERAGE_APPROVAL": {
+      "approved": true,
+      "approved_by": "CREATION_CONTROLLER",
+      "reason": "No approved external cache was supplied; deterministic local calibration is used with explicit DEGRADED coverage and no claim of full external evidence."
+    },
+    "DOMAIN_PROFILE": "sre_incident",
+    "DOMAIN_PROFILES_SHA256": "9612d83a11558d9013a82362c7405c70ddb5158b582cc2f9859c8c672ad6c838",
+    "EXTERNAL_DATASET_COVERAGE": "DEGRADED",
+    "RAW_SOURCE_KEYS_USED_FOR_CONTAMINATION": [],
+    "REVIEWER_CALIBRATION_ID": "hwcal-reviewer-18b34e039487d38e329f",
+    "REVIEWER_SAMPLE_IDS": [
+      "HC-016",
+      "HC-004",
+      "HC-028",
+      "HC-001",
+      "HC-022",
+      "HC-020",
+      "CP-005",
+      "CP-001",
+      "CP-004",
+      "AT-006",
+      "AT-002",
+      "HP-002",
+      "HP-004",
+      "HN-001",
+      "HN-002"
+    ],
+    "SEED_CATALOG_SHA256": "e205f858f8391fd88d3e26665d2f585a69cd691321b9275644e631bb949f0942",
+    "TASK_WRITING_PROFILE": {
+      "avoid": [
+        "one sentence per verifier scenario",
+        "implementation diagnosis or repair locations",
+        "invented outage or customer story",
+        "copied public issue wording",
+        "generic benchmark preamble",
+        "canary strings or oracle hints"
+      ],
+      "must_preserve": [
+        "public entrypoints /app/rds/bin/rdsd, /app/rds/bin/rds-worker, /app/rds/bin/rdsctl",
+        "AVAILABLE-only modifications and monotonic storage growth",
+        "DeletionProtection always enforced",
+        "WAL continuity and PITR window/LSN/timeline binding",
+        "dynamic vs pending-reboot parameter semantics",
+        "lag/LSN-fenced PromoteReadReplica with old-primary write-lease revocation",
+        "lease-TTL Multi-AZ failover with direct-port health probes",
+        "transactional outbox with deterministic EventIdentifier hashes",
+        "deterministic published outputs under /app/rds/out"
+      ],
+      "structure": [
+        "open with completing the inherited Python/PostgreSQL RDS-compatible control plane",
+        "group lifecycle, WAL/PITR, parameter apply modes, replica promotion, Multi-AZ failover, and outbox outcomes rather than mirroring tests",
+        "point to /app/rds/docs operator contracts for schemas and state semantics",
+        "state offline lab boundaries: no live AWS RDS API or cloud credentials"
+      ],
+      "voice": "direct cloud platform engineer sovereign-RDS control-plane handoff"
+    },
+    "WRITER_CALIBRATION_ID": "hwcal-writer-fad2a3b0e15bdf4640d9",
+    "WRITER_REVIEWER_SAMPLE_OVERLAP": [],
+    "WRITER_SAMPLE_IDS": [
+      "HC-005",
+      "HC-013",
+      "HC-024",
+      "HC-026",
+      "HC-007",
+      "HC-017",
+      "CP-003",
+      "CP-002",
+      "AT-005"
+    ]
+  },
+  "record_id": "rec_a9fe6de8c5495cab0f180ebb7917c4068296b9466e143bad9720150cb0ff8b6a",
+  "role_id": "A6_HUMAN_WRITING_RESEARCHER",
+  "schema_version": "1.0",
+  "stage_id": "HUMAN_WRITING_RESEARCH",
+  "status": "CALIBRATION_READY",
+  "task_lineage": {
+    "input_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+    "output_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "INSTRUCTION_DRAFT",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 2,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}

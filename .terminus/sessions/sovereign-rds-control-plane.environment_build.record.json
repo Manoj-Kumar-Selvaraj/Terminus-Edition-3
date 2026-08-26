@@ -1,0 +1,572 @@
+{
+  "ledger_event": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "event_id": "evt_757754d91c0c371449e2dbb0f14f23d9b5bca48cc098fd3a968446253ada48bc",
+    "input_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+    "invocation_id": "inv_0b9a141d5244be8d902dd6190b8d3a62f6118e38bb1174fb8157f296c490b8b5",
+    "output_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+    "previous_event_id": "evt_120f182f538568fb8b8d4bc6d02b78b93c70cdf7a4f12cf1bbcb9dffa8a06ef3",
+    "record_hash": "sha256:fd822d51567b47c7b7db50fa0d80eeadfc76f1360636a7046ce8226517bb2a38",
+    "record_id": "rec_6f031c75471a90b460fe2c58dbb520fa308fc81e1b1e470b17b53e84b0d5b9c9",
+    "record_path": ".terminus/executions/sovereign-rds-control-plane/inv_0b9a141d5244be8d902dd6190b8d3a62f6118e38bb1174fb8157f296c490b8b5.result.json",
+    "schema_version": "1.0",
+    "sequence": 5,
+    "stage_id": "ENVIRONMENT_BUILD",
+    "task_id": "sovereign-rds-control-plane"
+  },
+  "record": {
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+      "task_id": "sovereign-rds-control-plane"
+    },
+    "disposition": "ADVANCE",
+    "evidence_refs": [
+      {
+        "content_hash": "sha256:1e950e0ea5f6ce34ff813202df633c1eea7a948d3eaaa7fed4c8ebad3524e380",
+        "kind": "COMMIT",
+        "ref": "commit:df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe"
+      },
+      {
+        "content_hash": "sha256:c37bd949c992df182829e7bb88d59b45b704d28e5a97c3bcdea3311ade49c29d",
+        "kind": "COMMIT",
+        "ref": "commit:80f30305a5d92128e780ee16a2227e2c195a68c8"
+      }
+    ],
+    "invocation_id": "inv_0b9a141d5244be8d902dd6190b8d3a62f6118e38bb1174fb8157f296c490b8b5",
+    "invocation_snapshot": {
+      "acceptance_predicates": {},
+      "authority": {
+        "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+        "policy_versions": {},
+        "task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+        "task_id": "sovereign-rds-control-plane"
+      },
+      "evidence": {
+        "authorized_evidence_classes": [
+          "CONTROL_PLANE_POLICY",
+          "PRIVATE_CREATION_DESIGN",
+          "PUBLIC_REFERENCE",
+          "SOLVER_VISIBLE_TASK"
+        ],
+        "evidence_required": [
+          "reachable starter runtime",
+          "representative deterministic state",
+          "normal engineering docs/contracts",
+          "runtime/operator evidence where applicable"
+        ],
+        "excluded_evidence_classes": [
+          "CI_RUNTIME_EVIDENCE",
+          "CURRENT_REVIEW_PACKET",
+          "DURABLE_SESSION_STATE",
+          "FINAL_PACKAGE_EVIDENCE",
+          "MODEL_TRIAL_EVIDENCE",
+          "PRIOR_REVIEW_RESULTS",
+          "SOLUTION_ORACLE",
+          "VERIFIER_PRIVATE"
+        ],
+        "mandatory_exact_reads": [
+          "TERMINUS_3_AI_INSTRUCTIONS.md",
+          ".terminus/agents/CREATION_PIPELINE.md",
+          ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+          ".terminus/agents/CREATOR_PROMPTS.md",
+          ".terminus/agents/A2_PHASE_PROMPTS.md"
+        ],
+        "retrieval_mode": "FILTERED_HYBRID"
+      },
+      "ignored_input_count": 36,
+      "inputs": {
+        "optional": {},
+        "required": {
+          "CLEAN_SYSTEM_ARCHITECTURE": {
+            "COMPONENT_GRAPH": [
+              "RDS control plane API daemon (rdsd) with HTTP endpoints for DBInstances, DBParameterGroups, DBSnapshots, and EventSubscriptions",
+              "Control plane CLI (rdsctl) for operator commands and automated management",
+              "Instance lifecycle orchestrator (provisioning, modifying, stopping, starting, rebooting, deleting)",
+              "WAL archive collector and PITR recovery target synthesizer",
+              "Parameter group manager with dynamic/static parameter application classification",
+              "Replica topology manager and streaming replication lag monitor",
+              "Failover coordinator with leader election, lease fencing, and VIP migration",
+              "Event outbox processor with subscription filter engine",
+              "Deterministic RDS state and telemetry fixture generator",
+              "Local offline RDS protocol simulator for end-to-end testing"
+            ],
+            "DATA_VOLUME_PLAN": "Generate 14,800 deterministic primary records across DB instances, parameter groups, WAL manifests, snapshots, events, failover logs, and metrics.",
+            "ENTRYPOINTS": [
+              "/app/rds/bin/rdsd",
+              "/app/rds/bin/rds-worker",
+              "/app/rds/bin/rdsctl",
+              "/app/rds/bin/generate-estate"
+            ],
+            "PRODUCTION_CHARACTERISTICS": [
+              "RDS-compatible instance lifecycle API",
+              "WAL archive and PITR synthesis",
+              "parameter dynamic vs pending-reboot fencing",
+              "replica promotion lag/LSN fencing",
+              "Multi-AZ lease/VIP failover",
+              "transactional event outbox",
+              "deterministic published digests",
+              "crash/restart checkpoint recovery"
+            ],
+            "SCALE_FIT": "Target 4,500-7,000 reachable canonical environment LOC; generated estate data, tests, solution, docs, comments, blanks, and duplicate filler do not count.",
+            "SOLVER_VISIBLE_DOC_PLAN": [
+              "environment/rds/docs/architecture.md",
+              "environment/rds/docs/failover-replica-contract.md",
+              "environment/rds/docs/operator-contract.md",
+              "environment/rds/docs/parameter-group-contract.md",
+              "environment/rds/docs/pitr-wal-contract.md"
+            ],
+            "STATE_MODEL": "PostgreSQL 16 for control plane metadata, instance state, parameter groups, snapshot manifests, WAL segments, event outbox, leases, and audit trail."
+          },
+          "CREATION_RULE_CONTEXT": {
+            "ACTIVE_VALIDATORS": [
+              ".terminus/validate_agent_system.py",
+              ".terminus/validate_stage_contracts.py",
+              ".terminus/validate_task_complexity.py",
+              ".terminus/validate_environment_complexity.py",
+              ".terminus/validate_runtime_authenticity.py",
+              ".terminus/validate_business_module_diversity.py",
+              ".terminus/validate_review_freshness.py",
+              ".terminus/validate_quality_interlock.py",
+              ".github/workflows/terminus-edition-3-ci.yml",
+              ".github/workflows/terminus-creator-complexity.yml",
+              ".github/workflows/terminus-production-authenticity.yml"
+            ],
+            "CONTROL_PLANE_COMMIT": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+            "CREATION_PROFILE": "large_system_strict",
+            "KNOWN_POLICY_CONFLICTS": [],
+            "NETWORK_ENVIRONMENT_CONSTRAINTS": "Public network during image build for package installation; runtime grading is deterministic with no live AWS RDS API calls, no cloud credentials, and no privileged containers. PostgreSQL 16 runs in the task compose topology.",
+            "RULE_SOURCES": [
+              "TERMINUS_3_AI_INSTRUCTIONS.md",
+              ".terminus/AGENT_SYSTEM.md",
+              ".terminus/agents/CREATION_CONTROLLER.md",
+              ".terminus/agents/CREATION_PIPELINE.md",
+              ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+              ".terminus/reviewers/REVIEWER_CHECKLIST.md",
+              ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+              ".terminus/agents/STAGE_CONTRACTS.md",
+              ".terminus/agents/stage_contracts.json"
+            ]
+          },
+          "DEFECT_TOPOLOGY": {
+            "manifestations": 28,
+            "path": ".terminus/designs/sovereign-rds-control-plane.json",
+            "profile": "large_system_strict",
+            "root_cause_clusters": 7,
+            "status": "DESIGN_READY"
+          },
+          "SOLVER_VISIBLE_DOC_PLAN": [
+            "environment/rds/docs/architecture.md",
+            "environment/rds/docs/failover-replica-contract.md",
+            "environment/rds/docs/operator-contract.md",
+            "environment/rds/docs/parameter-group-contract.md",
+            "environment/rds/docs/pitr-wal-contract.md"
+          ]
+        }
+      },
+      "invocation_id": "inv_0b9a141d5244be8d902dd6190b8d3a62f6118e38bb1174fb8157f296c490b8b5",
+      "learning": {
+        "context_hash": "sha256:307e06b6be8eee79e941256cc80e7b4b8e6d8edb9a73269dbba59257a864107b",
+        "lessons": [],
+        "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+        "raw_feedback_exposed": false,
+        "raw_historical_findings_exposed": false,
+        "registry_heads": {
+          "feedback": "sha256:8dd19b0617b094661caf5fe0a5b30e437703843b5f05ce63a7a75586710575c6",
+          "findings": "GENESIS",
+          "lessons": "GENESIS",
+          "patterns": "GENESIS",
+          "remediations": "GENESIS"
+        },
+        "remediations": []
+      },
+      "missing_required_inputs": [],
+      "output_contract": {
+        "allowed_status_values": [
+          "BUILT",
+          "SCENARIO_TOO_SMALL",
+          "ARCHITECTURE_GAP",
+          "BLOCKED"
+        ],
+        "deterministic_validators": [
+          ".terminus/validate_environment_complexity.py <task>",
+          ".terminus/validate_runtime_authenticity.py <task>",
+          ".terminus/validate_business_module_diversity.py <task> when applicable"
+        ],
+        "optional_fields": [
+          "RESOURCE_COUNT",
+          "UNRESOLVED_RISKS"
+        ],
+        "persisted_artifacts": [
+          "<task>/environment/"
+        ],
+        "required_fields": [
+          "COMPONENT_GRAPH",
+          "ENTRYPOINTS",
+          "SOLVER_VISIBLE_DOCS",
+          "INSTRUCTION_DOC_BOUNDARY",
+          "SUBSTANTIVE_LOC",
+          "PRODUCTION_CHARACTERISTICS",
+          "RUNTIME_REACHABILITY_NOTES",
+          "ENVIRONMENT_RULE_CHECKS"
+        ],
+        "semantic_reviewers": [
+          "Complexity Governor"
+        ]
+      },
+      "readiness": "READY",
+      "retrieval": {
+        "query": null,
+        "retrieved_chars": 0,
+        "retrieved_context": [],
+        "status": "NOT_REQUESTED"
+      },
+      "routing": {
+        "failure_routes": {
+          "ARCHITECTURE_GAP": "Creation Controller -> SYSTEM_ARCHITECTURE",
+          "FORMAT_ERROR": "Q7 Task Format Enforcer",
+          "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH",
+          "TOY_OR_PADDED_SYSTEM": "A2 System Architect / Environment Builder"
+        },
+        "stale_on": [
+          "architecture change",
+          "defect-topology change",
+          "solver-visible documentation plan change",
+          "environment rule change",
+          "solver-visible environment change"
+        ],
+        "success_transition": "REFERENCE_SOLUTION"
+      },
+      "schema_version": "1.0",
+      "stage": {
+        "lifecycle": "creation",
+        "owner": "A2 System Architect / Environment Builder",
+        "role_class": "PRODUCER",
+        "role_id": "A2_ENVIRONMENT_BUILDER",
+        "stage_id": "ENVIRONMENT_BUILD"
+      }
+    },
+    "outputs": {
+      "COMPONENT_GRAPH": [
+        "RDS control plane API daemon (rdsd) with HTTP endpoints for DBInstances, DBParameterGroups, DBSnapshots, and EventSubscriptions",
+        "Control plane CLI (rdsctl) for operator commands and automated management",
+        "Instance lifecycle orchestrator (provisioning, modifying, stopping, starting, rebooting, deleting)",
+        "WAL archive collector and PITR recovery target synthesizer",
+        "Parameter group manager with dynamic/static parameter application classification",
+        "Replica topology manager and streaming replication lag monitor",
+        "Failover coordinator with leader election, lease fencing, and VIP migration",
+        "Event outbox processor with subscription filter engine",
+        "Deterministic RDS state and telemetry fixture generator",
+        "Local offline RDS protocol simulator for end-to-end testing"
+      ],
+      "ENTRYPOINTS": [
+        "rdsd",
+        "rds-worker",
+        "rdsctl",
+        "generate-estate"
+      ],
+      "ENVIRONMENT_RULE_CHECKS": {
+        "complexity_validator": "PASS",
+        "runtime_authenticity_validator": "FAIL_MISSING_PROFILE"
+      },
+      "INSTRUCTION_DOC_BOUNDARY": "instruction owns requirements; operator-contract.md owns architecture/schemas",
+      "PRODUCTION_CHARACTERISTICS": [
+        "RDS control plane API daemon (rdsd) with HTTP endpoints for DBInstances, DBParameterGroups, DBSnapshots, and EventSubscriptions",
+        "Control plane CLI (rdsctl) for operator commands and automated management",
+        "Instance lifecycle orchestrator (provisioning, modifying, stopping, starting, rebooting, deleting)",
+        "WAL archive collector and PITR recovery target synthesizer",
+        "Parameter group manager with dynamic/static parameter application classification",
+        "Replica topology manager and streaming replication lag monitor",
+        "Failover coordinator with leader election, lease fencing, and VIP migration",
+        "Event outbox processor with subscription filter engine",
+        "Deterministic RDS state and telemetry fixture generator",
+        "Local offline RDS protocol simulator for end-to-end testing"
+      ],
+      "RUNTIME_REACHABILITY_NOTES": "Public CLI/daemon/worker under /app/rds/bin drive API, workers, and estate generation",
+      "SOLVER_VISIBLE_DOCS": [
+        "environment/rds/docs/architecture.md",
+        "environment/rds/docs/failover-replica-contract.md",
+        "environment/rds/docs/operator-contract.md",
+        "environment/rds/docs/parameter-group-contract.md",
+        "environment/rds/docs/pitr-wal-contract.md"
+      ],
+      "SUBSTANTIVE_LOC": "3017 (validate_environment_complexity PASS)"
+    },
+    "record_id": "rec_6f031c75471a90b460fe2c58dbb520fa308fc81e1b1e470b17b53e84b0d5b9c9",
+    "role_id": "A2_ENVIRONMENT_BUILDER",
+    "schema_version": "1.0",
+    "stage_id": "ENVIRONMENT_BUILD",
+    "status": "BUILT",
+    "task_lineage": {
+      "input_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+      "output_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+      "task_changed": false
+    },
+    "transition": {
+      "action": "ADVANCE",
+      "requires_state_validation": false,
+      "target": "REFERENCE_SOLUTION",
+      "target_kind": "STAGE"
+    },
+    "validation": {
+      "acceptance_predicates_satisfied": true,
+      "evidence_binding_satisfied": true,
+      "evidence_refs_count": 2,
+      "invocation_identity_valid": true,
+      "invocation_policy_valid": true,
+      "output_keys_valid": true,
+      "required_outputs_satisfied": true,
+      "retrieval_context_authorized": true,
+      "status_legal": true,
+      "task_commit_change_authorized": true,
+      "task_lineage_valid": true
+    }
+  },
+  "remediation_updates": [],
+  "state": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "derived_from": {
+      "freshness_overlay_hash": null,
+      "record_ids": [
+        "rec_15c440a653cf913033e1338857122b34bbf8d46587e150ebfe93d14984bf2013",
+        "rec_3cba1e5377933d9ac569217c94d5866aa181b92f14e8ecec978273e8a4a604ba",
+        "rec_6f031c75471a90b460fe2c58dbb520fa308fc81e1b1e470b17b53e84b0d5b9c9",
+        "rec_73acde27c0b9ea5238228f258a1925330c8d7ac0216253baa44e8ac86ec1c638",
+        "rec_c8267b8c2fdbb8045ec3b901ecb6475983fc8a8a89640a25248e217a83213f8d"
+      ]
+    },
+    "ledger_event_count": 5,
+    "ledger_head_event_id": "evt_757754d91c0c371449e2dbb0f14f23d9b5bca48cc098fd3a968446253ada48bc",
+    "lineage": {
+      "bootstrap_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+      "current_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+      "recorded_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+      "status": "CURRENT"
+    },
+    "next": {
+      "action": "INVOKE_STAGE",
+      "optional_inputs": [
+        "SOLVER_VISIBLE_CONTRACTS"
+      ],
+      "owner": "A4 Reference Solution Author",
+      "primary_role_id": "A4_REFERENCE_SOLUTION_AUTHOR",
+      "required_inputs": [
+        "APPROVED_OPERATIONAL_REQUIREMENTS",
+        "STARTER_ENVIRONMENT",
+        "SYSTEM_ARCHITECTURE"
+      ],
+      "stage_id": "REFERENCE_SOLUTION"
+    },
+    "nodes": [
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+        "invocation_id": "inv_0873419deefb34b5359b41d6f5e453752c563989fe92f29f776cd873d7d59afa",
+        "ledger_event_id": "evt_0d34df9d3b86906bbeb214f8d7b20bf53be30e1f55450735c77b531edb901c73",
+        "node_id": "RULE_RESOLUTION",
+        "node_kind": "STAGE",
+        "output_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+        "reason": "validated ADVANCE record reaches WORK_PACKAGE_RESEARCH",
+        "record_id": "rec_c8267b8c2fdbb8045ec3b901ecb6475983fc8a8a89640a25248e217a83213f8d",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+        "invocation_id": "inv_1fa17743c7ce53cf9500379c1ca012b305ebc4bcfc835282ef8dd6c8633b639e",
+        "ledger_event_id": "evt_19de55e985016509f17f02c6f6a6bd91b0ca939b15ea3e8e43f031aec9f2dd84",
+        "node_id": "WORK_PACKAGE_RESEARCH",
+        "node_kind": "STAGE",
+        "output_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+        "reason": "validated ADVANCE record reaches SYSTEM_ARCHITECTURE",
+        "record_id": "rec_3cba1e5377933d9ac569217c94d5866aa181b92f14e8ecec978273e8a4a604ba",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+        "invocation_id": "inv_3fbc95e559061677251f439f248c9f7f871f121c2a34856f7124682e1c6b60e1",
+        "ledger_event_id": "evt_5d65f5fff267e968a0fbac5dc10df0d3e4b9c37e7ff4d554a127954c13ea8a9c",
+        "node_id": "SYSTEM_ARCHITECTURE",
+        "node_kind": "STAGE",
+        "output_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+        "reason": "validated ADVANCE record reaches DEFECT_TOPOLOGY",
+        "record_id": "rec_73acde27c0b9ea5238228f258a1925330c8d7ac0216253baa44e8ac86ec1c638",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+        "invocation_id": "inv_e1239aed4ce0cf66eb0396ffa8ee4461f3474a230b01acba878f0843a8b6d24b",
+        "ledger_event_id": "evt_120f182f538568fb8b8d4bc6d02b78b93c70cdf7a4f12cf1bbcb9dffa8a06ef3",
+        "node_id": "DEFECT_TOPOLOGY",
+        "node_kind": "STAGE",
+        "output_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+        "reason": "validated ADVANCE record reaches ENVIRONMENT_BUILD",
+        "record_id": "rec_15c440a653cf913033e1338857122b34bbf8d46587e150ebfe93d14984bf2013",
+        "status": "CURRENT"
+      },
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+        "invocation_id": "inv_0b9a141d5244be8d902dd6190b8d3a62f6118e38bb1174fb8157f296c490b8b5",
+        "ledger_event_id": "evt_757754d91c0c371449e2dbb0f14f23d9b5bca48cc098fd3a968446253ada48bc",
+        "node_id": "ENVIRONMENT_BUILD",
+        "node_kind": "STAGE",
+        "output_task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+        "reason": "validated ADVANCE record reaches REFERENCE_SOLUTION",
+        "record_id": "rec_6f031c75471a90b460fe2c58dbb520fa308fc81e1b1e470b17b53e84b0d5b9c9",
+        "status": "CURRENT"
+      },
+      {
+        "node_id": "REFERENCE_SOLUTION",
+        "node_kind": "STAGE",
+        "reason": "no execution-ledger event exists for this stage",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "VERIFIER_BUILD",
+        "node_kind": "STAGE",
+        "reason": "upstream node REFERENCE_SOLUTION is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "HUMAN_WRITING_RESEARCH",
+        "node_kind": "STAGE",
+        "reason": "upstream node VERIFIER_BUILD is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "INSTRUCTION_DRAFT",
+        "node_kind": "STAGE",
+        "reason": "upstream node HUMAN_WRITING_RESEARCH is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "SPEC_ALIGNMENT",
+        "node_kind": "STAGE",
+        "reason": "upstream node INSTRUCTION_DRAFT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "DOCUMENTATION_DRAFT",
+        "node_kind": "STAGE",
+        "reason": "upstream node SPEC_ALIGNMENT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "FORMAT_GATE",
+        "node_kind": "STAGE",
+        "reason": "upstream node DOCUMENTATION_DRAFT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "ASSEMBLY",
+        "node_kind": "STAGE",
+        "reason": "upstream node FORMAT_GATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "COMPLEXITY_GATE",
+        "node_kind": "STAGE",
+        "reason": "upstream node ASSEMBLY is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "RUNTIME_AUTHENTICITY",
+        "node_kind": "STAGE",
+        "reason": "upstream node COMPLEXITY_GATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "DETERMINISTIC_VALIDATION",
+        "node_kind": "STAGE",
+        "reason": "upstream node RUNTIME_AUTHENTICITY is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "FROZEN_CANDIDATE",
+        "node_kind": "STATE",
+        "reason": "state cannot be current while its predecessor chain is non-current",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "QUALITY_INTERLOCK",
+        "node_kind": "STAGE",
+        "reason": "upstream node FROZEN_CANDIDATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "PRE_LLMAJ",
+        "node_kind": "STAGE",
+        "reason": "upstream node QUALITY_INTERLOCK is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_GPT",
+        "node_kind": "STAGE",
+        "reason": "upstream node PRE_LLMAJ is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_CLAUDE",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_GPT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_AGGREGATE",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_CLAUDE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "HARBOR_LLMAJ",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_AGGREGATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "OFFICIAL_MODEL_TRIALS",
+        "node_kind": "STAGE",
+        "reason": "upstream node HARBOR_LLMAJ is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "TRIAL_ANALYSIS",
+        "node_kind": "STAGE",
+        "reason": "upstream node OFFICIAL_MODEL_TRIALS is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "DIFFICULTY_ASSESSMENT",
+        "node_kind": "STAGE",
+        "reason": "upstream node TRIAL_ANALYSIS is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "FINAL_REVIEW",
+        "node_kind": "STAGE",
+        "reason": "upstream node DIFFICULTY_ASSESSMENT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "SUBMISSION_READY",
+        "node_kind": "STAGE",
+        "reason": "upstream node FINAL_REVIEW is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      }
+    ],
+    "schema_version": "1.0",
+    "state_snapshot_id": "state_fd9b89f5977dfcd34b26bb8a93886069b0458192cab819f334aad7aa32c6eb0e",
+    "summary": {
+      "BLOCKED": 0,
+      "CURRENT": 5,
+      "MISSING": 23,
+      "STALE": 0
+    },
+    "task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+    "task_id": "sovereign-rds-control-plane"
+  }
+}
