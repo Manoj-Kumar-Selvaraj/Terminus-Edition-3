@@ -26,11 +26,11 @@ WORKDIR /app/rds
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY rds/ ./rds/
-COPY bin/ ./bin/
-COPY config/ ./config/
-COPY db/ ./db/
-COPY docs/ ./docs/
+COPY rds/bin/ ./bin/
+COPY rds/rds/ ./rds/
+COPY rds/config/ ./config/
+COPY rds/db/ ./db/
+COPY rds/docs/ ./docs/
 
 RUN sed -i 's/\r$//' bin/* \
     && chmod +x bin/* \
