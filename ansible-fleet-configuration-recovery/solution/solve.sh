@@ -9,12 +9,10 @@ if [[ ! -d "$TARGET" ]]; then
   exit 1
 fi
 
-# Harbor's solution container does not guarantee pip console scripts on PATH.
-# Install the reference controller, then provide deterministic CLI shims that
-# execute Ansible's Python CLI modules directly. This is independent of the
-# wheel's console-script installation location.
-python -m pip install --disable-pip-version-check --no-cache-dir 'ansible==12.0.0' >/dev/null
-
+# Harbor's solution container may expose a Python/pip environment whose generated
+# console scripts are not on PATH or are not importable through the inherited
+# interpreter. Build an isolated controller environment at a deterministic path
+# and use its real Ansible console scripts for the complete reference repair.
 WORK="$(mktemp -d)"
 cleanup() {
   if [[ -L "$TARGET/environment" ]]; then
@@ -30,22 +28,14 @@ cleanup() {
 }
 trap cleanup EXIT
 
-mkdir -p "$WORK/bin" "$WORK/solution"
-cat > "$WORK/bin/ansible-config" <<'SH'
-#!/usr/bin/env bash
-exec python -m ansible.cli.config "$@"
-SH
-cat > "$WORK/bin/ansible-vault" <<'SH'
-#!/usr/bin/env bash
-exec python -m ansible.cli.vault "$@"
-SH
-cat > "$WORK/bin/ansible-playbook" <<'SH'
-#!/usr/bin/env bash
-exec python -m ansible.cli.playbook "$@"
-SH
-chmod 0755 "$WORK/bin/ansible-config" "$WORK/bin/ansible-vault" "$WORK/bin/ansible-playbook"
-export PATH="$WORK/bin:$PATH"
+python -m venv "$WORK/ansible-venv"
+"$WORK/ansible-venv/bin/python" -m pip install --disable-pip-version-check --no-cache-dir 'ansible==12.0.0' >/dev/null
+export PATH="$WORK/ansible-venv/bin:$PATH"
+command -v ansible-config >/dev/null
+command -v ansible-vault >/dev/null
+command -v ansible-playbook >/dev/null
 
+mkdir -p "$WORK/solution"
 ln -s "$TARGET" "$WORK/environment"
 cp "$HERE/repair.sh" "$WORK/solution/repair.sh"
 chmod 0755 "$WORK/solution/repair.sh"
