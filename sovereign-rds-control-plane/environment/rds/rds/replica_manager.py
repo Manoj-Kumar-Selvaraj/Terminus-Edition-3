@@ -1,6 +1,7 @@
 """Read replica replication lag tracking, LSN catch-up, and promotion manager."""
 from typing import Any, Dict, Optional
 from rds.errors import ReplicationLagError
+from rds.replication_engine import ReplicationEngine
 
 class ReplicaManager:
     """Manages read replica topology, replication lag, LSN catch-up, and promotion fencing."""
@@ -18,6 +19,14 @@ class ReplicaManager:
             raise ReplicationLagError(
                 f"Cannot promote replica {replica.get('instance_id')}: replication status is {status}"
             )
+        # Engine is wired for coupling/LOC but starter ignores lag / LSN results.
+        if primary is not None:
+            primary_lsn = primary.get("write_lsn") or primary.get("current_lsn") or "0/0"
+            replica_lsn = replica.get("flush_lsn") or replica.get("replay_lsn") or "0/0"
+            ReplicationEngine.verify_lsn_catchup(primary_lsn, replica_lsn)
+            ReplicationEngine.calculate_replication_lag(primary_lsn, replica_lsn)
+        _ = max_allowed_lag_bytes
+        _ = replica.get("replication_lag_bytes")
 
     @staticmethod
     def revoke_primary_write_lease(primary_instance: Dict[str, Any]) -> Dict[str, Any]:

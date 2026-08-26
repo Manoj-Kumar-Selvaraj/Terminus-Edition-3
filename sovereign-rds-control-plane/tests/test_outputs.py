@@ -56,6 +56,7 @@ class FakeRepository:
         self.leases: Dict[str, Dict[str, Any]] = {}
         self.audits: List[Dict[str, Any]] = []
         self.sql_log: List[tuple] = []
+        self.call_order: List[str] = []
 
     async def get_instance(self, instance_id: str) -> Optional[Dict[str, Any]]:
         inst = self.instances.get(instance_id)
@@ -74,6 +75,7 @@ class FakeRepository:
         return sorted(rows, key=lambda x: x["instance_id"])
 
     async def update_instance_status(self, instance_id: str, status: str) -> int:
+        self.call_order.append(f"update_status:{status}")
         if instance_id not in self.instances:
             return 0
         self.instances[instance_id]["status"] = status
@@ -179,6 +181,7 @@ class FakeRepository:
         return [dict(e) for e in self.outbox if e.get("status") == "PENDING"]
 
     async def create_outbox_event(self, record: Dict[str, Any]) -> int:
+        self.call_order.append("create_outbox")
         self.outbox.append(dict(record))
         return 1
 
@@ -628,7 +631,7 @@ def test_f2p_vip_migration_flushes_routes_and_issues_grat_arp() -> None:
 
 
 def test_f2p_outbox_events_enqueued_transactionally() -> None:
-    """Status transitions enqueue outbox events before/at commit via InstanceManager."""
+    """Outbox enqueue happens in the same mutation path before status commit."""
 
     async def _run() -> None:
         repo = FakeRepository()
@@ -637,6 +640,10 @@ def test_f2p_outbox_events_enqueued_transactionally() -> None:
         await mgr.modify_instance("db-1", {"db_instance_class": "db.m6i.2xlarge"})
         assert len(repo.outbox) >= 1
         assert repo.outbox[0]["source_type"] == "db-instance"
+        assert "create_outbox" in repo.call_order
+        assert repo.call_order.index("create_outbox") < repo.call_order.index(
+            "update_status:MODIFYING"
+        )
 
     asyncio.run(_run())
 

@@ -1,20 +1,11 @@
-- Complete the inherited Python and PostgreSQL sovereign RDS-compatible control plane at `/app/rds` so DB instances, WAL-backed PITR restores, parameter group apply modes, read replica promotion, multi-AZ failover fencing, and event outbox notifications achieve policy-compliant, restart-safe readiness.
-- Operate the control plane through `/app/rds/bin/rdsd`, `/app/rds/bin/rds-worker`, and `/app/rds/bin/rdsctl` against PostgreSQL 16.
-- Accept DBInstance modification requests (instance class, storage, retention) only when instance status is `AVAILABLE` and enforce monotonic storage allocation growth.
-- Enforce `DeletionProtection = true` to reject `DeleteDBInstance` calls regardless of whether `FinalDBSnapshotIdentifier` is specified.
-- Process `RebootDBInstance` calls by reloading configuration and applying pending static parameters marked `pending-reboot`.
-- Ingest PostgreSQL WAL archives, validate sequence and timeline continuity, and flag sequence gaps as archive errors.
-- Synthesize Point-In-Time Recovery (PITR) restores by matching base backup manifests, verifying LSN and timeline compatibility, and applying partial WAL replay to the target timestamp.
-- Validate `RestoreDBInstanceToPointInTime` target timestamps strictly between `EarliestRestorableTime` and `LatestRestorableTime`.
-- Classify parameter group modifications: apply dynamic parameters immediately and mark static parameters (`apply_type = static`) as `pending-reboot`.
-- Inherit default parameter family settings when applying custom parameter group overrides rather than overwriting family defaults.
-- Clear `PendingRebootParameters` flags only after all modified static parameters pass boot-time validation on restart.
-- Execute `ResetDBParameterGroup` by setting instance `parameter_group_status` to `pending-reboot`.
-- Verify read replica replication lag (`bytes_behind_primary <= MaximumAllowedLagBytes`) and LSN catch-up before executing `PromoteReadReplica`.
-- Revoke the write lease on the former primary instance during replica promotion to prevent split-brain dual-primary writes.
-- Update DNS and VIP routing endpoints atomically upon replica promotion so read/write traffic routes to the promoted primary.
-- Enforce leader lease acquisition and lease TTL fencing before executing automatic Multi-AZ failover.
-- Distinguish direct database TCP port health probes from control plane database connection pool latency to prevent false-positive failovers.
-- Enqueue EventBridge outbox notifications transactionally inside the same database transaction as instance state transitions, filtering by `SourceType` and `SourceIdentifier`.
-- Record delivery failure evidence in `event_delivery_audit` when notifications exhaust maximum retries, using deterministic `EventIdentifier` hashes.
-- Publish deterministic outputs at `/app/rds/out/rds-snapshot.json`, `/app/rds/out/instances.jsonl`, `/app/rds/out/events.jsonl`, and `/app/rds/out/health.json` with stable schemas, ordering, encoding, and SHA-256 digests.
+Finish the sovereign RDS control plane at `/app/rds` so operators can run provisioning, PITR, parameter apply, replica promotion, Multi-AZ failover, and EventBridge outbox delivery through `/app/rds/bin/rdsd`, `/app/rds/bin/rds-worker`, and `/app/rds/bin/rdsctl` against the local protocol lab only (no live AWS RDS APIs). Treat `/app/rds/docs/operator-contract.md`, `/app/rds/docs/pitr-wal-contract.md`, `/app/rds/docs/parameter-group-contract.md`, and `/app/rds/docs/failover-replica-contract.md` as binding for schemas, error names, restore windows, lag limits, health-probe outcomes, and VIP migration evidence. Unauthorized or invalid calls must fail closed without corrupting control-plane state.
+
+When the plane is healthy, visible instances are `AVAILABLE`, outbox/backlog work is clear, readiness reports `READY` (else `UNHEALTHY`), and restarts skip already-checkpointed instance transitions. Publish deterministic reports under `/app/rds/out/`.
+
+- Lifecycle: allow `ModifyDBInstance` only while status is `AVAILABLE`; allocated storage must strictly increase; reject `DeleteDBInstance` when `DeletionProtection` is true even if a final snapshot id is supplied; on reboot, reload config, apply pending static parameters, and clear `PendingRebootParameters` only after boot validation succeeds.
+- WAL / PITR: ingest archives with timeline and sequence continuity (flag gaps); bind base-backup LSN/timeline; partially replay WAL to the restore target; accept targets only when `EarliestRestorableTime <= target <= LatestRestorableTime`.
+- Parameter groups: apply dynamic parameters immediately, mark static ones pending reboot, merge overrides into family defaults; `ResetDBParameterGroup` sets attached instances to `parameter_group_status=pending-reboot` and `PendingRebootParameters=true`.
+- Promotion: require `replication_lag_bytes <= MaximumAllowedLagBytes` (10485760) and LSN catch-up, revoke the old primary write lease, then atomically swap writer/reader endpoints—promotion must not perform floating-VIP ARP.
+- Failover: acquire a TTL-fenced leader lease first; decide health from direct DB TCP reachability (ignore control-plane pool lag alone); on floating VIP migration flush routes, send gratuitous ARP, and record evidence per the failover contract.
+- Outbox / isolation: enqueue EventBridge rows in the same DB transaction as instance state changes; match subscriptions by `SourceType` and event category; use deterministic `EventIdentifier` hashes; write `event_delivery_audit` after max retries; enforce account, region, and `tenant_id` isolation on describe/list projections.
+- Outputs: `/app/rds/out/rds-snapshot.json` (canonical sorted keys + `report_digest`), `/app/rds/out/instances.jsonl`, `/app/rds/out/events.jsonl`, and `/app/rds/out/health.json` with stable UTF-8 encoding and deterministic ordering.

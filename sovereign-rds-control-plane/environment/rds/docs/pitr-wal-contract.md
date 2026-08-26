@@ -15,4 +15,4 @@ The control plane maintains continuous WAL archiving and base backup manifests f
 3. **Target Timestamp Synthesis**:
    - `RestoreDBInstanceToPointInTime` specifies `TargetRestorableTime`.
    - The restore engine identifies the latest base backup before `TargetRestorableTime` and replays WAL segments up to the exact transaction timestamp.
-   - Target timestamps outside `[EarliestRestorableTime, LatestRestorableTime]` are rejected.
+   - Target timestamps must satisfy `EarliestRestorableTime <= target <= LatestRestorableTime` (closed window). Values outside that inclusive range are rejected.

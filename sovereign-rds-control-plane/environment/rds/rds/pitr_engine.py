@@ -1,8 +1,11 @@
 """Point-In-Time Recovery (PITR) target synthesizer and window evaluator."""
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from rds.errors import PITRWindowError
 from rds.wal_collector import WALCollector
+from rds.wal_playback_simulator import WALPlaybackSimulator
+from rds.coverage_analyzer import CoverageAnalyzer
+
 
 class PITREngine:
     """Synthesizes Point-In-Time Recovery restores with WAL timeline replay."""
@@ -36,13 +39,18 @@ class PITREngine:
         instance_id: str,
         target_time: datetime,
         snapshots: List[Dict[str, Any]],
-        wal_segments: List[Dict[str, Any]]
+        wal_segments: List[Dict[str, Any]],
+        earliest_time: Optional[datetime] = None,
+        latest_time: Optional[datetime] = None,
+        instance: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """Synthesize base snapshot and WAL segment list for PITR restore."""
+        if earliest_time is not None and latest_time is not None:
+            PITREngine.validate_pitr_target_window(target_time, earliest_time, latest_time)
+
         base_snapshot = PITREngine.select_base_snapshot(snapshots, target_time)
         snapshot_time = base_snapshot["snapshot_time"]
 
-        # Filter WAL segments between base snapshot LSN and target_time
         base_lsn_val = WALCollector.parse_lsn(base_snapshot["redo_lsn"])
         replay_segments = [
             w for w in wal_segments
@@ -50,6 +58,9 @@ class PITREngine:
         ]
 
         WALCollector.validate_wal_continuity(replay_segments)
+        coverage = CoverageAnalyzer().analyze_wal_coverage(wal_segments)
+        playback = WALPlaybackSimulator(target_time, target_timeline=base_snapshot.get("timeline_id", 1))
+        replay = playback.simulate_wal_replay(base_snapshot["redo_lsn"], wal_segments)
 
         return {
             "instance_id": instance_id,
@@ -59,4 +70,8 @@ class PITREngine:
             "wal_segments_to_replay": len(replay_segments),
             "start_lsn": base_snapshot["redo_lsn"],
             "stop_lsn": replay_segments[-1]["end_lsn"] if replay_segments else base_snapshot["redo_lsn"],
+            "coverage": coverage,
+            "playback": replay,
+            "base_lsn_value": base_lsn_val,
+            "instance_hint": instance.get("instance_id") if instance else None,
         }

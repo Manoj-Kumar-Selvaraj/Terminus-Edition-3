@@ -1,25 +1,21 @@
 # Sovereign RDS Control Plane
 
-Terminus Edition 3 large-system task: a sovereign PostgreSQL control plane that mirrors AWS RDS semantics for instance lifecycle, WAL-backed PITR, parameter-group apply fencing, replica promotion, multi-AZ failover leases, and EventBridge-style outbox delivery.
+Local Python + PostgreSQL 16 control plane that implements RDS-style instance lifecycle, WAL-backed PITR, parameter-group apply modes, replica promotion, Multi-AZ failover fencing, and EventBridge outbox delivery.
 
 ## Layout
 
-- `environment/` — agent-visible control plane (Python + Postgres 16 compose lab)
-- `solution/` — reference overlays + `solve.sh`
-- `tests/` — separate verifier (34 offline pytest cases)
+- `environment/` — control plane sources and compose lab under `environment/rds/`
+- `solution/` — reference overlays and `solve.sh`
+- `tests/` — verifier image and pytest suite
 
-## Verification (local)
+## Local checks
 
 ```bash
-# NOP: starter code should fail all 30 F2P cases (4 P2P pass)
+# Starter (NOP)
 RDS_HOME=/path/to/environment/rds PYTHONPATH=/path/to/environment/rds \
   pytest tests/test_outputs.py -q
 
-# Oracle: apply overlays then re-run
+# After applying solution overlays
 bash solution/solve.sh
 RDS_HOME=/app/rds PYTHONPATH=/app/rds pytest tests/test_outputs.py -q
 ```
-
-## Complexity
-
-`large_system_strict` gate: ~3k substantive LOC, 28 defects / 7 root causes, 30 F2P + 4 P2P cases.

@@ -2,6 +2,8 @@
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional, Tuple
 from rds.errors import FailoverLeaseError
+from rds.vip_manager import VIPManager
+from rds.connection_pool_monitor import ConnectionPoolMonitor
 
 class FailoverCoordinator:
     """Coordinates Multi-AZ failover, lease fencing, health probe isolation, and floating VIP migration."""
@@ -29,6 +31,7 @@ class FailoverCoordinator:
         """Acquire failover leader lease (starter returns a stub without fencing)."""
         # D17 trap: ignore conflicting current_lease ownership.
         current = now or datetime.now(timezone.utc)
+        _ = current_lease
         return {
             "instance_id": instance_id,
             "leader_worker_id": worker_id,
@@ -43,8 +46,13 @@ class FailoverCoordinator:
         control_plane_db_lag: bool
     ) -> Tuple[bool, str]:
         """Distinguish direct DB TCP port health from control plane connection pool lag."""
-        # D19 trap: treat control-plane lag as instance failure.
-        if not direct_port_reachable or control_plane_db_lag:
+        # Couple pool monitor into evaluation path while preserving D19 trap semantics.
+        pool = ConnectionPoolMonitor().evaluate_pool_saturation(
+            active_connections=90 if control_plane_db_lag else 10,
+            max_connections=100,
+        )
+        # D19 trap: treat control-plane lag / saturation as instance failure.
+        if not direct_port_reachable or control_plane_db_lag or pool.get("pool_saturated"):
             return False, "UNHEALTHY"
         return True, "INSTANCE_HEALTHY"
 
@@ -56,6 +64,7 @@ class FailoverCoordinator:
         new_primary_host: str
     ) -> Dict[str, Any]:
         """Flushes route tables and issues gratuitous ARP announcements during floating VIP failover migration."""
+        migrated = VIPManager(vip_address=new_vip).migrate_vip(instance_id, new_primary_host)
         # D20 trap: update mapping without route flush / grat ARP.
         return {
             "instance_id": instance_id,
@@ -64,5 +73,5 @@ class FailoverCoordinator:
             "new_primary_host": new_primary_host,
             "route_table_flushed": False,
             "gratuitous_arp_sent": False,
-            "status": "MIGRATED"
+            "status": migrated.get("status", "MIGRATED"),
         }

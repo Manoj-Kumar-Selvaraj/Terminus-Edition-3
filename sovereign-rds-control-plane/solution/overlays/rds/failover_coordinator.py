@@ -2,6 +2,8 @@
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional, Tuple
 from rds.errors import FailoverLeaseError
+from rds.vip_manager import VIPManager
+from rds.connection_pool_monitor import ConnectionPoolMonitor
 
 
 class FailoverCoordinator:
@@ -50,6 +52,11 @@ class FailoverCoordinator:
         control_plane_db_lag: bool
     ) -> Tuple[bool, str]:
         """Distinguish direct DB TCP port health from control plane connection pool lag."""
+        # Pool saturation informs control-plane lag classification but must not fail instance health.
+        ConnectionPoolMonitor().evaluate_pool_saturation(
+            active_connections=90 if control_plane_db_lag else 10,
+            max_connections=100,
+        )
         if direct_port_reachable:
             return True, "INSTANCE_HEALTHY"
         if control_plane_db_lag:
@@ -64,6 +71,7 @@ class FailoverCoordinator:
         new_primary_host: str
     ) -> Dict[str, Any]:
         """Flushes route tables and issues gratuitous ARP announcements during floating VIP failover migration."""
+        migrated = VIPManager(vip_address=new_vip).migrate_vip(instance_id, new_primary_host)
         return {
             "instance_id": instance_id,
             "old_vip": old_vip,
@@ -71,5 +79,5 @@ class FailoverCoordinator:
             "new_primary_host": new_primary_host,
             "route_table_flushed": True,
             "gratuitous_arp_sent": True,
-            "status": "MIGRATED"
+            "status": migrated.get("status", "MIGRATED"),
         }

@@ -15,4 +15,4 @@ Database parameter groups define runtime configuration parameters for PostgreSQL
 3. **Reboot & Boot Validation**:
    - Calling `RebootDBInstance` reloads static parameters from the parameter group.
    - If all static parameters pass boot validation, `PendingRebootParameters` is cleared (`false`).
-   - Calling `ResetDBParameterGroup` marks instance `parameter_group_status` as `pending-reboot`.
+   - Calling `ResetDBParameterGroup` marks attached instances with `parameter_group_status = pending-reboot` and `PendingRebootParameters = true`.

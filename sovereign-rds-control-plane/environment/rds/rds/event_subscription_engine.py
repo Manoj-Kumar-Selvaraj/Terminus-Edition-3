@@ -42,14 +42,17 @@ class EventSubscriptionEngine:
         source_type: str,
         source_id: str,
         category: str,
-        message: str
+        message: str,
+        event_time: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Route event notification to all matching subscriptions."""
         subs = list(self.subscriptions.values())
         matching = EventOutboxManager.filter_subscriptions_by_source(subs, source_type.lower(), category.lower())
 
+        # Starter still uses wall clock when event_time omitted (D23 surface via UUID identifier).
+        stable_time = event_time or datetime.now(timezone.utc).isoformat()[:19]
         event_identifier = EventOutboxManager.generate_event_identifier(
-            source_type, source_id, datetime.now(timezone.utc).isoformat()[:19], message
+            source_type, source_id, stable_time, message
         )
 
         deliveries = []
