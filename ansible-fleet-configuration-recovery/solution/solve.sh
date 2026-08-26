@@ -40,6 +40,23 @@ ln -s "$TARGET" "$WORK/environment"
 cp "$HERE/repair.sh" "$WORK/solution/repair.sh"
 chmod 0755 "$WORK/solution/repair.sh"
 
+# The encrypted vars file already owns the top-level fleet_vault key. The
+# historical repair wrapped include_vars with the same name again, producing
+# fleet_vault.fleet_vault.* and aborting application credential staging. Keep
+# the file's native namespace when executing the reference repair.
+python - "$WORK/solution/repair.sh" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+text = path.read_text(encoding="utf-8")
+old = '''  include_vars:\n    file: "{{ fleet_secret_file }}"\n    name: fleet_vault\n'''
+new = '''  include_vars:\n    file: "{{ fleet_secret_file }}"\n'''
+if text.count(old) != 1:
+    raise SystemExit("application secret include_vars anchor not found exactly once")
+path.write_text(text.replace(old, new, 1), encoding="utf-8")
+PY
+
 # The historical reference repair was authored against the repository task
 # layout where the runtime lives under environment/. Recreate that layout
 # transiently while applying all mutations to the real runtime artifact.
