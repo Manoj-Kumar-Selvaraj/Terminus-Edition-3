@@ -213,7 +213,13 @@ class ExecutionRecordBuilder(_core.ExecutionRecordBuilder):
             return True
         if path.startswith(f".terminus/designs/{task_id}/"):
             return True
-        return path.startswith(f".terminus/contracts/{task_id}/")
+        if path.startswith(f".terminus/contracts/{task_id}/"):
+            return True
+        if path == f".terminus/sessions/{task_id}.md":
+            return True
+        if path.startswith(f".terminus/reviews/{task_id}/"):
+            return True
+        return False
 
     def _validate_evidence_refs(self, values: list[Any]) -> list[dict[str, Any]]:
         refs: list[dict[str, Any]] = []
