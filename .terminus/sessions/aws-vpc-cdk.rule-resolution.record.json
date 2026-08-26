@@ -1,0 +1,438 @@
+{
+  "ledger_event": {
+    "control_plane_commit": "7c37091e7ae4a401d3ebc8785593866c83b233ad",
+    "event_id": "evt_18013f2da18a9ab6f0120b59b16fb1055b03c9263c3426edbf3d94f397a45d51",
+    "input_task_commit": "033a2fffd4f1aa1260249a70aa55080889adb084",
+    "invocation_id": "inv_9bb56a46be902d67c6d25a30f9566a4c5e17787b4967600b9a4443bee700b7a0",
+    "output_task_commit": "033a2fffd4f1aa1260249a70aa55080889adb084",
+    "previous_event_id": null,
+    "record_hash": "sha256:0a16ac3e38a8b1ad86bc45fda370c5c63ed8de0f373386f12ebb1571e90aff69",
+    "record_id": "rec_948940a2dcd6904b967a28c89e843424ac1a97fb7e87748e2e09d80e43b9dbc1",
+    "record_path": ".terminus/executions/aws-vpc-cdk/inv_9bb56a46be902d67c6d25a30f9566a4c5e17787b4967600b9a4443bee700b7a0.result.json",
+    "schema_version": "1.0",
+    "sequence": 1,
+    "stage_id": "RULE_RESOLUTION",
+    "task_id": "aws-vpc-cdk"
+  },
+  "record": {
+    "authority": {
+      "control_plane_commit": "7c37091e7ae4a401d3ebc8785593866c83b233ad",
+      "policy_versions": {},
+      "task_commit": "033a2fffd4f1aa1260249a70aa55080889adb084",
+      "task_id": "aws-vpc-cdk"
+    },
+    "disposition": "ADVANCE",
+    "evidence_refs": [
+      {
+        "content_hash": "sha256:517c220d05def85d3cbb41e3150bf2e343999480bba846100ba3a6fdf1730204",
+        "kind": "COMMIT",
+        "ref": "commit:7c37091e7ae4a401d3ebc8785593866c83b233ad"
+      }
+    ],
+    "invocation_id": "inv_9bb56a46be902d67c6d25a30f9566a4c5e17787b4967600b9a4443bee700b7a0",
+    "invocation_snapshot": {
+      "acceptance_predicates": {
+        "RULES_RESOLVED": [
+          {
+            "op": "empty",
+            "path": "KNOWN_POLICY_CONFLICTS"
+          }
+        ]
+      },
+      "authority": {
+        "control_plane_commit": "7c37091e7ae4a401d3ebc8785593866c83b233ad",
+        "policy_versions": {},
+        "task_commit": "033a2fffd4f1aa1260249a70aa55080889adb084",
+        "task_id": "aws-vpc-cdk"
+      },
+      "evidence": {
+        "authorized_evidence_classes": [
+          "CONTROL_PLANE_POLICY",
+          "DURABLE_SESSION_STATE"
+        ],
+        "evidence_required": [
+          "resolved authoritative rule sources",
+          "active validator inventory",
+          "creation profile decision"
+        ],
+        "excluded_evidence_classes": [
+          "CI_RUNTIME_EVIDENCE",
+          "CURRENT_REVIEW_PACKET",
+          "FINAL_PACKAGE_EVIDENCE",
+          "MODEL_TRIAL_EVIDENCE",
+          "PRIOR_REVIEW_RESULTS",
+          "PRIVATE_CREATION_DESIGN",
+          "PUBLIC_REFERENCE",
+          "SOLUTION_ORACLE",
+          "SOLVER_VISIBLE_TASK",
+          "VERIFIER_PRIVATE"
+        ],
+        "mandatory_exact_reads": [
+          "TERMINUS_3_AI_INSTRUCTIONS.md",
+          ".terminus/AGENT_SYSTEM.md",
+          ".terminus/agents/CREATION_CONTROLLER.md",
+          ".terminus/agents/CREATION_PIPELINE.md",
+          ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+          ".terminus/reviewers/REVIEWER_CHECKLIST.md"
+        ],
+        "retrieval_mode": "EXACT_ONLY"
+      },
+      "ignored_input_count": 6,
+      "inputs": {
+        "optional": {
+          "NETWORK_ENVIRONMENT_CONSTRAINTS": "No AWS deployment. No AWS credentials. The verifier synthesizes CloudFormation locally and inspects resource semantics.",
+          "REQUESTED_DOMAIN": "AWS VPC network infrastructure authored as a Node.js AWS CDK module",
+          "REQUESTED_PROFILE": "large_system"
+        },
+        "required": {
+          "CREATION_REQUEST": "Create a brand new Node.js AWS CDK module for an AWS VPC baseline, using a temporary local checkout of terraform-aws-modules/terraform-aws-vpc as feature-family reference only. The task is synthesis and testing only; no deployment is required."
+        }
+      },
+      "invocation_id": "inv_9bb56a46be902d67c6d25a30f9566a4c5e17787b4967600b9a4443bee700b7a0",
+      "learning": {
+        "context_hash": "sha256:307e06b6be8eee79e941256cc80e7b4b8e6d8edb9a73269dbba59257a864107b",
+        "lessons": [],
+        "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+        "raw_feedback_exposed": false,
+        "raw_historical_findings_exposed": false,
+        "registry_heads": {
+          "feedback": "sha256:8dd19b0617b094661caf5fe0a5b30e437703843b5f05ce63a7a75586710575c6",
+          "findings": "GENESIS",
+          "lessons": "GENESIS",
+          "patterns": "GENESIS",
+          "remediations": "GENESIS"
+        },
+        "remediations": []
+      },
+      "missing_required_inputs": [],
+      "output_contract": {
+        "allowed_status_values": [
+          "RULES_RESOLVED",
+          "POLICY_CONFLICT",
+          "BLOCKED"
+        ],
+        "deterministic_validators": [
+          ".terminus/validate_agent_system.py"
+        ],
+        "optional_fields": [
+          "RULE_DELTA"
+        ],
+        "persisted_artifacts": [
+          "CREATION_RULE_CONTEXT"
+        ],
+        "required_fields": [
+          "CONTROL_PLANE_COMMIT",
+          "RULE_SOURCES",
+          "ACTIVE_VALIDATORS",
+          "CREATION_PROFILE",
+          "NETWORK_ENVIRONMENT_CONSTRAINTS",
+          "KNOWN_POLICY_CONFLICTS"
+        ],
+        "semantic_reviewers": []
+      },
+      "readiness": "READY",
+      "retrieval": {
+        "query": null,
+        "retrieved_chars": 0,
+        "retrieved_context": [],
+        "status": "NOT_REQUESTED"
+      },
+      "routing": {
+        "failure_routes": {
+          "MISSING_RULE_SOURCE": "Creation Controller",
+          "POLICY_CONFLICT": "Creation Controller -> policy conflict ledger -> blocked affected gate"
+        },
+        "stale_on": [
+          "governing task-rule change",
+          "active validator change",
+          "creation profile change",
+          "network/environment policy change"
+        ],
+        "success_transition": "WORK_PACKAGE_RESEARCH"
+      },
+      "schema_version": "1.0",
+      "stage": {
+        "lifecycle": "creation",
+        "owner": "Creation Controller",
+        "role_class": "CONTROLLER",
+        "role_id": "CREATION_CONTROLLER",
+        "stage_id": "RULE_RESOLUTION"
+      }
+    },
+    "outputs": {
+      "ACTIVE_VALIDATORS": [
+        ".terminus/validate_agent_system.py",
+        ".terminus/validate_stage_contracts.py",
+        ".terminus/validate_defect_topology.py",
+        ".terminus/validate_environment_complexity.py",
+        ".terminus/validate_task_complexity.py",
+        ".terminus/validate_runtime_authenticity.py",
+        ".terminus/validate_review_freshness.py",
+        ".terminus/validate_quality_interlock.py"
+      ],
+      "CONTROL_PLANE_COMMIT": "7c37091e7ae4a401d3ebc8785593866c83b233ad",
+      "CREATION_PROFILE": "large_system",
+      "KNOWN_POLICY_CONFLICTS": [],
+      "NETWORK_ENVIRONMENT_CONSTRAINTS": "Public network may be used for package installation during image build; task execution is local CDK synthesis only with no AWS deploy or credential dependency.",
+      "RULE_SOURCES": [
+        "TERMINUS_3_AI_INSTRUCTIONS.md",
+        ".terminus/AGENT_SYSTEM.md",
+        ".terminus/agents/CREATION_CONTROLLER.md",
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+        ".terminus/reviewers/REVIEWER_CHECKLIST.md",
+        ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+        ".terminus/agents/STAGE_CONTRACTS.md",
+        ".terminus/agents/stage_contracts.json"
+      ]
+    },
+    "record_id": "rec_948940a2dcd6904b967a28c89e843424ac1a97fb7e87748e2e09d80e43b9dbc1",
+    "role_id": "CREATION_CONTROLLER",
+    "schema_version": "1.0",
+    "stage_id": "RULE_RESOLUTION",
+    "status": "RULES_RESOLVED",
+    "task_lineage": {
+      "input_task_commit": "033a2fffd4f1aa1260249a70aa55080889adb084",
+      "output_task_commit": "033a2fffd4f1aa1260249a70aa55080889adb084",
+      "task_changed": false
+    },
+    "transition": {
+      "action": "ADVANCE",
+      "requires_state_validation": false,
+      "target": "WORK_PACKAGE_RESEARCH",
+      "target_kind": "STAGE"
+    },
+    "validation": {
+      "acceptance_predicates_satisfied": true,
+      "evidence_binding_satisfied": true,
+      "evidence_refs_count": 1,
+      "invocation_identity_valid": true,
+      "invocation_policy_valid": true,
+      "output_keys_valid": true,
+      "required_outputs_satisfied": true,
+      "retrieval_context_authorized": true,
+      "status_legal": true,
+      "task_commit_change_authorized": true,
+      "task_lineage_valid": true
+    }
+  },
+  "remediation_updates": [],
+  "state": {
+    "control_plane_commit": "7c37091e7ae4a401d3ebc8785593866c83b233ad",
+    "derived_from": {
+      "freshness_overlay_hash": null,
+      "record_ids": [
+        "rec_948940a2dcd6904b967a28c89e843424ac1a97fb7e87748e2e09d80e43b9dbc1"
+      ]
+    },
+    "ledger_event_count": 1,
+    "ledger_head_event_id": "evt_18013f2da18a9ab6f0120b59b16fb1055b03c9263c3426edbf3d94f397a45d51",
+    "lineage": {
+      "bootstrap_task_commit": "033a2fffd4f1aa1260249a70aa55080889adb084",
+      "current_task_commit": "033a2fffd4f1aa1260249a70aa55080889adb084",
+      "recorded_task_commit": "033a2fffd4f1aa1260249a70aa55080889adb084",
+      "status": "CURRENT"
+    },
+    "next": {
+      "action": "INVOKE_STAGE",
+      "optional_inputs": [
+        "LOCAL_TASK_INVENTORY",
+        "ORIGINALITY_REFERENCES",
+        "PUBLIC_RESEARCH"
+      ],
+      "owner": "A1 Scenario Researcher",
+      "primary_role_id": "A1_SCENARIO_RESEARCHER",
+      "required_inputs": [
+        "CREATION_RULE_CONTEXT",
+        "REQUESTED_DOMAIN"
+      ],
+      "stage_id": "WORK_PACKAGE_RESEARCH"
+    },
+    "nodes": [
+      {
+        "disposition": "ADVANCE",
+        "input_task_commit": "033a2fffd4f1aa1260249a70aa55080889adb084",
+        "invocation_id": "inv_9bb56a46be902d67c6d25a30f9566a4c5e17787b4967600b9a4443bee700b7a0",
+        "ledger_event_id": "evt_18013f2da18a9ab6f0120b59b16fb1055b03c9263c3426edbf3d94f397a45d51",
+        "node_id": "RULE_RESOLUTION",
+        "node_kind": "STAGE",
+        "output_task_commit": "033a2fffd4f1aa1260249a70aa55080889adb084",
+        "reason": "validated ADVANCE record reaches WORK_PACKAGE_RESEARCH",
+        "record_id": "rec_948940a2dcd6904b967a28c89e843424ac1a97fb7e87748e2e09d80e43b9dbc1",
+        "status": "CURRENT"
+      },
+      {
+        "node_id": "WORK_PACKAGE_RESEARCH",
+        "node_kind": "STAGE",
+        "reason": "no execution-ledger event exists for this stage",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "SYSTEM_ARCHITECTURE",
+        "node_kind": "STAGE",
+        "reason": "upstream node WORK_PACKAGE_RESEARCH is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "DEFECT_TOPOLOGY",
+        "node_kind": "STAGE",
+        "reason": "upstream node SYSTEM_ARCHITECTURE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "ENVIRONMENT_BUILD",
+        "node_kind": "STAGE",
+        "reason": "upstream node DEFECT_TOPOLOGY is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "REFERENCE_SOLUTION",
+        "node_kind": "STAGE",
+        "reason": "upstream node ENVIRONMENT_BUILD is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "VERIFIER_BUILD",
+        "node_kind": "STAGE",
+        "reason": "upstream node REFERENCE_SOLUTION is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "HUMAN_WRITING_RESEARCH",
+        "node_kind": "STAGE",
+        "reason": "upstream node VERIFIER_BUILD is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "INSTRUCTION_DRAFT",
+        "node_kind": "STAGE",
+        "reason": "upstream node HUMAN_WRITING_RESEARCH is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "SPEC_ALIGNMENT",
+        "node_kind": "STAGE",
+        "reason": "upstream node INSTRUCTION_DRAFT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "DOCUMENTATION_DRAFT",
+        "node_kind": "STAGE",
+        "reason": "upstream node SPEC_ALIGNMENT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "FORMAT_GATE",
+        "node_kind": "STAGE",
+        "reason": "upstream node DOCUMENTATION_DRAFT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "ASSEMBLY",
+        "node_kind": "STAGE",
+        "reason": "upstream node FORMAT_GATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "COMPLEXITY_GATE",
+        "node_kind": "STAGE",
+        "reason": "upstream node ASSEMBLY is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "RUNTIME_AUTHENTICITY",
+        "node_kind": "STAGE",
+        "reason": "upstream node COMPLEXITY_GATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "DETERMINISTIC_VALIDATION",
+        "node_kind": "STAGE",
+        "reason": "upstream node RUNTIME_AUTHENTICITY is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "FROZEN_CANDIDATE",
+        "node_kind": "STATE",
+        "reason": "state cannot be current while its predecessor chain is non-current",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "QUALITY_INTERLOCK",
+        "node_kind": "STAGE",
+        "reason": "upstream node FROZEN_CANDIDATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "PRE_LLMAJ",
+        "node_kind": "STAGE",
+        "reason": "upstream node QUALITY_INTERLOCK is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_GPT",
+        "node_kind": "STAGE",
+        "reason": "upstream node PRE_LLMAJ is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_CLAUDE",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_GPT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "MODEL_DIAGNOSTIC_AGGREGATE",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_CLAUDE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "HARBOR_LLMAJ",
+        "node_kind": "STAGE",
+        "reason": "upstream node MODEL_DIAGNOSTIC_AGGREGATE is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "OFFICIAL_MODEL_TRIALS",
+        "node_kind": "STAGE",
+        "reason": "upstream node HARBOR_LLMAJ is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "TRIAL_ANALYSIS",
+        "node_kind": "STAGE",
+        "reason": "upstream node OFFICIAL_MODEL_TRIALS is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "DIFFICULTY_ASSESSMENT",
+        "node_kind": "STAGE",
+        "reason": "upstream node TRIAL_ANALYSIS is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "FINAL_REVIEW",
+        "node_kind": "STAGE",
+        "reason": "upstream node DIFFICULTY_ASSESSMENT is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      },
+      {
+        "node_id": "SUBMISSION_READY",
+        "node_kind": "STAGE",
+        "reason": "upstream node FINAL_REVIEW is not current; later historical evidence cannot advance",
+        "status": "MISSING"
+      }
+    ],
+    "schema_version": "1.0",
+    "state_snapshot_id": "state_20295f6d4c0fdb87152f677ac26628e1be4e985d150690592c7aec56e23bb99d",
+    "summary": {
+      "BLOCKED": 0,
+      "CURRENT": 1,
+      "MISSING": 27,
+      "STALE": 0
+    },
+    "task_commit": "033a2fffd4f1aa1260249a70aa55080889adb084",
+    "task_id": "aws-vpc-cdk"
+  }
+}

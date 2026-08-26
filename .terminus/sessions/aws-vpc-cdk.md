@@ -39,14 +39,18 @@ KNOWN_POLICY_CONFLICTS: none
 | Reference Solution | PASS | `aws-vpc-cdk/solution/solve.sh` and fixed `network-fabric.js` |
 | Verifier Build | PASS | `aws-vpc-cdk/tests/test_outputs.py`, fixtures, separate Dockerfile |
 | Instruction Draft | PASS | `aws-vpc-cdk/instruction.md` |
-| Spec Alignment | PENDING | Requires Q1/Q2/Q3 producer-side review after local deterministic checks |
+| Spec Alignment | LOCAL_PASS | instruction, solver-visible contract, and verifier behavior aligned by same-chat producer review |
 | Documentation Draft | PASS | `aws-vpc-cdk/README.md` |
-| Format Gate | PENDING | Local validators not yet all complete |
-| Deterministic Validation | PENDING | Oracle/NOP local checks pending |
+| Format Gate | LOCAL_PASS | `python -m ruff check aws-vpc-cdk\tests\test_outputs.py`; required layout present |
+| Complexity | PASS | `python .terminus/validate_task_complexity.py aws-vpc-cdk` under `large_system` with strict-scale warnings recorded |
+| Runtime Authenticity | PASS | `python .terminus/validate_runtime_authenticity.py aws-vpc-cdk` returned not-declared/not-applicable |
+| Local Oracle | PASS | temp oracle artifact: `python -m pytest aws-vpc-cdk\tests\test_outputs.py -q` -> 9 passed |
+| Local NOP | PASS | unmodified starter verifier run failed 7 tests, reward would remain 0 |
+| Deterministic Validation | BLOCKED_LOCAL | Docker daemon unavailable; `stb` CLI unavailable |
 
 ## Current blocker
 
-None.
+Local Docker/Harbor validation is unavailable in this shell: `docker build` cannot connect to Docker Desktop Linux engine, and `stb` is not installed. `.terminus/validate_quality_interlock.py` also fails in the current repository with a circular import in `feedback.provenance` before task-specific evidence is evaluated.
 
 ## Decisions that must survive chat changes
 
