@@ -1,0 +1,217 @@
+{
+  "acceptance_predicates": {},
+  "authority": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "policy_versions": {},
+    "task_commit": "321a21f5ad8e2e7774a31b19f5f9210b84b4efe2",
+    "task_id": "ansible-fleet-configuration-recovery"
+  },
+  "evidence": {
+    "authorized_evidence_classes": [
+      "CI_RUNTIME_EVIDENCE",
+      "CONTROL_PLANE_POLICY",
+      "PRIVATE_CREATION_DESIGN",
+      "SOLVER_VISIBLE_TASK",
+      "VERIFIER_PRIVATE"
+    ],
+    "evidence_required": [
+      "removal/reachability analysis",
+      "scale authenticity",
+      "test organicity",
+      "behavioral breadth"
+    ],
+    "excluded_evidence_classes": [
+      "CURRENT_REVIEW_PACKET",
+      "DURABLE_SESSION_STATE",
+      "FINAL_PACKAGE_EVIDENCE",
+      "MODEL_TRIAL_EVIDENCE",
+      "PRIOR_REVIEW_RESULTS",
+      "PUBLIC_REFERENCE",
+      "SOLUTION_ORACLE"
+    ],
+    "mandatory_exact_reads": [
+      ".terminus/agents/CREATION_PIPELINE.md",
+      ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+      ".terminus/agents/CREATOR_PROMPTS.md"
+    ],
+    "retrieval_mode": "EXACT_ONLY"
+  },
+  "ignored_input_count": 0,
+  "inputs": {
+    "optional": {},
+    "required": {
+      "DEFECT_GRAPH": {
+        "behavioral_surfaces": [
+          "controller bootstrap and project configuration selection",
+          "repository-local role discovery",
+          "Vault secret boundary",
+          "role identity, dependency ordering, handlers and host ownership",
+          "Ansible YAML/action/module schema correctness",
+          "heterogeneous Jinja endpoint/site/policy/telemetry rendering",
+          "IPv4/IPv6 and cross-host aggregation",
+          "full-run convergence and unchanged second-run idempotency"
+        ],
+        "connected_manifestations": 24,
+        "defect_manifestations": 24,
+        "profile": "large_system_strict",
+        "root_cause_clusters": 6
+      },
+      "ENVIRONMENT_TREE": {
+        "components": [
+          "controller bootstrap and project configuration",
+          "inventory and fleet identity model",
+          "service and policy catalogs",
+          "Ansible roles, orchestration and handlers",
+          "Vault secret handling",
+          "Jinja configuration rendering",
+          "semantic fleet validator",
+          "atomic state and promotion engine",
+          "rollout planner",
+          "operator incident evidence and handoff"
+        ],
+        "entrypoints": [
+          "/app/fleet-automation/bin/fleet-ansible",
+          "/app/fleet-automation/playbooks/site.yml",
+          "/app/fleet-automation/playbooks/validate.yml"
+        ],
+        "runtime_artifact": "/app/fleet-automation",
+        "task_root": "ansible-fleet-configuration-recovery"
+      },
+      "INSTRUCTION": "Recover the inherited multi-site Ansible fleet automation under /app/fleet-automation as a supported, portable and convergent production configuration system while preserving its production-scale catalogs, topology, evidence and operating contracts.",
+      "PRODUCTION_CHARACTERISTIC_EVIDENCE": [
+        "three-site heterogeneous Ansible fleet inventory",
+        "service catalog plus 60-rule policy catalog",
+        "Vault-managed sensitive production variables",
+        "repository-local role orchestration, dependencies and handlers",
+        "heterogeneous endpoint, telemetry and policy rendering",
+        "IPv4 and IPv6 proxy/backend behavior",
+        "atomic configuration state and promotion semantics",
+        "failure-budgeted rollout planning and revision reconciliation",
+        "operator incident logs, configuration-selection evidence and structured handoff"
+      ],
+      "RUNTIME_REACHABILITY_EVIDENCE": [
+        "bin/fleet-ansible loads the project controller configuration and supplied inventory",
+        "site.yml reaches the repository roles, handlers and Jinja templates across fleet hosts",
+        "inventory plus service/policy catalogs drive rendered application, proxy, telemetry and policy configuration",
+        "validate.yml and the semantic fleet validator inspect the materialized runtime state",
+        "atomic state/promotion and rollout components support real configuration lifecycle behavior rather than dead scale",
+        "unchanged second execution traverses the same operational path to measure convergence and handler/state churn"
+      ],
+      "SUBSTANTIVE_LOC_REPORT": {
+        "reachable_production_loc": 3327,
+        "runtime_entrypoint": "bin/fleet-ansible -> playbooks/site.yml",
+        "substantive_loc": 3327
+      },
+      "TEST_CLASSIFICATION_MAP": {
+        "F2P_COUNT": 27,
+        "P2P_COUNT": 6,
+        "classification": "27 F2P + 6 P2P",
+        "coverage": {
+          "cross_component": [
+            "controller configuration to role discovery",
+            "inventory/catalog data to cross-host template aggregation",
+            "rendered artifacts to semantic/state validation"
+          ],
+          "edge": [
+            "optional inventory groups",
+            "mixed endpoint shapes",
+            "numeric policy ordering",
+            "conditional IPv6 bracket rendering"
+          ],
+          "negative": [
+            "plaintext/inaccessible Vault material",
+            "invalid task/module schema",
+            "wrong role identity or host scope",
+            "unbracketed IPv6 backend"
+          ],
+          "normal": [
+            "supported project controller bootstrap",
+            "portable role discovery",
+            "successful full fleet convergence"
+          ],
+          "recovery": [
+            "second-run idempotency",
+            "atomic state verification and drift detection"
+          ]
+        }
+      }
+    }
+  },
+  "invocation_id": "inv_d057f9a0d6488bcedf7689c4b90c75747edc1a246f399e60e48c1eac40534758",
+  "learning": {
+    "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+    "lessons": [],
+    "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+    "raw_feedback_exposed": false,
+    "raw_historical_findings_exposed": false,
+    "registry_heads": {
+      "feedback": "GENESIS",
+      "findings": "GENESIS",
+      "lessons": "GENESIS",
+      "patterns": "GENESIS",
+      "remediations": "GENESIS"
+    },
+    "remediations": []
+  },
+  "missing_required_inputs": [],
+  "output_contract": {
+    "allowed_status_values": [
+      "PASS",
+      "REVISE",
+      "SCENARIO_TOO_SMALL"
+    ],
+    "deterministic_validators": [
+      ".terminus/validate_task_complexity.py <task>"
+    ],
+    "optional_fields": [
+      "MEANINGFUL_RESOURCE_COUNT"
+    ],
+    "persisted_artifacts": [],
+    "required_fields": [
+      "SUBSTANTIVE_LOC",
+      "REACHABLE_PRODUCTION_LOC",
+      "PRODUCTION_CHARACTERISTICS",
+      "DEFECT_MANIFESTATIONS",
+      "CONNECTED_MANIFESTATIONS",
+      "ROOT_CAUSE_CLUSTERS",
+      "F2P_COUNT",
+      "P2P_COUNT",
+      "F2P_ORGANICITY",
+      "EDGE_BOUNDARY_COVERAGE",
+      "NEGATIVE_FAILURE_COVERAGE",
+      "PADDING_RISK",
+      "TEST_DUPLICATION_RISK",
+      "INSTRUCTION_CHECKLIST_RISK",
+      "REQUIRED_CHANGES"
+    ],
+    "semantic_reviewers": []
+  },
+  "readiness": "READY",
+  "retrieval": {
+    "query": null,
+    "retrieved_chars": 0,
+    "retrieved_context": [],
+    "status": "NOT_REQUESTED"
+  },
+  "routing": {
+    "failure_routes": {
+      "REVISE": "smallest responsible producer",
+      "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH"
+    },
+    "stale_on": [
+      "solver-visible environment change",
+      "defect-graph change",
+      "verifier/test-map change",
+      "instruction change affecting complexity claims"
+    ],
+    "success_transition": "RUNTIME_AUTHENTICITY"
+  },
+  "schema_version": "1.0",
+  "stage": {
+    "lifecycle": "creation",
+    "owner": "A10 Complexity Governor",
+    "role_class": "REVIEWER",
+    "role_id": "A10_COMPLEXITY_GOVERNOR",
+    "stage_id": "COMPLEXITY_GATE"
+  }
+}
