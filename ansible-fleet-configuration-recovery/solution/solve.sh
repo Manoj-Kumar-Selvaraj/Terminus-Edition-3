@@ -9,16 +9,27 @@ if [[ ! -d "$TARGET" ]]; then
   exit 1
 fi
 
-# Harbor's solution container does not guarantee that Python's console-script
-# directory is already present on PATH. The reference repair installs Ansible
-# with this interpreter, so expose both its authoritative scripts directory and
-# the conventional user-bin fallback before invoking ansible-config/vault/playbook.
+# Harbor's solution container does not guarantee that pip's console scripts
+# land on the inherited PATH. Install the reference controller first, then
+# resolve ansible-core's actual script directory from installed package metadata.
+python -m pip install --disable-pip-version-check --no-cache-dir 'ansible==12.0.0' >/dev/null
 PYTHON_SCRIPTS="$(python - <<'PY'
-import sysconfig
-print(sysconfig.get_path('scripts'))
+from importlib.metadata import distribution
+from pathlib import Path
+
+dist = distribution("ansible-core")
+for entry in dist.files or ():
+    if Path(str(entry)).name == "ansible-config":
+        candidate = Path(dist.locate_file(entry)).resolve()
+        if candidate.is_file():
+            print(candidate.parent)
+            break
+else:
+    raise SystemExit("ansible-config console script not found after installation")
 PY
 )"
-export PATH="$PYTHON_SCRIPTS:${HOME:-/root}/.local/bin:$PATH"
+export PATH="$PYTHON_SCRIPTS:$PATH"
+command -v ansible-config >/dev/null
 
 WORK="$(mktemp -d)"
 cleanup() {
