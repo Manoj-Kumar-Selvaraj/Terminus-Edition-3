@@ -9,10 +9,27 @@ if [[ ! -d "$TARGET" ]]; then
   exit 1
 fi
 
+# Harbor's solution container does not guarantee that Python's console-script
+# directory is already present on PATH. The reference repair installs Ansible
+# with this interpreter, so expose both its authoritative scripts directory and
+# the conventional user-bin fallback before invoking ansible-config/vault/playbook.
+PYTHON_SCRIPTS="$(python - <<'PY'
+import sysconfig
+print(sysconfig.get_path('scripts'))
+PY
+)"
+export PATH="$PYTHON_SCRIPTS:${HOME:-/root}/.local/bin:$PATH"
+
 WORK="$(mktemp -d)"
 cleanup() {
   if [[ -L "$TARGET/environment" ]]; then
     rm -f "$TARGET/environment"
+  fi
+  if [[ -L "$TARGET/ansible.cfg" ]]; then
+    rm -f "$TARGET/ansible.cfg"
+  fi
+  if [[ -L "$TARGET/.runtime-vault-pass" ]]; then
+    rm -f "$TARGET/.runtime-vault-pass"
   fi
   rm -rf "$WORK"
 }
