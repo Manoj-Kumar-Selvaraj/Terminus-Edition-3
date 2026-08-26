@@ -1,0 +1,218 @@
+{
+  "authority": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "policy_versions": {},
+    "task_commit": "475ff014df7bae9ab6b0bb49fcab7454e40195ba",
+    "task_id": "ansible-fleet-configuration-recovery"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [],
+  "invocation_id": "inv_a3b52540fe4c2ad9d36af2fdd0ebe0de17de26eb72ba41430d92ecc3ee212ed6",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "475ff014df7bae9ab6b0bb49fcab7454e40195ba",
+      "task_id": "ansible-fleet-configuration-recovery"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CONTROL_PLANE_POLICY",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "task structure",
+        "task.toml",
+        "Docker/verifier/solution layout",
+        "artifact/isolation checks"
+      ],
+      "excluded_evidence_classes": [
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PRIVATE_CREATION_DESIGN",
+        "PUBLIC_REFERENCE",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        "TERMINUS_3_AI_INSTRUCTIONS.md",
+        ".terminus/reviewers/REVIEWER_CHECKLIST.md",
+        ".terminus/agents/QUALITY_AGENT_PROMPTS.md"
+      ],
+      "retrieval_mode": "EXACT_ONLY"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "ACTIVE_FORMAT_VALIDATORS": [
+          "flat Edition-3 task layout",
+          "task.toml canonical fields and absolute paths",
+          "separate verifier packaging/reward contract",
+          "solution/tests isolation",
+          "shell LF/shebang contract",
+          "Docker build-context path validity",
+          "post-Q5 attribution clean-state validation",
+          "reference-solution deterministic Python CLI shim validation"
+        ],
+        "CREATION_RULE_CONTEXT": {
+          "CONTROL_PLANE_COMMIT": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+          "CREATION_PROFILE": "large_system_strict",
+          "KNOWN_POLICY_CONFLICTS": [],
+          "NETWORK_ENVIRONMENT_CONSTRAINTS": "public task network with separate verifier environment"
+        },
+        "CURRENT_TASK_TREE": {
+          "environment": {
+            ".dockerignore": "present and excludes git/cache/private control-plane/solution/tests material",
+            "Dockerfile": "solver-visible starter remains rooted at /app/fleet-automation with Ansible 2.9.27"
+          },
+          "snapshot_commit": "cc7ace93f361c10a98dc54720ea1c5cde98a278a",
+          "solution": {
+            "cli_bootstrap": "temporary executable shims invoke installed ansible.cli.config, ansible.cli.vault and ansible.cli.playbook Python modules directly after Ansible 12 installation",
+            "entrypoint": "solution/solve.sh",
+            "repair_body": "solution/repair.sh",
+            "runtime_target": "/app/fleet-automation"
+          },
+          "task_root": "ansible-fleet-configuration-recovery",
+          "task_toml": {
+            "agent_timeout_sec": 7200,
+            "artifacts": [
+              "/app/fleet-automation"
+            ],
+            "network_mode": "public",
+            "verifier_environment_mode": "separate",
+            "verifier_timeout_sec": 1800,
+            "version": "2.0",
+            "workdir": "/app/fleet-automation"
+          },
+          "tests": {
+            "Dockerfile": "separate verifier image",
+            "behavioral_cases": "27 F2P / 6 P2P",
+            "requirements_lock": "pinned verifier dependencies",
+            "test_sh": "reward/CTRF runner"
+          },
+          "top_level": [
+            ".gitattributes",
+            "README.md",
+            "environment/",
+            "instruction.md",
+            "solution/",
+            "task.toml",
+            "tests/"
+          ]
+        }
+      }
+    },
+    "invocation_id": "inv_a3b52540fe4c2ad9d36af2fdd0ebe0de17de26eb72ba41430d92ecc3ee212ed6",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "FORMAT_PASS",
+        "FIXED",
+        "BLOCKED",
+        "POLICY_CONFLICT"
+      ],
+      "deterministic_validators": [
+        "current task-format/packaging CI and validators"
+      ],
+      "optional_fields": [],
+      "persisted_artifacts": [],
+      "required_fields": [
+        "CHECKS",
+        "RERUN"
+      ],
+      "semantic_reviewers": [
+        "Compliance Auditor"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "FORMAT_DEFECT": "Q7 Task Format Enforcer",
+        "POLICY_CONFLICT": "Creation Controller",
+        "SEMANTIC_DEFECT": "route to semantic owner"
+      },
+      "stale_on": [
+        "task structure change",
+        "task.toml change",
+        "Docker/test/solution/package change",
+        "format-rule change"
+      ],
+      "success_transition": "ASSEMBLY"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "Q7 Task Format Enforcer",
+      "role_class": "FIXER",
+      "role_id": "Q7_TASK_FORMAT_ENFORCER",
+      "stage_id": "FORMAT_GATE"
+    }
+  },
+  "outputs": {
+    "CHECKS": [
+      "PASS: repaired logical snapshot cc7ace93f361c10a98dc54720ea1c5cde98a278a is a direct descendant of 8d960fe6beb7e4a51007ea1c253251a9f5af0705.",
+      "PASS: only solution/solve.sh changed; solver-visible starter, verifier, instruction and task metadata are unchanged.",
+      "PASS: temporary CLI shims call Ansible's installed Python CLI modules directly and are removed with the solution work directory after execution.",
+      "PASS: the change addresses the Oracle bootstrap failure without weakening durable-controller, Vault, role, schema, Jinja, convergence or preservation requirements.",
+      "PASS: starter Ansible 2.9.27 remains unchanged so the intended solver upgrade inference is preserved.",
+      "PASS: flat package layout, separate verifier packaging and solution/tests isolation remain valid."
+    ],
+    "RERUN": "Q5 deterministic Python CLI shim repair attributed; snapshot ready for downstream replay."
+  },
+  "record_id": "rec_6f8c9ad630091dacc2962334cbb4901aa68602c07517a196219d1998631e356f",
+  "role_id": "Q7_TASK_FORMAT_ENFORCER",
+  "schema_version": "1.0",
+  "stage_id": "FORMAT_GATE",
+  "status": "FORMAT_PASS",
+  "task_lineage": {
+    "input_task_commit": "475ff014df7bae9ab6b0bb49fcab7454e40195ba",
+    "output_task_commit": "cc7ace93f361c10a98dc54720ea1c5cde98a278a",
+    "task_changed": true
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "ASSEMBLY",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 0,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}
