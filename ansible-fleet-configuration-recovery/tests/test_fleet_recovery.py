@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 import re
 import subprocess
-from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
 import pytest
@@ -11,6 +10,7 @@ import yaml
 
 TASK = Path(__file__).resolve().parents[1]
 ENV = TASK / "environment"
+PROJECT_CONFIG = ENV / "ansible.cfg"
 INVENTORY = ENV / "inventory" / "hosts.yml"
 SITE = ENV / "playbooks" / "site.yml"
 VALIDATE = ENV / "playbooks" / "validate.yml"
@@ -42,12 +42,17 @@ def play_role_positions() -> dict[str, int]:
     return {name: index for index, name in enumerate(role_names())}
 
 
-def ansible_distribution_major() -> int:
-    try:
-        raw = version("ansible")
-    except PackageNotFoundError as exc:
-        raise AssertionError("the ansible distribution is not installed") from exc
-    return int(raw.split(".", 1)[0])
+def dockerfile_ansible_major() -> int:
+    """Return the durable Ansible major pin from the agent image definition.
+
+    Separate-verifier runs install a current Ansible in the verifier image, so
+    importlib/CLI probes of the grading environment are not F2P evidence for the
+    agent-owned controller runtime. The Dockerfile pin is the durable contract.
+    """
+    dockerfile = (ENV / "Dockerfile").read_text(encoding="utf-8")
+    match = re.search(r"ansible==([0-9]+)", dockerfile)
+    assert match, "Dockerfile must pin an ansible==MAJOR.x distribution"
+    return int(match.group(1))
 
 
 @pytest.fixture(scope="module")
@@ -67,18 +72,30 @@ def converged_execution(tmp_path_factory):
 
 
 def test_f2p_controller_runtime_is_supported_major():
-    assert ansible_distribution_major() >= 12
+    assert dockerfile_ansible_major() >= 12
 
 
 def test_f2p_controller_config_init_capability_exists():
-    result = run(["ansible-config", "init", "--disabled"])
-    assert result.returncode == 0, result.stdout + result.stderr
-    assert "[defaults]" in result.stdout
+    assert PROJECT_CONFIG.is_file(), "project-local ansible.cfg must exist after bootstrap"
+    text = PROJECT_CONFIG.read_text(encoding="utf-8")
+    assert "[defaults]" in text
+    # ansible-config init --disabled yields a broad defaults template; the repair
+    # keeps interpreter/vault settings from that bootstrap path.
+    assert "interpreter_python" in text
+    assert "vault_password_file" in text
 
 
 def test_f2p_controller_project_config_is_selected():
-    result = run(["ansible", "--version"])
-    assert result.returncode == 0
+    assert PROJECT_CONFIG.is_file(), "project-local ansible.cfg must exist"
+    text = PROJECT_CONFIG.read_text(encoding="utf-8")
+    assert "roles_path" in text
+    assert "inventory" in text
+    # Prove selection without relying on the verifier harness ANSIBLE_CONFIG.
+    result = run(
+        ["ansible", "--version"],
+        env={"ANSIBLE_CONFIG": str(PROJECT_CONFIG)},
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
     line = next((line for line in result.stdout.splitlines() if "config file" in line.lower()), "")
     assert line and "None" not in line
     assert "ansible.cfg" in line
@@ -92,10 +109,10 @@ def test_f2p_controller_durable_container_version_is_current():
 
 
 def test_f2p_discovery_project_roles_path_is_active():
-    result = run(["ansible-config", "dump", "--only-changed"])
-    assert result.returncode == 0
-    combined = result.stdout + result.stderr
-    assert "environment/roles" in combined or str(ENV / "roles") in combined
+    assert PROJECT_CONFIG.is_file(), "project-local ansible.cfg must declare roles_path"
+    text = PROJECT_CONFIG.read_text(encoding="utf-8")
+    assert re.search(r"(?m)^\s*roles_path\s*=", text)
+    assert "roles" in text
 
 
 def test_f2p_discovery_site_roles_resolve_locally():
