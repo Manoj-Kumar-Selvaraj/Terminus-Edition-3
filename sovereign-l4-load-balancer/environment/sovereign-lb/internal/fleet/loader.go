@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 )
 
 type NodeProfile struct {
@@ -71,6 +72,9 @@ func LoadAllProfiles(root string, inventory Inventory) (map[string]NodeProfile, 
 		if profile.Zone != node.Zone {
 			return nil, fmt.Errorf("node %q profile zone %q does not match inventory zone %q", node.ID, profile.Zone, node.Zone)
 		}
+		if profile.StatusAddress != node.Status {
+			return nil, fmt.Errorf("node %q status address mismatch", node.ID)
+		}
 		result[node.ID] = profile
 	}
 	return result, nil
@@ -89,4 +93,24 @@ func WriteNodeProfile(path string, profile NodeProfile) error {
 	}
 	data = append(data, '\n')
 	return os.WriteFile(path, data, 0640)
+}
+
+func ProfileIDs(profiles map[string]NodeProfile) []string {
+	result := make([]string, 0, len(profiles))
+	for id := range profiles {
+		result = append(result, id)
+	}
+	sort.Strings(result)
+	return result
+}
+
+func ProfilesByZone(profiles map[string]NodeProfile) map[string][]NodeProfile {
+	result := map[string][]NodeProfile{}
+	for _, profile := range profiles {
+		result[profile.Zone] = append(result[profile.Zone], profile)
+	}
+	for zone := range result {
+		sort.Slice(result[zone], func(i, j int) bool { return result[zone][i].NodeID < result[zone][j].NodeID })
+	}
+	return result
 }

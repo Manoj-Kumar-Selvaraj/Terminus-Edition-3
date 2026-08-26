@@ -1,0 +1,522 @@
+{
+  "schema_version": "3.0",
+  "role": "Spec-Test Contract Reviewer",
+  "review_id": "sovereign-l4-load-balancer-13ffb6b2-spec-test-contract-5469088b45",
+  "task": "sovereign-l4-load-balancer",
+  "task_commit": "13ffb6b204fa624cf2c2fe311f265279ba15ec85",
+  "control_plane_commit": "13ffb6b204fa624cf2c2fe311f265279ba15ec85",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "d2994789dc83b2c8a6b92201782ea9f3e5528a3a9d725c863c22efb6356e570e",
+  "context_packet": ".terminus/reviews/sovereign-l4-load-balancer/13ffb6b2/sovereign-l4-load-balancer-13ffb6b2-spec-test-contract-5469088b45.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Exhaustive Q4 walk over instruction.md, all /docs contracts, and tests/test_outputs.py finds strong coverage for revision/idempotency authority, canonical digests, quorum rollout, TCP streaming/selection, eligibility (zone/fail-open/drain/passive), readiness, audit bounds, and dataplane checkpoint recovery. Bidirectional alignment still fails: graded management HTTP status codes and GET /metrics are not in the solver-visible contract, and material instruction requirements for active health, control-frame fencing/torn-frame non-advancement, control-plane restart recovery, and connect/idle/backpressure stream semantics lack meaningful tests.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/instruction.md",
+      "observation": "Exactly 20 concise bullets state the full work package: workspace/binaries, validation, revision/idempotency fences, immutable digests, control protocol envelopes, node fencing, quorum rollout, persistence/recovery, TCP proxy semantics, generation binding, selection policies, eligibility combination including active health and passive ejection, drain, PROXY v2, checkpoint recovery without torn-frame authority advance, bounded observability, 24-node lab inventory, exclusions, and docs/idempotency closure."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/docs/observability.md",
+      "observation": "Documents readiness JSON semantics, GET /v1/status (including rollout_present), GET /v1/audit event shape and forbidden fields, and metrics label cardinality rules. Does not name GET /metrics or HTTP status codes for apply/readiness failures."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/docs/control-protocol.md",
+      "observation": "Defines length-prefixed canonical JSON, hello/prepare/prepared/rejected/activate/active/status envelopes, sequence/session fencing, and torn-frame no-effect rule. No verifier probes inject torn frames or fencing conflicts."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/docs/dataplane.md",
+      "observation": "Eligibility explicitly combines administrative state, draining, active health, passive ejection, and zone policy; active probes publish bounded health transitions. Passive ejection is tested; active-health failure paths are not."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/docs/recovery.md",
+      "observation": "Requires authority.json accepted_revision/accepted_digest restore before mutations, padded generation directories, CURRENT fallback, idempotency record restore, and node session fence persistence across reconnect."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/docs/operations.md",
+      "observation": "Operator entrypoints under /app/sovereign-lb/bin/*, management vs control listeners, apply requiring revision and idempotency key. Mentions inspecting readiness and metrics without HTTP paths or status codes."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/cmd/lbctl/main.go",
+      "observation": "Public CLI maps status/nodes/audit to /v1/* and ready to /ready; no metrics command. Idempotency-Key header is discoverable here."
+    },
+    {
+      "type": "test",
+      "ref": "sovereign-l4-load-balancer/tests/test_outputs.py",
+      "observation": "37 probes: 4 P2P and 33 F2P covering authority, canonical validation/digest, rollout/quorum/audit, TCP/selection/PROXY echo, readiness, unknown apply fields, metrics generation= bound, eligibility (zone/fail-open/incarnation/drain/passive), and dataplane checkpoint padding/restart/CURRENT fallback. Hard-asserts HTTP 422/409/400 and GET /metrics; no active-health, control-plane restart, or torn-frame/session-fence rejection probes."
+    },
+    {
+      "type": "file",
+      "ref": ".terminus/designs/sovereign-l4-load-balancer-test-map.json",
+      "observation": "Classification-only map aligns test names to P2P/F2P and REQ_* families; used solely to confirm boundary labels, not as requirement authority."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md",
+      "observation": "Q4 requires complete forward/reverse matrices, instruction completeness and docs-boundary walks, F2P/P2P and output-interface inspection, second omission sweep, and REVISE on any material phantom, untested requirement, or grading-relevant ambiguity."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/INSTRUCTION_POLICY.md",
+      "observation": "Instruction owns material functional ask; docs may hold protocol/schema/API contracts but must not hide goals; grading-relevant schemas must remain discoverable; Q4 certifies bidirectional alignment after freeze."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q4-B01",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Every substantive verifier behavior maps to a discoverable solver-visible requirement (no phantom return-value contracts)",
+      "evidence_refs": [
+        "sovereign-l4-load-balancer/tests/test_outputs.py:320-326",
+        "sovereign-l4-load-balancer/tests/test_outputs.py:355-388",
+        "sovereign-l4-load-balancer/tests/test_outputs.py:670-680",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/operations.md",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/observability.md",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/recovery.md",
+        "sovereign-l4-load-balancer/instruction.md:3-4"
+      ],
+      "why_it_matters": "Verifier hard-requires HTTP 422 for invalid desired documents, 409 for stale/conflicting revision or idempotency reuse, and 400 for unknown apply fields. Instruction and docs only say reject/conflict/invalid; no solver-visible management API contract states those status codes. Competent implementations using alternate 4xx mapping fail despite satisfying stated rejection semantics.",
+      "minimal_remediation": "Add a management HTTP contract (new docs page or operations/observability section) stating apply status codes: 422 validation, 409 revision/idempotency conflict, 400 malformed/unknown fields (and success 200/202 if graded), then keep the existing asserts.",
+      "regression_risk": "Low for documentation; existing tests already encode the intended codes."
+    },
+    {
+      "id": "Q4-B02",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Graded output/interface paths are discoverable from the solver-visible contract",
+      "evidence_refs": [
+        "sovereign-l4-load-balancer/tests/test_outputs.py:683-692",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/observability.md:9-13",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/operations.md:7",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/cmd/lbctl/main.go:18-22",
+        "sovereign-l4-load-balancer/instruction.md:17"
+      ],
+      "why_it_matters": "test_f2p_metrics_labels_bounded grades GET /metrics text exposition and generation= label cardinality. Observability documents metric semantics and forbids generation as a label but never names the /metrics path; lbctl has no metrics command (unlike /ready). A solver exposing equivalent metrics under /v1/metrics or another documented-style path fails the probe.",
+      "minimal_remediation": "Document GET /metrics (content-type/text exposition and forbidden high-cardinality labels including generation) in observability.md or operations.md; optionally add lbctl metrics for operator discoverability.",
+      "regression_risk": "Low for path documentation; tighten label rule to zero generation labels if aligning fully with observability prose."
+    },
+    {
+      "id": "Q4-B03",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Every material solver-visible requirement has meaningful behavioral test coverage (forward matrix)",
+      "evidence_refs": [
+        "sovereign-l4-load-balancer/instruction.md:13",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/dataplane.md:5",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/dataplane.md:17",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/configuration.md:11",
+        "sovereign-l4-load-balancer/tests/test_outputs.py:698-857"
+      ],
+      "why_it_matters": "Instruction requires combining administrative state, active health, passive ejection, zone policy, fail-open, and draining exactly as documented. Eligibility F2P covers zone, fail-open/disabled, drain, incarnation, and passive ejection, but never drives active-probe unhealthy/healthy thresholds. A solver can stub active health as always-healthy and still pass.",
+      "minimal_remediation": "Add an F2P that makes a target fail active health (send/expect or connect probe) with fail_open false and asserts it is skipped, then recovers after healthy_threshold successes if that recovery is graded.",
+      "regression_risk": "Moderate timing risk; pin probe intervals/thresholds and use deterministic lab backends."
+    },
+    {
+      "id": "Q4-B04",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Material fencing and torn-frame safety requirements are behaviorally tested",
+      "evidence_refs": [
+        "sovereign-l4-load-balancer/instruction.md:6-7",
+        "sovereign-l4-load-balancer/instruction.md:16",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/control-protocol.md:3",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/control-protocol.md:19",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/architecture.md:7",
+        "sovereign-l4-load-balancer/tests/test_outputs.py:435-469",
+        "sovereign-l4-load-balancer/tests/test_outputs.py:871-914"
+      ],
+      "why_it_matters": "Instruction and control-protocol require node/session/generation/digest/sequence fencing and that torn or invalid control frames must not advance authority. Verifier only exercises happy-path prepare/activate (and dataplane restart). Sequence reuse with different content, stale session, or partial-frame injection is untested, so fencing defects can ship green.",
+      "minimal_remediation": "Add focused control-channel probes: inject a torn length-prefix/body and assert no generation/authority advance; inject sequence or session mismatch and assert rejection without quorum/authority progress.",
+      "regression_risk": "Moderate harness complexity; keep probes independent of existing rollout happy-path tests."
+    },
+    {
+      "id": "Q4-B05",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Material persist-and-recover obligations for control-plane authority are tested",
+      "evidence_refs": [
+        "sovereign-l4-load-balancer/instruction.md:9",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/recovery.md:5-11",
+        "sovereign-l4-load-balancer/tests/test_outputs.py:365-370",
+        "sovereign-l4-load-balancer/tests/test_outputs.py:871-914"
+      ],
+      "why_it_matters": "Instruction requires atomic persist/recover of desired state, generations, rollout, idempotency records, and node fences. recovery.md requires restoring accepted_revision/accepted_digest and idempotency before mutations. Tests persist accepted_digest on apply and recover dataplane checkpoints, but never restart the control plane and verify revision/idempotency fences survive. Control-plane recovery bugs remain invisible.",
+      "minimal_remediation": "After a successful apply, restart lb-control-plane on the same state root and assert accepted_revision/digest, idempotent replay, and stale-revision conflict still hold before mutations.",
+      "regression_risk": "Low if state roots are already isolated per test."
+    },
+    {
+      "id": "Q4-B06",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "Material stream operational requirements named in the work request are tested",
+      "evidence_refs": [
+        "sovereign-l4-load-balancer/instruction.md:10",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/dataplane.md:9-11",
+        "sovereign-l4-load-balancer/tests/test_outputs.py:498-562"
+      ],
+      "why_it_matters": "The stream bullet requires bounded buffers, partial I/O, backpressure, half-close, connect timeout, idle timeout, and deterministic teardown. Verifier covers large multibuffer echo and half-close only. Connect timeout, idle timeout, and EPOLLIN backpressure when the peer buffer is full are untested; solvers can omit them and still score 1. This changes external observable correctness for documented stable dataplane behavior, so MEDIUM is blocking.",
+      "minimal_remediation": "Add at least one connect-timeout failure probe and one idle-timeout or full-buffer backpressure probe against lab slow/reset backends with pinned timeouts.",
+      "regression_risk": "Moderate flakiness if timeouts are tight; use generous bounds and lab slow reader."
+    },
+    {
+      "id": "Q4-A01",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Preservation of the documented 24-node inventory is meaningfully asserted",
+      "evidence_refs": [
+        "sovereign-l4-load-balancer/instruction.md:18",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/lab.md:9",
+        "sovereign-l4-load-balancer/tests/test_outputs.py:312-317"
+      ],
+      "why_it_matters": "Instruction requires keeping the deterministic 24-node, three-zone inventory. P2P only asserts fleet.json exists, not node count or zone distribution, so a truncated inventory file would still pass.",
+      "minimal_remediation": "Optional: assert len(nodes)==24 and three zones in fleet.json during P2P catalog checks.",
+      "regression_risk": "Minimal."
+    },
+    {
+      "id": "Q4-A02",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "PROXY v2 at-most-once and reconnect header reset coverage depth",
+      "evidence_refs": [
+        "sovereign-l4-load-balancer/instruction.md:15",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/dataplane.md:13",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/lab.md:5",
+        "sovereign-l4-load-balancer/tests/test_outputs.py:509-516"
+      ],
+      "why_it_matters": "proxy-inspect echo implies at least one valid PROXY v2 header reached the inspector. At-most-once on a single backend and header reset on reconnect are not separately asserted.",
+      "minimal_remediation": "Optional: assert lab inspector event count/header fields and a reconnect path that expects a fresh single header.",
+      "regression_risk": "Minimal."
+    },
+    {
+      "id": "Q4-A03",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Binary output path wording vs build layout clarity",
+      "evidence_refs": [
+        "sovereign-l4-load-balancer/instruction.md:2",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/operations.md:3",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/bin/build",
+        "sovereign-l4-load-balancer/tests/test_outputs.py:20-24"
+      ],
+      "why_it_matters": "Instruction names artifacts under /app/sovereign-lb/bin/*; bin/build writes to build/bin and wrappers exec those artifacts; tests assert build/bin presence. Discoverable but slightly asymmetric for solvers who only read the instruction path list.",
+      "minimal_remediation": "Optional: one operations sentence that bin/* wrappers invoke build/bin artifacts produced by bin/build.",
+      "regression_risk": "None."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "sovereign-l4-load-balancer/environment/sovereign-lb/docs/observability.md",
+    "sovereign-l4-load-balancer/environment/sovereign-lb/docs/operations.md",
+    "sovereign-l4-load-balancer/tests/test_outputs.py"
+  ],
+  "do_not_change": [
+    "sovereign-l4-load-balancer/instruction.md",
+    "sovereign-l4-load-balancer/solution/",
+    "sovereign-l4-load-balancer/environment/sovereign-lb/docs/architecture.md",
+    "sovereign-l4-load-balancer/environment/sovereign-lb/docs/configuration.md",
+    "sovereign-l4-load-balancer/environment/sovereign-lb/docs/control-protocol.md",
+    "sovereign-l4-load-balancer/environment/sovereign-lb/docs/dataplane.md",
+    "sovereign-l4-load-balancer/environment/sovereign-lb/docs/recovery.md",
+    "sovereign-l4-load-balancer/environment/sovereign-lb/docs/rollout-state.md",
+    "sovereign-l4-load-balancer/environment/sovereign-lb/docs/lab.md"
+  ],
+  "next_gate": "SPEC_ALIGNMENT (Q1 management HTTP contract; Q2 untested active-health/fencing/CP-recovery/stream probes)",
+  "role_output": {
+    "REQUIREMENT_TEST_MATRIX": [
+      {
+        "id": "R01",
+        "source": "instruction.md:1",
+        "requirement": "Work only in /app/sovereign-lb; preserve mixed Go/C++/Bash/Python structure",
+        "coverage": "partial",
+        "gap": "Structure preservation assumed via P2P binary/catalog presence, not deep layout assertions",
+        "tests": ["test_p2p_binaries_and_catalog_present"]
+      },
+      {
+        "id": "R02",
+        "source": "instruction.md:2",
+        "requirement": "Build lb-control-plane, lbctl, lb-dataplane, and lab binaries",
+        "coverage": "complete",
+        "tests": ["test_p2p_binaries_and_catalog_present", "build_tree fixture"]
+      },
+      {
+        "id": "R03",
+        "source": "instruction.md:3",
+        "requirement": "Canonical validation of complete listener/target-group/target/health/balancing/zone/fail-open config before generation allocation",
+        "coverage": "partial",
+        "gap": "Invalid policy, duplicate bind, invalid port, unknown field covered; many other validation axes (limits ceilings, health string lengths, name rules) unprobed",
+        "tests": ["test_p2p_validate_rejects_invalid_policy", "test_f2p_duplicate_listener_bind_rejected", "test_f2p_invalid_listener_port_rejected", "test_f2p_unknown_apply_field_rejected"]
+      },
+      {
+        "id": "R04",
+        "source": "instruction.md:4",
+        "requirement": "Fence desired-state mutation by monotonic revision and idempotency key",
+        "coverage": "complete",
+        "tests": ["test_p2p_idempotency_replay", "test_f2p_same_revision_different_body_conflict", "test_f2p_stale_revision_rejected", "test_f2p_idempotency_key_body_conflict", "test_f2p_revision_advances_accepted_authority"]
+      },
+      {
+        "id": "R05",
+        "source": "instruction.md:5",
+        "requirement": "Compile accepted revision into immutable snapshot with deterministic digest and atomic generation record",
+        "coverage": "complete",
+        "tests": ["test_f2p_generation_snapshot_matches_digest", "test_f2p_accepted_digest_persisted"]
+      },
+      {
+        "id": "R06",
+        "source": "instruction.md:6",
+        "requirement": "Four-byte BE length-prefixed canonical JSON control protocol with documented envelopes",
+        "coverage": "partial",
+        "gap": "Exercised indirectly via successful rollout; envelope/framing failures not injected",
+        "tests": ["test_f2p_rollout_reaches_active_phase", "test_f2p_quorum_requires_connected_nodes"]
+      },
+      {
+        "id": "R07",
+        "source": "instruction.md:7",
+        "requirement": "Fence node acknowledgements/activation by node, session, generation, digest, sequence",
+        "coverage": "absent",
+        "gap": "No negative fencing probes; Q4-B04",
+        "tests": []
+      },
+      {
+        "id": "R08",
+        "source": "instruction.md:8",
+        "requirement": "Prepare then activate across live-session quorum without damaging last active generation on candidate failure",
+        "coverage": "complete",
+        "tests": ["test_f2p_rollout_reaches_active_phase", "test_f2p_conflict_preserves_active_generation", "test_f2p_quorum_requires_connected_nodes", "test_f2p_status_reports_rollout_present"]
+      },
+      {
+        "id": "R09",
+        "source": "instruction.md:9",
+        "requirement": "Persist and recover desired state, generations, rollout, idempotency, node fences, checkpoints atomically",
+        "coverage": "partial",
+        "gap": "Dataplane checkpoint restart/CURRENT fallback and digest persistence covered; control-plane restart recovery absent (Q4-B05)",
+        "tests": ["test_f2p_accepted_digest_persisted", "test_f2p_checkpoint_generation_directory_padding", "test_f2p_dataplane_restart_recovers_active_generation", "test_f2p_corrupt_current_pointer_falls_back"]
+      },
+      {
+        "id": "R10",
+        "source": "instruction.md:10",
+        "requirement": "Proxy real TCP with buffers, partial I/O, backpressure, half-close, connect/idle timeouts, deterministic teardown",
+        "coverage": "partial",
+        "gap": "Large echo and half-close covered; connect/idle/backpressure untested (Q4-B06)",
+        "tests": ["test_f2p_multibuffer_tcp_echo", "test_f2p_half_close_backend_survives"]
+      },
+      {
+        "id": "R11",
+        "source": "instruction.md:11",
+        "requirement": "Accepted connections stay bound to acquired generation and target incarnation until completion",
+        "coverage": "partial",
+        "gap": "Drain handoff shows owned connection continues; cross-generation binding not isolated",
+        "tests": ["test_f2p_deregistered_target_drains_existing_connection", "test_f2p_target_incarnation_increments_on_reregister"]
+      },
+      {
+        "id": "R12",
+        "source": "instruction.md:12",
+        "requirement": "Select eligible targets via round robin, least connections, or stable source-address hash",
+        "coverage": "complete",
+        "tests": ["test_f2p_round_robin_hits_multiple_backends", "test_f2p_source_hash_stable_after_target_reorder", "test_f2p_least_connections_prefers_lower_load"]
+      },
+      {
+        "id": "R13",
+        "source": "instruction.md:13",
+        "requirement": "Combine admin, active health, passive ejection, zone, fail-open, draining as documented",
+        "coverage": "partial",
+        "gap": "Active health untested (Q4-B03); other axes covered",
+        "tests": ["test_f2p_same_zone_skips_remote_without_failopen", "test_f2p_fail_open_skips_disabled_targets", "test_f2p_deregistered_target_drains_existing_connection", "test_f2p_passive_ejection_skips_reset_target"]
+      },
+      {
+        "id": "R14",
+        "source": "instruction.md:14",
+        "requirement": "Stop new assignment to deregistered targets while draining owned connections to deadline",
+        "coverage": "complete",
+        "tests": ["test_f2p_deregistered_target_drains_existing_connection"]
+      },
+      {
+        "id": "R15",
+        "source": "instruction.md:15",
+        "requirement": "Emit at most one valid PROXY protocol v2 header per backend connection when enabled",
+        "coverage": "partial",
+        "gap": "Inspector echo implies header present; at-most-once/reconnect not asserted (Q4-A02)",
+        "tests": ["test_f2p_proxy_inspect_listener_echo"]
+      },
+      {
+        "id": "R16",
+        "source": "instruction.md:16",
+        "requirement": "Recover dataplane from verified checkpoints without advancing authority from torn/invalid control frames",
+        "coverage": "partial",
+        "gap": "Checkpoint recover/CURRENT fallback covered; torn/invalid frame non-advancement absent (Q4-B04)",
+        "tests": ["test_f2p_dataplane_restart_recovers_active_generation", "test_f2p_corrupt_current_pointer_falls_back", "test_f2p_checkpoint_generation_directory_padding"]
+      },
+      {
+        "id": "R17",
+        "source": "instruction.md:17",
+        "requirement": "Expose bounded readiness, status, rollout, connection, metrics, audit without payload/unbounded labels",
+        "coverage": "partial",
+        "gap": "Readiness/status/rollout/audit/metrics probes exist; /metrics path and apply status codes not in docs (Q4-B01/B02); connection-view caps not probed",
+        "tests": ["test_f2p_readiness_false_before_activate", "test_f2p_readiness_false_during_prepare", "test_f2p_readiness_true_after_activate", "test_f2p_status_reports_rollout_present", "test_f2p_audit_exports_bounded_apply_event", "test_f2p_metrics_labels_bounded", "test_p2p_lbctl_status_command"]
+      },
+      {
+        "id": "R18",
+        "source": "instruction.md:18",
+        "requirement": "Keep deterministic 24-node three-zone inventory and self-contained loopback lab backends",
+        "coverage": "partial",
+        "gap": "fleet.json existence and lab start used; 24/3 structure not asserted (Q4-A01)",
+        "tests": ["test_p2p_binaries_and_catalog_present"]
+      },
+      {
+        "id": "R19",
+        "source": "instruction.md:19",
+        "requirement": "Do not add HTTP routing, WAF/CDN, DNS cutover, host route/firewall mutation, or cloud provisioning",
+        "coverage": "vacuous",
+        "gap": "Negative exclusion; no probe attempts forbidden features (acceptable for hard exclusions)",
+        "tests": []
+      },
+      {
+        "id": "R20",
+        "source": "instruction.md:20",
+        "requirement": "Follow /app/sovereign-lb/docs; repeated apply/reconnect/prepare/activate/drain/recovery idempotent",
+        "coverage": "partial",
+        "gap": "Idempotent apply/drain/recovery happy paths covered; reconnect prepare non-inheritance per recovery.md not isolated",
+        "tests": ["test_p2p_idempotency_replay", "test_f2p_deregistered_target_drains_existing_connection", "test_f2p_dataplane_restart_recovers_active_generation"]
+      }
+    ],
+    "PHANTOM_TEST_CONTRACTS": [
+      "HTTP apply status codes 422/409/400 hard-asserted without management API documentation (Q4-B01)",
+      "GET /metrics path graded without docs or lbctl discovery surface (Q4-B02)"
+    ],
+    "UNTESTED_REQUIREMENTS": [
+      "R07: node/session/sequence fencing rejection modes",
+      "R13 active-health axis of eligibility combination",
+      "R09 control-plane restart restore of authority/idempotency/node fences",
+      "R10 connect timeout, idle timeout, and backpressure",
+      "R16 torn/invalid control frame must not advance authority"
+    ],
+    "AMBIGUITIES": [
+      {
+        "id": "AMB_HTTP_STATUS",
+        "text": "Rejection/conflict outcomes for apply are described without HTTP status code mapping, while tests require exact 400/409/422.",
+        "grading_consequence": "Alternate valid 4xx mappings fail the verifier.",
+        "location": "docs/operations.md, docs/recovery.md, docs/observability.md vs tests/test_outputs.py"
+      },
+      {
+        "id": "AMB_METRICS_PATH",
+        "text": "Metrics exposition path is unspecified in docs; tests call GET /metrics exclusively.",
+        "grading_consequence": "Equivalent metrics under /v1/metrics or another path fail.",
+        "location": "docs/observability.md vs tests/test_outputs.py:690"
+      }
+    ],
+    "INSTRUCTION_SHAPE": "PASS",
+    "INSTRUCTION_REQUIREMENT_COMPLETENESS": "SUFFICIENT",
+    "DELEGATED_CONTRACT_CHECK": {
+      "architecture.md": {
+        "classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION",
+        "notes": "Authority boundaries, control/dataplane split, lifecycle, exclusions; not a repair map."
+      },
+      "configuration.md": {
+        "classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION",
+        "notes": "Desired document schema, policies, canonical ordering, limits."
+      },
+      "control-protocol.md": {
+        "classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION",
+        "notes": "Framing, envelopes, fencing; graded only via happy-path integration."
+      },
+      "dataplane.md": {
+        "classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION",
+        "notes": "Selection, streaming, PROXY, draining, active/passive health."
+      },
+      "observability.md": {
+        "classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION",
+        "notes": "Status/audit/metrics semantics; missing /metrics path and HTTP codes (Q4-B01/B02)."
+      },
+      "operations.md": {
+        "classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION",
+        "notes": "Build/start/apply operator runbook; no acceptance checklist."
+      },
+      "recovery.md": {
+        "classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION",
+        "notes": "Atomic durable layout, authority.json, CURRENT fallback, session fences."
+      },
+      "rollout-state.md": {
+        "classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION",
+        "notes": "Phases, quorum fencing, preserve-active semantics aligned with rollout tests."
+      },
+      "lab.md": {
+        "classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION",
+        "notes": "Loopback backend map and 24-node fleet fixture description."
+      },
+      "examples/control.ndjson": {
+        "classification": "LEGITIMATE_TECHNICAL_DOCUMENTATION",
+        "notes": "Example framed control messages; not a hidden prompt."
+      }
+    },
+    "INSTRUCTION_DOC_BOUNDARY": "CLEAN",
+    "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "NONE",
+    "CURRENT_STATE_EVIDENCE": "NOT_APPLICABLE",
+    "SPEC_DUMP_RISK": "MEDIUM",
+    "BIDIRECTIONAL_ALIGNMENT": "FAIL",
+    "BLOCKING_FINDING_IDS": ["Q4-B01", "Q4-B02", "Q4-B03", "Q4-B04", "Q4-B05", "Q4-B06"],
+    "ADVISORY_FINDING_IDS": ["Q4-A01", "Q4-A02", "Q4-A03"],
+    "EXHAUSTIVENESS": {
+      "REQUIREMENTS_ENUMERATED": "COMPLETE",
+      "VERIFIER_BEHAVIORS_ENUMERATED": "COMPLETE",
+      "FORWARD_MATRIX_COMPLETE": "YES",
+      "REVERSE_MATRIX_COMPLETE": "YES",
+      "INSTRUCTION_COMPLETENESS_COMPLETE": "YES",
+      "DELEGATED_CONTRACTS_COMPLETE": "YES",
+      "PROMPT_EXTENSION_WALK_COMPLETE": "YES",
+      "P2P_BOUNDARIES_COMPLETE": "YES",
+      "F2P_BOUNDARIES_COMPLETE": "YES",
+      "OUTPUT_INTERFACES_COMPLETE": "YES",
+      "SECOND_PASS_OMISSION_SWEEP": "PASS",
+      "UNINSPECTED_SCOPE": []
+    },
+    "VERIFIER_BEHAVIOR_INVENTORY": [
+      "P2P: binaries+fleet+scenario present",
+      "P2P: invalid policy -> 422",
+      "P2P: idempotency replay same generation",
+      "P2P: lbctl status exposes accepted_revision",
+      "F2P: same revision different body -> 409",
+      "F2P: authority.json accepted_digest 64-hex",
+      "F2P: stale revision -> 409",
+      "F2P: idempotency key body conflict -> 409",
+      "F2P: revision advances accepted_revision",
+      "F2P: snapshot SHA-256 matches digest file",
+      "F2P: duplicate listener bind -> 422",
+      "F2P: invalid listener port -> 422",
+      "F2P: rollout phase active",
+      "F2P: conflict preserves active_generation",
+      "F2P: activate_quorum unmet stays non-active",
+      "F2P: status.rollout_present true",
+      "F2P: audit apply accepted bounded fields",
+      "F2P: large TCP echo",
+      "F2P: PROXY-enabled listener echo via inspect backend",
+      "F2P: half-close backend",
+      "F2P: round robin multi-backend",
+      "F2P: source hash stable after reorder",
+      "F2P: least connections prefers lower load",
+      "F2P: readiness false before/during prepare; true after activate",
+      "F2P: unknown apply field -> 400",
+      "F2P: metrics generation= labels <= 2",
+      "F2P: same_zone_preferred remote-only no forward",
+      "F2P: fail_open skips disabled",
+      "F2P: incarnation increments in snapshot",
+      "F2P: drain keeps old conn; new goes to replacement",
+      "F2P: passive ejection skips reset",
+      "F2P: padded dataplane generation directory",
+      "F2P: dataplane restart serves active generation",
+      "F2P: corrupt CURRENT falls back with active_generation>=1"
+    ],
+    "P2P_BOUNDARY_NOTES": "P2P probes preserve shipped binaries/catalog and already-working validation/idempotency/lbctl surfaces; no circular oracle or external-network bypass observed.",
+    "F2P_BOUNDARY_NOTES": "F2P probes own behavioral gaps (authority, rollout, stream, eligibility, recovery). Passive of passive-ejection then echo-only apply still meaningfully asserts ejection before cutover. Quorum test uses wall-clock wait without asserting durable rejected/aborted phase explicitly.",
+    "SECOND_OMISSION_SWEEP_NOTES": "Second pass rechecked SHALL/MUST in docs for management HTTP codes, /metrics path, active probes, torn frames, control-plane authority restore, connect/idle/backpressure, generation-number reuse after failed rollout, and retention-referenced generations; first four clusters remain material gaps (findings above). Generation-number non-reuse and retention accounting remain untested but are narrower durability edges treated as advisory residual rather than additional blockers given existing preserve-active and checkpoint coverage."
+  }
+}

@@ -86,7 +86,10 @@ def patch_rollout(path: Path) -> None:
 
 
 def patch_service_ready(path: Path) -> None:
+    """Readiness evaluator is production-wired; keep it and only fix the legacy inline gate."""
     text = path.read_text(encoding="utf-8")
+    if "service.readiness.ReadyForRollout" in text or "service.readiness.Ready()" in text:
+        return
     old = 'func (service *Service) handleReady(writer http.ResponseWriter, _ *http.Request) { _, err := service.repository.Current(); ready := err == nil || service.revisions.AcceptedRevision() == 0; status := http.StatusOK; if !ready { status = http.StatusServiceUnavailable }; writeJSON(writer, status, map[string]bool{"ready":ready}) }'
     new = """func (service *Service) handleReady(writer http.ResponseWriter, _ *http.Request) {
 \tready := false
@@ -132,10 +135,17 @@ def patch_control_cpp(path: Path) -> None:
     )
     old_prepare = 'const Json& source=request.body.at("snapshot");std::string canonical=write_json(source);if(sha256_hex(canonical)!=request.digest)throw JsonError("snapshot digest mismatch");'
     new_prepare = 'const Json& source=request.body.at("snapshot");std::string canonical=request.body.contains("snapshot_canonical")?request.body.at("snapshot_canonical").string():write_json(source);if(sha256_hex(canonical)!=request.digest)throw JsonError("snapshot digest mismatch");'
-    text = replace_once(text, old_prepare, new_prepare, "prepare canonical digest")
+    if old_prepare in text:
+        text = replace_once(text, old_prepare, new_prepare, "prepare canonical digest")
+    elif "snapshot_canonical" not in text:
+        raise SystemExit("missing patch anchor for prepare canonical digest")
+    # DrainManager.transition is already production-wired on activate; do not rewire or undo it.
     old_activate = 'if(!runtimes_.activate(request.generation,request.digest))throw JsonError("candidate was not prepared");proxy_.publish();'
     new_activate = 'auto previous=runtimes_.active();if(!runtimes_.activate(request.generation,request.digest))throw JsonError("candidate was not prepared");drains_.transition(previous,runtimes_.active(),std::chrono::steady_clock::now());proxy_.publish();'
-    text = replace_once(text, old_activate, new_activate, "activate drain transition")
+    if old_activate in text:
+        text = replace_once(text, old_activate, new_activate, "activate drain transition")
+    elif "drains_.transition" not in text:
+        raise SystemExit("missing patch anchor for activate drain transition")
     path.write_text(text, encoding="utf-8", newline="\n")
 
 

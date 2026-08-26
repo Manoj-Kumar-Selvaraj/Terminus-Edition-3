@@ -8,7 +8,7 @@ Session schema version: `2.4`
 - Controller state: `FROZEN_CANDIDATE`
 - Working branch: `main`
 - Pull request: `none`
-- Current task commit: `d7a001a92485de5ca3ec1bd2593648436dc3c237`
+- Current task commit: `13ffb6b204fa624cf2c2fe311f265279ba15ec85` (pre-remediation; awaiting commit of Q4+Q6 repair)
 - Agent-system policy: `2.5`
 - Specialist prompt policy: `2.2`
 - Specialist protocol policy: `2.2`
@@ -21,32 +21,31 @@ Session schema version: `2.4`
 
 | Gate | Status | Evidence |
 | --- | --- | --- |
-| Creator Complexity Gate | PASS | `validate_task_complexity` artifact 3015 — 28 F2P / 4 P2P; large_system_strict |
-| Runtime authenticity | PASS | `validate_runtime_authenticity.py` |
-| Ruff verifier | PASS | ruff job 1 clean |
-| Oracle = 1 | PASS | Harbor `jobs/2026-08-22__20-40-17` — 36/36 after Q4 repair |
-| NOP = 0 | PASS | Harbor `jobs/2026-08-22__20-35-34` — 10 F2P fail / 26 pass |
-| Q4 Spec-Test Contract | PENDING_REREVIEW | blocking F001..F007 repaired locally; cold subagent re-review required |
-| Q6 Production Logic | PASS | `.terminus/reviews/sovereign-l4-load-balancer/d7a001a9/sovereign-l4-load-balancer-d7a001a9-production-logic-289990f233.json` — isolated subagent `2ac77fa2` |
-| Quality Interlock | PENDING | Q4 fixes applied; await cold Q4 re-review |
-| PRE_LLMAJ aggregate | STALE | prior PASS predates independent Q4 REVISE |
-| Pre-LLMaJ specialists | STALE | prior panel at d7a001a9; reopen after Q4 repair |
-| Q8 simulations | STALE | prior diagnostics predates Q4 REVISE |
-| Harbor LLMaJ | WAIVED | author policy (revisit if scope changes) |
+| Creator Complexity Gate | LOCAL_PASS (uncommitted) | `validate_task_complexity` — substantive_loc=3924, f2p_cases=27 |
+| Runtime authenticity | LOCAL_PASS (uncommitted) | `validate_runtime_authenticity.py` PASS |
+| Ruff verifier | PENDING | recheck after commit |
+| Oracle = 1 | STALE | must revalidate on post-repair commit |
+| NOP = 0 | STALE | must revalidate on post-repair commit |
+| Q4 Spec-Test Contract | REVISE @ 13ffb6b2 | producer remediation claimed (B01–B06); cold re-review required |
+| Q6 Production Logic | REVISE @ 13ffb6b2 | producer remediation claimed (orphans/drain/LOC); cold re-review required |
+| Quality Interlock | REVISE | awaiting new commit + cold Q4+Q6 |
+| PRE_LLMaJ aggregate | STALE | blocked |
+| Pre-LLMaJ specialists | STALE | blocked |
+| Q8 simulations | STALE | blocked |
+| Harbor LLMaJ | WAIVED | author policy |
 | Official ×10 trials | WAIVED | author policy |
-| Submission readiness | REVOKED | `.terminus/reviews/sovereign-l4-load-balancer/d7a001a9/submission-ready.md` |
+| Submission readiness | REVOKED | awaiting interlock PASS |
 
 ## Decisions that must survive chat changes
 
-- Q4 and Q6 were re-run via isolated subagents; inline-authored Q4 PASS is void.
-- Q6 independent PASS retained (3015 LOC, PADDING LOW).
-- Q4 blocking findings F001–F007 addressed: four new F2P tests, docs for `authority.json`/`accepted_digest`, `rollout_present`, `/v1/audit`, and `generation-%020d` padding; passive ejection wired in `repair.py` only (starter tree restored).
-- Oracle 36/36 and NOP 10 F2P fail confirmed after repair (`jobs/2026-08-22__20-40-17`, `jobs/2026-08-22__20-35-34`).
+- Cold Q4+Q6 at `13ffb6b2` both REVISE. Remediation completed by subagents `94a054c1` (Q4) and `f8e5c402` (Q6); case-id consolidation + repair.py by `0266be2f`.
+- Mechanical LOC ~3924; f2p_cases consolidated to 27. Do not treat producer claims as Q4/Q6 PASS.
+- Prior Q6 PASS @ `d7a001a9` remains STALE.
 
 ## Next action
 
-Commit Q4 repair delta (uncommitted), then run cold isolated Q4 subagent re-review and refresh quality interlock.
+Commit+push combined remediation, regenerate packets, cold Q4+Q6, refresh interlock.
 
 ## Current blocker
 
-Cold Q4 re-review not yet executed on the repaired verifier/docs contract.
+Uncommitted Q4+Q6 remediation pending commit binding.

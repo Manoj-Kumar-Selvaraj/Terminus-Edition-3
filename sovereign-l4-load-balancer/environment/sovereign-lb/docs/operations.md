@@ -4,7 +4,7 @@ Build all binaries with `/app/sovereign-lb/bin/build`. Start the control plane w
 
 The control plane listens on separate management HTTP and framed-control TCP addresses. Dataplane status is a local HTTP endpoint. Bind addresses and state roots come from flags or explicit environment variables; defaults remain under `/app/sovereign-lb/state`.
 
-Apply is complete-state replacement and requires both revision and idempotency key. Inspect desired, generations, rollout, nodes, health, audit, readiness, and metrics before and after an apply. A rollout that misses quorum is investigated and retried with a new accepted revision; operators do not edit generation files.
+Apply is complete-state replacement and requires both revision and idempotency key. `POST /v1/apply` returns `202` when a new revision is accepted and a rollout begins, or `200` when an identical idempotent replay is served. Validation failures return `422`. Stale revisions and idempotency-key reuse with different request content return `409`. Malformed JSON and unknown fields return `400`. Inspect desired, generations, rollout, nodes, health, audit, readiness, and metrics before and after an apply. A rollout that misses quorum is investigated and retried with a new accepted revision; operators do not edit generation files.
 
 Graceful control-plane shutdown stops accepting mutations, flushes durable state, closes control sessions, and leaves dataplanes serving their active checkpoints. Graceful dataplane shutdown drops readiness, stops accepts, drains owned streams to deadline, checkpoints authority, and then closes workers.
 

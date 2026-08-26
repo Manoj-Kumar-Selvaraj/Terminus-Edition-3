@@ -3,7 +3,6 @@ package retention
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"sort"
 	"sync"
 
@@ -11,8 +10,8 @@ import (
 )
 
 type Lease struct {
-	Generation uint64
-	Holder     string
+	Generation uint64 `json:"generation"`
+	Holder     string `json:"holder"`
 }
 
 type Manager struct {
@@ -31,6 +30,21 @@ func New(repository *snapshot.Repository, limit int) *Manager {
 		limit:      limit,
 		leases:     map[uint64]map[string]struct{}{},
 	}
+}
+
+func (manager *Manager) Limit() int {
+	manager.mutex.Lock()
+	defer manager.mutex.Unlock()
+	return manager.limit
+}
+
+func (manager *Manager) SetLimit(limit int) {
+	manager.mutex.Lock()
+	defer manager.mutex.Unlock()
+	if limit < 1 {
+		limit = 1
+	}
+	manager.limit = limit
 }
 
 func (manager *Manager) Acquire(generation uint64, holder string) {
@@ -63,21 +77,37 @@ func (manager *Manager) Held(generation uint64) bool {
 	return len(manager.leases[generation]) > 0
 }
 
+func (manager *Manager) Protect(activeGeneration, preparedGeneration uint64, holder string) {
+	if activeGeneration > 0 {
+		manager.Acquire(activeGeneration, holder)
+	}
+	if preparedGeneration > 0 && preparedGeneration != activeGeneration {
+		manager.Acquire(preparedGeneration, holder+"-prepared")
+	}
+}
+
 func (manager *Manager) Collect(activeGeneration uint64) ([]uint64, error) {
 	generations, err := manager.repository.Generations()
 	if err != nil {
 		return nil, err
 	}
-	if len(generations) <= manager.limit {
+	manager.mutex.Lock()
+	limit := manager.limit
+	held := make(map[uint64]bool, len(manager.leases))
+	for generation := range manager.leases {
+		held[generation] = true
+	}
+	manager.mutex.Unlock()
+	if len(generations) <= limit {
 		return nil, nil
 	}
 	sort.Slice(generations, func(i, j int) bool { return generations[i] < generations[j] })
 	removed := make([]uint64, 0)
 	for _, generation := range generations {
-		if len(generations)-len(removed) <= manager.limit {
+		if len(generations)-len(removed) <= limit {
 			break
 		}
-		if generation == activeGeneration || manager.Held(generation) {
+		if generation == activeGeneration || held[generation] {
 			continue
 		}
 		path := manager.repository.GenerationPath(generation)

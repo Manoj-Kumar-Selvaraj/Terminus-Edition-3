@@ -22,7 +22,10 @@ class DrainManager {
                   const std::shared_ptr<const Snapshot>& current,
                   std::chrono::steady_clock::time_point now);
   void collect();
+  void sweep(std::chrono::steady_clock::time_point now);
   std::size_t retained() const;
+  std::vector<std::string> retained_generations() const;
+  std::string status_json() const;
 
  private:
   static std::unordered_map<std::string, const Target*> targets(const Snapshot& snapshot);

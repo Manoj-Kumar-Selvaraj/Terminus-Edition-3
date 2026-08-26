@@ -96,7 +96,7 @@ def summarize(nodes: list[FleetNode]) -> dict[str, Any]:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=("list", "summary", "start-one"))
+    parser.add_argument("command", choices=("list", "summary", "start-one", "validate"))
     parser.add_argument("--root", default="/app/sovereign-lb")
     parser.add_argument("--node", default="dp-01")
     parser.add_argument("--log-dir", default="/app/sovereign-lb/state/fleet-sim")
@@ -108,6 +108,28 @@ def main() -> int:
         return 0
     if args.command == "summary":
         print(json.dumps(summarize(nodes), indent=2, sort_keys=True))
+        return 0
+    if args.command == "validate":
+        lbctl = root / "build" / "bin" / "lbctl"
+        if not lbctl.is_file():
+            lbctl = Path("/app/sovereign-lb/build/bin/lbctl")
+        if lbctl.is_file():
+            completed = subprocess.run(
+                [str(lbctl), "--root", str(root), "validate-fleet"],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            if completed.returncode != 0:
+                print(completed.stderr or completed.stdout, file=sys.stderr)
+                return completed.returncode
+            print(completed.stdout.strip())
+            return 0
+        for node in nodes:
+            if not node.config_path.is_file():
+                print(f"missing node config {node.config_path}", file=sys.stderr)
+                return 2
+        print(json.dumps({"ok": True, "node_count": len(nodes), "zones": summarize(nodes)["zones"]}))
         return 0
     selected = next((node for node in nodes if node.node_id == args.node), None)
     if selected is None:

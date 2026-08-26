@@ -1,0 +1,292 @@
+{
+  "schema_version": "3.0",
+  "role": "Production Logic Auditor",
+  "review_id": "sovereign-l4-load-balancer-13ffb6b2-production-logic-1b053a8149",
+  "task": "sovereign-l4-load-balancer",
+  "task_commit": "13ffb6b204fa624cf2c2fe311f265279ba15ec85",
+  "control_plane_commit": "13ffb6b204fa624cf2c2fe311f265279ba15ec85",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "a737a404c3b23518698932fec4eba6bb7f9831710c920bd66f267a00dca47661",
+  "review_scope_hash": "a90568489b848590661edc13f76e8e0900cd975ed706b949e8d703127169ce74",
+  "context_packet": ".terminus/reviews/sovereign-l4-load-balancer/13ffb6b2/sovereign-l4-load-balancer-13ffb6b2-production-logic-1b053a8149.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Independent Q6 rebuild finds a real dual-language L4 LB core (Go apply/revision/rollout/control-stream plus C++ epoll proxy, eligibility, active probing, and checkpoint recovery) with genuine cross-component coupling. However, six Go packages (~540 LOC) are never imported by any binary or lab entrypoint, DrainManager is constructed but never invoked, and the mechanical environment LOC of 3015 clears the large_system_strict floor only by counting those orphans plus 24 near-clone node JSON files. Honest reachable substantive runtime/config is about 2200–2500 LOC—below the >=3000 floor—so PADDING_RISK is HIGH and PASS is blocked.",
+  "evidence": [
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+      "observation": "Q6 independently judges reachability, material branching/state/error handling, subsystem diversity, cross-component interactions, removal impact, and padding. For large_system_strict, >=3000 substantive reachable runtime/config LOC is necessary but not sufficient; Complexity Governor or authenticity-validator PASS is not a conclusion to copy."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md",
+      "observation": "Required method: identify entrypoints, trace module reachability, check for clones/wrappers/unreachable filler, identify partial-fix traps, run a ~25% removal test, and separate production logic from config-volume noise. large_system_strict PASS also forbids HIGH toy or padding risk."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+      "observation": "Count only implementation that materially participates; do not satisfy scale with duplicated, dead, or unreachable modules or config-volume inflation. Raw LOC does not substitute for differentiated reachable modules and coupling."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/task.toml@13ffb6b204fa624cf2c2fe311f265279ba15ec85",
+      "observation": "Software/Systems Go+C++ load-balancer task; artifacts [/app/sovereign-lb]; separate verifier; agent timeout 7200; workdir /app. No LOC claim inside task.toml."
+    },
+    {
+      "type": "file",
+      "ref": ".terminus/designs/sovereign-l4-load-balancer-production.json",
+      "observation": "Binds profile=large_system_strict and claims substantive_runtime_loc=3015. Used only to bind the strict floor; creator production-grade claims were not treated as a Q6 conclusion."
+    },
+    {
+      "type": "run",
+      "ref": ".terminus/validate_runtime_authenticity.py sovereign-l4-load-balancer",
+      "observation": "Reports profile=large_system_strict and gate PASS with stateful_dataset_exemption. Treated as evidence of declared profile only, not as a production-logic verdict."
+    },
+    {
+      "type": "run",
+      "ref": ".terminus/validate_task_complexity.py sovereign-l4-load-balancer",
+      "observation": "Mechanical environment substantive_loc=3015 (go 1434, cpp 568, hpp 335, py 265, json 397, Dockerfile 16). Used as an inventory baseline; not accepted as honest reachable depth."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/cmd/lb-control-plane/main.go@13ffb6b204fa624cf2c2fe311f265279ba15ec85",
+      "observation": "Control-plane entrypoint opens api.Service, serves management HTTP and framed control TCP. Import closure is only sovereign-lb/internal/api."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/cmd/lbctl/main.go@13ffb6b204fa624cf2c2fe311f265279ba15ec85",
+      "observation": "Thin HTTP client for apply/status/nodes/audit/ready; no additional internal packages."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/bin/build@13ffb6b204fa624cf2c2fe311f265279ba15ec85",
+      "observation": "Builds only ./cmd/lb-control-plane, ./cmd/lbctl, and the C++ lb-dataplane target. Packages not imported by those cmds are never linked."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/internal/api/service.go@13ffb6b204fa624cf2c2fe311f265279ba15ec85",
+      "observation": "Apply path validates desired state, begins revision/idempotency authority, compiles and stores snapshots, starts rollout, dispatches prepare, commits response. Imports audit/metrics/model/nodes/revision/rollout/snapshot only."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/internal/api/control.go@13ffb6b204fa624cf2c2fe311f265279ba15ec85",
+      "observation": "Node sessions fence hello/prepared/active/rejected, record rollout quorum transitions, and dispatch activate. Real control-plane↔dataplane coupling."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/dataplane/src/main.cpp@13ffb6b204fa624cf2c2fe311f265279ba15ec85",
+      "observation": "Dataplane entrypoint loads node config, restores checkpoint, wires eligibility/health/drain/prober/proxy/status/control threads. All CMake sources are compiled into this binary."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/dataplane/src/proxy.cpp@13ffb6b204fa624cf2c2fe311f265279ba15ec85",
+      "observation": "Substantive epoll accept/connect/transfer/idle-timeout path with PROXY v2 header injection and eligibility-aware selection—non-toy dataplane core."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/dataplane/src/eligibility.cpp@13ffb6b204fa624cf2c2fe311f265279ba15ec85",
+      "observation": "Zone-local preference, cross-zone policy, fail-open, and drain-deadline filtering are real branching used by Proxy::accept_client."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/dataplane/src/prober.cpp@13ffb6b204fa624cf2c2fe311f265279ba15ec85",
+      "observation": "Active TCP probe loop with thresholds feeding HealthTracker; reachable from main probe thread."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/dataplane/src/checkpoint.cpp@13ffb6b204fa624cf2c2fe311f265279ba15ec85",
+      "observation": "Digest-checked generation directories, CURRENT pointer, and corrupt-CURRENT fallback load—real restart recovery on dataplane."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/dataplane/src/control.cpp@13ffb6b204fa624cf2c2fe311f265279ba15ec85",
+      "observation": "Implements prepare/activate/status/reject over framed control. ControlClient stores DrainManager& drains_ but never calls transition/collect—drain object is wired dead."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/internal/recovery/bootstrap.go@13ffb6b204fa624cf2c2fe311f265279ba15ec85",
+      "observation": "117 non-comment LOC for CURRENT recovery and authority validation. No Go import of sovereign-lb/internal/recovery exists under environment/."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/internal/retention/manager.go@13ffb6b204fa624cf2c2fe311f265279ba15ec85",
+      "observation": "98 LOC generation lease/GC manager. Unreferenced by api, cmds, or lab tools."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/internal/readiness/evaluator.go@13ffb6b204fa624cf2c2fe311f265279ba15ec85",
+      "observation": "70 LOC readiness evaluator. Service.handleReady uses an inline repository/revision check instead; package is orphaned."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/internal/catalog/scenarios.go@13ffb6b204fa624cf2c2fe311f265279ba15ec85",
+      "observation": "62 LOC scenario loader/writer. Never imported; lab/scenario JSON is consumed elsewhere without this package."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/internal/fleet/loader.go@13ffb6b204fa624cf2c2fe311f265279ba15ec85",
+      "observation": "Together with inventory.go (~163 LOC), Go fleet helpers are orphaned; tools/lab/fleet_simulator.py reimplements inventory loading in Python."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/internal/health/aggregate.go@13ffb6b204fa624cf2c2fe311f265279ba15ec85",
+      "observation": "~30 LOC control-plane health aggregator. Architecture docs claim health aggregation on the control plane, but no import reaches this package."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/config/nodes/dp-01.json@13ffb6b204fa624cf2c2fe311f265279ba15ec85",
+      "observation": "Representative of 24 nearly identical 11-line node profiles differing mainly by id/session/state_root/status/zone. Mechanically adds ~264 LOC toward the 3015 count."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/tools/lab/backends.py@13ffb6b204fa624cf2c2fe311f265279ba15ec85",
+      "observation": "Loopback lab backends (echo/slow/half-close/reset/proxy-v2) are reachable via bin/lab and exercise dataplane stream behaviors."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/docs/operations.md@13ffb6b204fa624cf2c2fe311f265279ba15ec85",
+      "observation": "Documents operator workflow: build, lb-control-plane, lb-dataplane --config, lbctl, lab. Confirms intended entrypoints used in the reachability walk."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q6-ORPHAN-GO-PACKAGES",
+      "severity": "BLOCKER",
+      "status": "OBSERVED",
+      "criterion": "major modules must be reachable from real entrypoints/operator workflows",
+      "evidence_refs": [
+        "sovereign-l4-load-balancer/environment/sovereign-lb/cmd/lb-control-plane/main.go@13ffb6b204fa624cf2c2fe311f265279ba15ec85",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/bin/build@13ffb6b204fa624cf2c2fe311f265279ba15ec85",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/internal/recovery/bootstrap.go@13ffb6b204fa624cf2c2fe311f265279ba15ec85",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/internal/retention/manager.go@13ffb6b204fa624cf2c2fe311f265279ba15ec85",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/internal/readiness/evaluator.go@13ffb6b204fa624cf2c2fe311f265279ba15ec85",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/internal/catalog/scenarios.go@13ffb6b204fa624cf2c2fe311f265279ba15ec85",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/internal/fleet/loader.go@13ffb6b204fa624cf2c2fe311f265279ba15ec85",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/internal/health/aggregate.go@13ffb6b204fa624cf2c2fe311f265279ba15ec85"
+      ],
+      "why_it_matters": "recovery, retention, readiness, catalog, fleet, and health (~540 non-comment LOC) never enter any binary or lab import graph, so they inflate module count and mechanical LOC without production behavior.",
+      "minimal_remediation": "Wire each package into lb-control-plane/lbctl/lab operator paths with observable state effects, or delete them and replace the lost depth with reachable domain logic.",
+      "regression_risk": "Wiring may change readiness/recovery/retention semantics that solvers and tests assume; delete-only shrinks the environment and may drop below the floor further."
+    },
+    {
+      "id": "Q6-LOC-FLOOR-MISS",
+      "severity": "BLOCKER",
+      "status": "OBSERVED",
+      "criterion": "large_system_strict requires >=3000 substantive reachable solver-visible runtime/config LOC",
+      "evidence_refs": [
+        ".terminus/agents/QUALITY_AGENT_PROMPTS.md",
+        ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+        ".terminus/validate_task_complexity.py sovereign-l4-load-balancer",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/config/nodes/dp-01.json@13ffb6b204fa624cf2c2fe311f265279ba15ec85"
+      ],
+      "why_it_matters": "Mechanical 3015 includes ~540 orphan Go LOC and ~253 redundant near-clone node JSON lines beyond one template. Honest reachable substantive runtime/config is about 2200–2500, below the strict floor.",
+      "minimal_remediation": "Add reachable production logic (or fully wire orphans with real call sites) until honest reachable LOC clears 3000 without counting dead packages or duplicated inventory shells.",
+      "regression_risk": "Expanding LOC without coupling risks more padding; must grow behavior that entrypoints actually execute."
+    },
+    {
+      "id": "Q6-DEAD-DRAIN-WIRING",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "compiled modules must participate in runtime behavior, not constant-output or dead shells",
+      "evidence_refs": [
+        "sovereign-l4-load-balancer/environment/sovereign-lb/dataplane/src/main.cpp@13ffb6b204fa624cf2c2fe311f265279ba15ec85",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/dataplane/src/control.cpp@13ffb6b204fa624cf2c2fe311f265279ba15ec85",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/dataplane/src/drain.cpp@13ffb6b204fa624cf2c2fe311f265279ba15ec85"
+      ],
+      "why_it_matters": "DrainManager is constructed and injected into ControlClient but transition/collect are never called, so generation-retirement drain behavior is absent despite appearing as a major dataplane module.",
+      "minimal_remediation": "Invoke DrainManager::transition on activate/runtime swap and collect on a tick, or remove the unused drain surface from the claimed core.",
+      "regression_risk": "Enabling drain transitions changes eligibility during rollouts and may alter stream teardown timing."
+    },
+    {
+      "id": "Q6-NODE-JSON-CONFIG-VOLUME",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "separate production complexity from config-volume noise and duplicated resources",
+      "evidence_refs": [
+        "sovereign-l4-load-balancer/environment/sovereign-lb/config/nodes/dp-01.json@13ffb6b204fa624cf2c2fe311f265279ba15ec85",
+        ".terminus/validate_task_complexity.py sovereign-l4-load-balancer"
+      ],
+      "why_it_matters": "Twenty-four near-identical node profiles contribute ~264 mechanical LOC. Fleet inventory is operationally meaningful, but counting template clones as substantive implementation depth is padding toward the floor.",
+      "minimal_remediation": "Keep a compact inventory generator or shared defaults plus per-node deltas; do not rely on clone volume for the substantive LOC floor.",
+      "regression_risk": "Collapsing node files requires updating lab/fleet paths that expect per-node JSON."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "Wire or remove orphan Go packages (recovery, retention, readiness, catalog, fleet, health) so declared modules are entrypoint-reachable",
+    "Invoke dataplane DrainManager on activate/runtime transitions or drop the dead drain surface",
+    "Grow honest reachable runtime/config logic until substantive LOC clears 3000 without orphan/clone inflation",
+    "Re-run Q6 after production-scope environment changes"
+  ],
+  "do_not_change": [
+    "Do not treat Complexity Governor or runtime-authenticity PASS as a substitute for reachable depth",
+    "Do not inflate LOC with more unwired packages, duplicated thick templates, or vendor trees",
+    "Do not weaken the real coupled core (revision/rollout/control-stream, epoll proxy, eligibility, probing, checkpoints)"
+  ],
+  "next_gate": "Environment Builder / System Architect: eliminate unreachable padding and raise honest reachable substantive LOC above 3000, then re-request Q6",
+  "role_output": {
+    "CORE_LOGIC_DEPTH": "MEDIUM",
+    "RUNTIME_REACHABILITY": "MEDIUM",
+    "MODULE_DIVERSITY": "MEDIUM",
+    "CROSS_COMPONENT_COUPLING": "HIGH",
+    "TOY_LOGIC_RISK": "LOW",
+    "PADDING_RISK": "HIGH",
+    "SUBSTANTIVE_LOC_ASSESSMENT": "Mechanical environment inventory (validate_task_complexity) is 3015 non-blank non-comment lines across go/cpp/hpp/py/json/Dockerfile. Independent reachability walk finds ~540 LOC in never-imported Go packages (recovery 117, retention 98, readiness 70, catalog 62, fleet 163, health ~30) and ~253 LOC of near-clone node JSON beyond one 11-line template. DrainManager (~38 cpp + header) is constructed but never invoked. Honest substantive reachable runtime/config is approximately 2200–2500 LOC (reachable Go import closure ~900, all compiled dataplane cpp/hpp ~900, lab py ~265, unique desired/fleet/scenario config ~133, plus modest consumed node/profile variance). That is below the large_system_strict >=3000 floor. Creator claim of 3015 was not accepted as honest reachable depth.",
+    "MAJOR_MODULES": [
+      {
+        "name": "lb-control-plane / internal/api",
+        "responsibility": "Management HTTP apply/status/nodes/audit/ready/metrics and framed control-stream fanout",
+        "reachable": true,
+        "notes": "Core mutation and session authority path"
+      },
+      {
+        "name": "revision + snapshot + rollout + nodes",
+        "responsibility": "Idempotent revision authority, immutable generation store, prepare/activate quorum, session fencing",
+        "reachable": true,
+        "notes": "Strong cross-module invariants"
+      },
+      {
+        "name": "lb-dataplane proxy/eligibility/health/prober/checkpoint",
+        "responsibility": "epoll L4 forwarding, zonal eligibility, active probes, digest-checked restart checkpoints",
+        "reachable": true,
+        "notes": "Non-toy dataplane; dense but real logic"
+      },
+      {
+        "name": "dataplane DrainManager",
+        "responsibility": "Retire prior-generation targets and retain runtimes until streams drain",
+        "reachable": false,
+        "notes": "Constructed and injected; transition/collect never called"
+      },
+      {
+        "name": "internal/recovery|retention|readiness|catalog|fleet|health",
+        "responsibility": "Documented/adjacent control-plane concerns (bootstrap, GC, readiness, scenarios, fleet profiles, health aggregation)",
+        "reachable": false,
+        "notes": "~540 LOC never imported by cmds or lab"
+      },
+      {
+        "name": "tools/lab backends + fleet_simulator",
+        "responsibility": "Loopback backends and dataplane fleet bring-up for operator/lab workflows",
+        "reachable": true,
+        "notes": "Reached via bin/lab; Python reimplements fleet loading"
+      }
+    ],
+    "PARTIAL_FIX_TRAPS": [
+      "Fixing only apply/revision without rollout quorum + session fencing leaves prepare/activate stuck",
+      "Fixing proxy forwarding without eligibility/health/probe coupling breaks fail-open and unhealthy ejection",
+      "Fixing dataplane checkpoint load without control-plane CURRENT/generation store leaves restart asymmetry",
+      "Wiring readiness package without replacing inline /ready can fork two readiness truths",
+      "Enabling DrainManager without activate-path transition can leave draining targets still selected"
+    ],
+    "REMOVAL_TEST": "Removing ~25% of the reachable core would collapse claimed behavior: deleting proxy transfer/eligibility selection removes L4 service; deleting control-stream prepare/activate removes publication; deleting revision/snapshot removes authority and digests; deleting prober/health removes active eligibility dynamics; deleting checkpoint remove restart continuity. Separately, deleting the orphan Go packages and unused drain methods would not change current operator-visible runtime behavior—evidence they are padding relative to today's entrypoints.",
+    "REQUIRED_CHANGES": [
+      "Make recovery/retention/readiness/catalog/fleet/health reachable from lb-control-plane, lbctl, or lab with observable effects, or remove them",
+      "Call DrainManager::transition/collect from activate/runtime publish paths (or remove dead drain API)",
+      "Increase honest reachable substantive runtime/config LOC to >=3000 without orphan packages or duplicated node-JSON inflation",
+      "Re-audit Q6 after environment production-scope edits"
+    ]
+  }
+}

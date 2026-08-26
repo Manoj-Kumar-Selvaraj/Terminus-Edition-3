@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+import errno
 import os
 import socket
+import struct
 import subprocess
 import time
 import urllib.error
@@ -304,6 +306,158 @@ def lab_events(lab_state: Path) -> list[dict[str, Any]]:
     if not events_path.is_file():
         return []
     return json.loads(events_path.read_text(encoding="utf-8"))
+
+
+def recv_exact(connection: socket.socket, size: int) -> bytes:
+    chunks: list[bytes] = []
+    remaining = size
+    while remaining > 0:
+        chunk = connection.recv(remaining)
+        if not chunk:
+            raise ConnectionError("control stream closed early")
+        chunks.append(chunk)
+        remaining -= len(chunk)
+    return b"".join(chunks)
+
+
+def encode_control_frame(envelope: dict[str, Any]) -> bytes:
+    body = json.dumps(envelope, separators=(",", ":"), sort_keys=True).encode("utf-8")
+    return struct.pack(">I", len(body)) + body
+
+
+def read_control_frame(connection: socket.socket, timeout: float = 10.0) -> dict[str, Any]:
+    connection.settimeout(timeout)
+    prefix = recv_exact(connection, 4)
+    length = struct.unpack(">I", prefix)[0]
+    if length == 0 or length > 4 * 1024 * 1024:
+        raise ValueError(f"invalid control frame length {length}")
+    payload = recv_exact(connection, length)
+    decoded = json.loads(payload.decode("utf-8"))
+    assert isinstance(decoded, dict)
+    return decoded
+
+
+def control_hello(node_id: str, session_id: str, sequence: int = 1) -> dict[str, Any]:
+    return {
+        "type": "hello",
+        "node_id": node_id,
+        "session_id": session_id,
+        "sequence": sequence,
+        "sent_at": "2026-01-01T00:00:00Z",
+        "body": {
+            "capabilities": ["proxy-v2", "checkpoint-v1"],
+            "checkpoint_generation": 0,
+            "software": "0.1.0",
+            "zone": "zone-a",
+        },
+    }
+
+
+def wait_rollout_not_active(endpoint: str, timeout: float = 6.0) -> dict[str, Any]:
+    deadline = time.time() + timeout
+    last: dict[str, Any] = {}
+    while time.time() < deadline:
+        status, payload = http_json(f"{endpoint}/v1/status")
+        assert status == 200 and isinstance(payload, dict)
+        last = payload
+        if payload.get("rollout", {}).get("phase") == "active" or int(payload.get("active_generation") or 0) > 0:
+            pytest.fail("rollout/authority advanced unexpectedly")
+        time.sleep(0.25)
+    return last
+
+
+@contextmanager
+def hung_backend_port() -> Iterator[int]:
+    """Saturate a listen backlog so further outbound connects stall in SYN/connect."""
+    listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    listener.bind(("127.0.0.1", 0))
+    listener.listen(1)
+    port = int(listener.getsockname()[1])
+    fillers: list[socket.socket] = []
+    stalled = False
+    try:
+        for _ in range(128):
+            candidate = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            candidate.settimeout(0.05)
+            try:
+                candidate.connect(("127.0.0.1", port))
+            except (TimeoutError, socket.timeout):
+                candidate.close()
+                stalled = True
+                break
+            except OSError:
+                candidate.close()
+                stalled = True
+                break
+            fillers.append(candidate)
+        if not stalled:
+            # Last attempt: nonblocking connect should report EINPROGRESS when full.
+            probe = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            probe.setblocking(False)
+            result = probe.connect_ex(("127.0.0.1", port))
+            fillers.append(probe)
+            stalled = result in {0, errno.EINPROGRESS, errno.EWOULDBLOCK, errno.EAGAIN} and result != 0
+        if not stalled:
+            listener.close()
+            for filler in fillers:
+                try:
+                    filler.close()
+                except OSError:
+                    pass
+            raise RuntimeError("unable to create a stalled connect target on loopback")
+        yield port
+    finally:
+        for filler in fillers:
+            try:
+                filler.close()
+            except OSError:
+                pass
+        try:
+            listener.close()
+        except OSError:
+            pass
+
+
+def scenario_active_health_fail() -> dict[str, Any]:
+    desired = scenario_desired()
+    group = desired["target_groups"][0]
+    group["policy"] = "round_robin"
+    group["zone_policy"] = "cross_zone"
+    group["fail_open"] = False
+    group["health"] = {
+        "interval_ms": 200,
+        "timeout_ms": 100,
+        "healthy_threshold": 2,
+        "unhealthy_threshold": 2,
+        "passive_failures": 3,
+        "passive_window_ms": 10000,
+        "ejection_ms": 15000,
+        "send": "PING\n",
+        "expect": "PONG\n",
+    }
+    group["targets"] = [
+        {
+            "id": "echo-a",
+            "address": "127.0.0.1",
+            "port": 19001,
+            "zone": "zone-a",
+            "administrative_state": "enabled",
+            "weight": 1,
+            "incarnation": 1,
+        }
+    ]
+    desired["listeners"] = [desired["listeners"][0]]
+    desired["target_groups"] = [group]
+    return desired
+
+
+def scenario_active_health_recover(base: dict[str, Any]) -> dict[str, Any]:
+    recovered = json.loads(json.dumps(base))
+    recovered["revision"] = int(base["revision"]) + 1
+    recovered["target_groups"][0]["health"]["send"] = "PING\n"
+    recovered["target_groups"][0]["health"]["expect"] = "PING\n"
+    return recovered
 
 
 # --- P2P smoke ---
@@ -637,6 +791,161 @@ def test_f2p_least_connections_prefers_lower_load(lab_state: Path, control_state
             slow_sock.close()
 
 
+def test_f2p_connect_timeout_closes_stalled_backend(lab_state: Path, control_state: Path, dataplane_state: Path) -> None:
+    with hung_backend_port() as hung_port:
+        desired = scenario_desired()
+        desired["listeners"] = [
+            {
+                "name": "echo",
+                "address": "127.0.0.1",
+                "port": 18001,
+                "target_group": "echo-pool",
+                "proxy_protocol_v2": False,
+                "connect_timeout_ms": 400,
+                "idle_timeout_ms": 30000,
+                "buffer_bytes": 65536,
+            }
+        ]
+        desired["target_groups"] = [
+            {
+                "name": "echo-pool",
+                "policy": "round_robin",
+                "zone_policy": "cross_zone",
+                "fail_open": False,
+                "drain_timeout_ms": 30000,
+                "health": {
+                    "interval_ms": 5000,
+                    "timeout_ms": 500,
+                    "healthy_threshold": 2,
+                    "unhealthy_threshold": 3,
+                    "passive_failures": 3,
+                    "passive_window_ms": 10000,
+                    "ejection_ms": 15000,
+                },
+                "targets": [
+                    {
+                        "id": "hung-a",
+                        "address": "127.0.0.1",
+                        "port": hung_port,
+                        "zone": "zone-a",
+                        "administrative_state": "enabled",
+                        "weight": 1,
+                        "incarnation": 1,
+                    }
+                ],
+            }
+        ]
+        with running_stack(lab_state, control_state, dataplane_state) as stack:
+            assert apply(stack["management"], write_desired(lab_state, desired, "connect-timeout.json"), "connect-timeout")[0] in {
+                200,
+                202,
+            }
+            wait_active(stack["management"])
+            started = time.time()
+            with socket.create_connection(("127.0.0.1", 18001), timeout=5) as client:
+                client.settimeout(3.0)
+                try:
+                    client.sendall(b"x")
+                except OSError:
+                    pass
+                data = b""
+                try:
+                    data = client.recv(16)
+                except (TimeoutError, socket.timeout, ConnectionResetError, OSError):
+                    data = b""
+            elapsed = time.time() - started
+            assert data == b""
+            assert elapsed < 2.5, f"connect timeout did not tear down promptly ({elapsed:.2f}s)"
+
+
+def test_f2p_idle_timeout_tears_down_quiet_stream(lab_state: Path, control_state: Path, dataplane_state: Path) -> None:
+    desired = scenario_desired()
+    desired["listeners"][0]["idle_timeout_ms"] = 700
+    desired["listeners"] = [desired["listeners"][0]]
+    desired["target_groups"] = [desired["target_groups"][0]]
+    desired["target_groups"][0]["targets"] = [
+        {
+            "id": "echo-a",
+            "address": "127.0.0.1",
+            "port": 19001,
+            "zone": "zone-a",
+            "administrative_state": "enabled",
+            "weight": 1,
+            "incarnation": 1,
+        }
+    ]
+    desired["target_groups"][0]["fail_open"] = False
+    desired["target_groups"][0]["zone_policy"] = "cross_zone"
+    with running_stack(lab_state, control_state, dataplane_state) as stack:
+        assert apply(stack["management"], write_desired(lab_state, desired, "idle-timeout.json"), "idle-timeout")[0] in {200, 202}
+        wait_active(stack["management"])
+        with socket.create_connection(("127.0.0.1", 18001), timeout=5) as client:
+            client.settimeout(3.0)
+            client.sendall(b"hi")
+            assert recv_all(client, 2) == b"hi"
+            started = time.time()
+            data = b"sentinel"
+            try:
+                data = client.recv(16)
+            except (TimeoutError, socket.timeout):
+                data = b"timeout"
+            except (ConnectionResetError, OSError):
+                data = b""
+            elapsed = time.time() - started
+            assert data == b"", f"idle timeout should close quietly, got {data!r}"
+            assert elapsed < 2.5
+
+
+def test_f2p_slow_backend_survives_full_buffer_backpressure(lab_state: Path, control_state: Path, dataplane_state: Path) -> None:
+    desired = scenario_desired()
+    desired["listeners"] = [
+        {
+            "name": "echo",
+            "address": "127.0.0.1",
+            "port": 18001,
+            "target_group": "echo-pool",
+            "proxy_protocol_v2": False,
+            "connect_timeout_ms": 1000,
+            "idle_timeout_ms": 30000,
+            "buffer_bytes": 4096,
+        }
+    ]
+    desired["target_groups"] = [
+        {
+            "name": "echo-pool",
+            "policy": "round_robin",
+            "zone_policy": "cross_zone",
+            "fail_open": False,
+            "drain_timeout_ms": 30000,
+            "health": desired["target_groups"][0]["health"],
+            "targets": [
+                {
+                    "id": "slow-b",
+                    "address": "127.0.0.1",
+                    "port": 19002,
+                    "zone": "zone-a",
+                    "administrative_state": "enabled",
+                    "weight": 1,
+                    "incarnation": 1,
+                }
+            ],
+        }
+    ]
+    payload = b"B" * 16384
+    with running_stack(lab_state, control_state, dataplane_state) as stack:
+        assert apply(stack["management"], write_desired(lab_state, desired, "backpressure.json"), "backpressure")[0] in {200, 202}
+        wait_active(stack["management"])
+        with socket.create_connection(("127.0.0.1", 18001), timeout=5) as client:
+            client.settimeout(20.0)
+            offset = 0
+            while offset < len(payload):
+                sent = client.send(payload[offset : offset + 1024])
+                assert sent > 0
+                offset += sent
+            client.shutdown(socket.SHUT_WR)
+            assert recv_all(client, len(payload)) == payload
+
+
 # --- REQ_READINESS ---
 
 
@@ -690,6 +999,104 @@ def test_f2p_metrics_labels_bounded(lab_state: Path, control_state: Path, datapl
         metrics = http_text(f"{stack['management']}/metrics")
         generation_labels = [line for line in metrics.splitlines() if "generation=" in line]
         assert len(generation_labels) <= 2
+
+
+def test_f2p_torn_control_frame_does_not_advance_authority(lab_state: Path, control_state: Path, dataplane_state: Path) -> None:
+    """Torn length-prefix/body on the control channel must not count toward quorum."""
+    del dataplane_state  # control-plane-only probe
+    management_port = free_port()
+    control_port = free_port()
+    env = os.environ.copy()
+    env["SOVEREIGN_LB_HOME"] = str(ROOT)
+    with managed_process([str(LAB), "start", "--state", str(lab_state)], cwd=ROOT, env=env):
+        wait_port("127.0.0.1", 19001, timeout=15)
+        with managed_process(
+            [str(CONTROL), "-management", f"127.0.0.1:{management_port}", "-control", f"127.0.0.1:{control_port}", "-state", str(control_state)],
+            cwd=ROOT,
+            env=env,
+        ):
+            wait_port("127.0.0.1", management_port, timeout=15)
+            endpoint = f"http://127.0.0.1:{management_port}"
+            with socket.create_connection(("127.0.0.1", control_port), timeout=5) as node:
+                node.sendall(encode_control_frame(control_hello("dp-probe", "dp-probe-0001")))
+                assert apply(endpoint, desired_path(lab_state), "torn-frame")[0] in {200, 202}
+                prepare = read_control_frame(node, timeout=10.0)
+                assert prepare.get("type") == "prepare"
+                # Announce a body length then close before delivering it.
+                node.sendall(struct.pack(">I", 64))
+                node.sendall(b'{"type":"prepared"')
+            wait_rollout_not_active(endpoint, timeout=5.0)
+            authority = json.loads((control_state / "authority.json").read_text(encoding="utf-8"))
+            assert int(authority.get("accepted_revision") or 0) == 1
+            status, payload = http_json(f"{endpoint}/v1/status")
+            assert status == 200 and isinstance(payload, dict)
+            assert int(payload.get("active_generation") or 0) == 0
+            assert payload.get("rollout", {}).get("phase") != "active"
+
+
+def test_f2p_control_session_sequence_mismatch_rejected(lab_state: Path, control_state: Path, dataplane_state: Path) -> None:
+    """Stale session or sequence reuse must not progress prepare/activate quorum."""
+    del dataplane_state
+    management_port = free_port()
+    control_port = free_port()
+    env = os.environ.copy()
+    env["SOVEREIGN_LB_HOME"] = str(ROOT)
+    with managed_process([str(LAB), "start", "--state", str(lab_state)], cwd=ROOT, env=env):
+        wait_port("127.0.0.1", 19001, timeout=15)
+        with managed_process(
+            [str(CONTROL), "-management", f"127.0.0.1:{management_port}", "-control", f"127.0.0.1:{control_port}", "-state", str(control_state)],
+            cwd=ROOT,
+            env=env,
+        ):
+            wait_port("127.0.0.1", management_port, timeout=15)
+            endpoint = f"http://127.0.0.1:{management_port}"
+            with socket.create_connection(("127.0.0.1", control_port), timeout=5) as node:
+                node.sendall(encode_control_frame(control_hello("dp-probe", "dp-probe-0001")))
+                assert apply(endpoint, desired_path(lab_state), "fence-session")[0] in {200, 202}
+                prepare = read_control_frame(node, timeout=10.0)
+                assert prepare.get("type") == "prepare"
+                bad_session = {
+                    "type": "prepared",
+                    "node_id": "dp-probe",
+                    "session_id": "dp-probe-stale",
+                    "sequence": 2,
+                    "sent_at": "2026-01-01T00:00:02Z",
+                    "generation": prepare["generation"],
+                    "digest": prepare["digest"],
+                    "body": {},
+                }
+                node.sendall(encode_control_frame(bad_session))
+            wait_rollout_not_active(endpoint, timeout=4.0)
+
+            high_quorum = scenario_desired()
+            high_quorum["revision"] = 2
+            high_quorum["rollout"]["prepare_quorum"] = 2
+            high_quorum["rollout"]["activate_quorum"] = 2
+            with socket.create_connection(("127.0.0.1", control_port), timeout=5) as node:
+                node.sendall(encode_control_frame(control_hello("dp-probe", "dp-probe-0002", sequence=1)))
+                assert apply(endpoint, write_desired(lab_state, high_quorum, "fence-seq.json"), "fence-seq")[0] in {200, 202}
+                prepare = read_control_frame(node, timeout=10.0)
+                assert prepare.get("type") == "prepare"
+                first = {
+                    "type": "prepared",
+                    "node_id": "dp-probe",
+                    "session_id": "dp-probe-0002",
+                    "sequence": 2,
+                    "sent_at": "2026-01-01T00:00:03Z",
+                    "generation": prepare["generation"],
+                    "digest": prepare["digest"],
+                    "body": {},
+                }
+                node.sendall(encode_control_frame(first))
+                # Reuse sequence with different content — must not satisfy quorum.
+                reused = dict(first)
+                reused["body"] = {"detail": "different"}
+                reused["sent_at"] = "2026-01-01T00:00:04Z"
+                try:
+                    node.sendall(encode_control_frame(reused))
+                except OSError:
+                    pass
+            wait_rollout_not_active(endpoint, timeout=4.0)
 
 
 # --- REQ_ELIGIBILITY ---
@@ -857,6 +1264,50 @@ def test_f2p_passive_ejection_skips_reset_target(lab_state: Path, control_state:
         assert accepted
 
 
+def test_f2p_active_health_failure_skips_then_recovers(lab_state: Path, control_state: Path, dataplane_state: Path) -> None:
+    failing = scenario_active_health_fail()
+    recovering = scenario_active_health_recover(failing)
+    with running_stack(lab_state, control_state, dataplane_state) as stack:
+        assert apply(stack["management"], write_desired(lab_state, failing, "active-fail.json"), "active-fail")[0] in {200, 202}
+        wait_active(stack["management"])
+        deadline = time.time() + 8.0
+        while time.time() < deadline:
+            try:
+                with socket.create_connection(("127.0.0.1", 18001), timeout=1) as client:
+                    client.settimeout(0.5)
+                    client.sendall(b"probe")
+                    echoed = recv_all(client, 1)
+                    if echoed:
+                        time.sleep(0.3)
+                        continue
+            except (OSError, ConnectionError, TimeoutError):
+                pass
+            # Sustained skip after unhealthy_threshold probe failures.
+            expect_no_forwarding("127.0.0.1", 18001)
+            break
+        else:
+            pytest.fail("active health failure should skip the target under fail_open=false")
+
+        assert apply(stack["management"], write_desired(lab_state, recovering, "active-recover.json"), "active-recover")[0] in {
+            200,
+            202,
+        }
+        wait_active(stack["management"])
+        recovered = False
+        recover_deadline = time.time() + 8.0
+        while time.time() < recover_deadline:
+            try:
+                with socket.create_connection(("127.0.0.1", 18001), timeout=2) as client:
+                    client.settimeout(2.0)
+                    client.sendall(b"ok")
+                    if recv_all(client, 2) == b"ok":
+                        recovered = True
+                        break
+            except (OSError, ConnectionError, TimeoutError):
+                time.sleep(0.3)
+        assert recovered, "target should become eligible again after healthy_threshold successes"
+
+
 # --- REQ_RECOVERY ---
 
 
@@ -912,3 +1363,77 @@ def test_f2p_corrupt_current_pointer_falls_back(lab_state: Path, control_state: 
         status, payload = http_json(f"http://127.0.0.1:{stack['status_port']}/status")
         assert status == 200 and isinstance(payload, dict)
         assert payload.get("active_generation", 0) >= 1
+
+
+def test_f2p_control_plane_restart_restores_authority_fences(lab_state: Path, control_state: Path, dataplane_state: Path) -> None:
+    management_port = free_port()
+    control_port = free_port()
+    status_port = free_port()
+    node_config = write_node_config(dataplane_state, NODE_CONFIG, control_port, status_port)
+    env = os.environ.copy()
+    env["SOVEREIGN_LB_HOME"] = str(ROOT)
+    with managed_process([str(LAB), "start", "--state", str(lab_state)], cwd=ROOT, env=env):
+        wait_port("127.0.0.1", 19001, timeout=15)
+        control = subprocess.Popen(
+            [str(CONTROL), "-management", f"127.0.0.1:{management_port}", "-control", f"127.0.0.1:{control_port}", "-state", str(control_state)],
+            cwd=str(ROOT),
+            env=env,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        try:
+            wait_port("127.0.0.1", management_port, timeout=15)
+            with managed_process([str(DATAPLANE), "--config", str(node_config)], cwd=ROOT, env=env):
+                wait_port("127.0.0.1", status_port, timeout=15)
+                endpoint = f"http://127.0.0.1:{management_port}"
+                first = apply(endpoint, desired_path(lab_state), "cp-restart-1")
+                assert first[0] in {200, 202}
+                wait_active(endpoint)
+                authority_before = json.loads((control_state / "authority.json").read_text(encoding="utf-8"))
+                accepted_revision = int(authority_before["accepted_revision"])
+                accepted_digest = str(authority_before.get("accepted_digest") or "")
+                assert accepted_revision == 1
+                assert len(accepted_digest) == 64
+                generation = first[1]["generation"]
+
+                control.terminate()
+                try:
+                    control.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    control.kill()
+                    control.wait(timeout=2)
+                time.sleep(0.3)
+
+                management_port = free_port()
+                control = subprocess.Popen(
+                    [str(CONTROL), "-management", f"127.0.0.1:{management_port}", "-control", f"127.0.0.1:{control_port}", "-state", str(control_state)],
+                    cwd=str(ROOT),
+                    env=env,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
+                wait_port("127.0.0.1", management_port, timeout=15)
+                endpoint = f"http://127.0.0.1:{management_port}"
+
+                status, payload = http_json(f"{endpoint}/v1/status")
+                assert status == 200 and isinstance(payload, dict)
+                assert payload["accepted_revision"] == accepted_revision
+                authority_after = json.loads((control_state / "authority.json").read_text(encoding="utf-8"))
+                assert authority_after.get("accepted_digest") == accepted_digest
+
+                replay = apply(endpoint, desired_path(lab_state), "cp-restart-1")
+                assert replay[0] == 200
+                assert replay[1]["generation"] == generation
+
+                stale = scenario_desired()
+                stale["revision"] = 1
+                stale_status, _payload = apply(endpoint, write_desired(lab_state, stale, "cp-stale.json"), "cp-stale")
+                assert stale_status == 409
+        finally:
+            if control.poll() is None:
+                control.terminate()
+                try:
+                    control.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    control.kill()
+                    control.wait(timeout=2)

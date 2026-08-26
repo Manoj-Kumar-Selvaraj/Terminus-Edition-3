@@ -6,7 +6,7 @@ Status views expose bounded summaries: desired revision, active and candidate ge
 
 `GET /v1/audit` returns a bounded ring of apply and control events as JSON: `events` (each with timestamp, actor class, operation, optional digest prefix, revision, generation, outcome, and fixed reason) and `dropped` (count of evicted events). Audit entries never include traffic bytes, full client addresses, idempotency keys, or request bodies.
 
-Metrics use stable names and low-cardinality labels. Allowed labels are operation, result, message type, listener name from bounded configuration, zone from bounded inventory, and reason code from a fixed set. Generation, digest, session ID, source address, target address, and connection ID are values in status where needed, not metric labels.
+`GET /metrics` exposes Prometheus text exposition (`text/plain; version=0.0.4`). Metrics use stable names and low-cardinality labels. Allowed labels are operation, result, message type, listener name from bounded configuration, zone from bounded inventory, and reason code from a fixed set. Generation, digest, session ID, source address, target address, and connection ID are values in status where needed, not metric labels; the exposition must not attach high-cardinality `generation=` labels.
 
 Control-plane counters cover apply outcomes, protocol frames, session replacement, prepare and activate outcomes, persistence errors, health transitions, and audit drops. Gauges cover connected current sessions, rollout quorum progress, retained generations, and bounded queue utilization.
 

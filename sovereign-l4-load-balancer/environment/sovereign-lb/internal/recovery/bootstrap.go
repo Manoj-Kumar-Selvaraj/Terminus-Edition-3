@@ -109,6 +109,19 @@ func (bootstrap *Bootstrap) LoadDesired(path string) (model.Desired, error) {
 	return desired, nil
 }
 
+func (bootstrap *Bootstrap) AlignActive(report Report) error {
+	if report.ActiveGeneration == 0 {
+		return nil
+	}
+	if _, err := bootstrap.Repository.Load(report.ActiveGeneration); err != nil {
+		return fmt.Errorf("active generation %d is not loadable after recovery: %w", report.ActiveGeneration, err)
+	}
+	if current, err := CurrentPointer(bootstrap.Root); err == nil && current != report.ActiveGeneration {
+		return fmt.Errorf("CURRENT pointer %d disagrees with recovered active %d", current, report.ActiveGeneration)
+	}
+	return nil
+}
+
 func CurrentPointer(root string) (uint64, error) {
 	data, err := os.ReadFile(filepath.Join(root, "generations", "CURRENT"))
 	if err != nil {

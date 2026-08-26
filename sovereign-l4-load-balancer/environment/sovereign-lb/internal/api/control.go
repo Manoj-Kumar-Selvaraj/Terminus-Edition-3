@@ -58,14 +58,23 @@ func (service *Service) serveNode(ctx context.Context, connection net.Conn, maxi
 		envelope, readErr := stream.Read()
 		if readErr != nil { if !errors.Is(readErr, io.EOF) { log.Printf("node %s control read: %v", hello.NodeID, readErr) }; return }
 		if envelope.NodeID != hello.NodeID || envelope.SessionID != hello.SessionID { return }
-		if _, acceptErr := service.nodes.Accept(envelope, time.Now()); acceptErr != nil { return }
-		if envelope.Type == "prepared" || envelope.Type == "active" || envelope.Type == "rejected" {
-			previous, _ := service.rollout.Snapshot()
-			state, recordErr := service.rollout.Record(envelope, time.Now(), 15*time.Second)
-			if recordErr == nil && previous.Phase == "preparing" && state.Phase == "activating" {
-				service.dispatchActivate(state)
+		nodeStatus, acceptErr := service.nodes.Accept(envelope, time.Now())
+		if acceptErr != nil { return }
+		if envelope.Type == "prepared" || envelope.Type == "active" || envelope.Type == "rejected" || envelope.Type == "status" {
+			if envelope.Type == "status" || envelope.Type == "active" {
+				service.health.ObserveNode(nodeStatus, time.Now())
 			}
-			if recordErr == nil && state.Phase == "active" { service.mutex.Lock(); service.active = state.Generation; service.mutex.Unlock(); _ = service.repository.SetCurrent(state.Generation) }
+			if envelope.Type == "prepared" || envelope.Type == "active" || envelope.Type == "rejected" {
+				previous, _ := service.rollout.Snapshot()
+				state, recordErr := service.rollout.Record(envelope, time.Now(), 15*time.Second)
+				if recordErr == nil && previous.Phase == "preparing" && state.Phase == "activating" {
+					service.dispatchActivate(state)
+				}
+				if recordErr == nil && state.Phase == "active" {
+					_ = service.repository.SetCurrent(state.Generation)
+					service.promoteActive(state.Generation)
+				}
+			}
 		}
 	}
 }
