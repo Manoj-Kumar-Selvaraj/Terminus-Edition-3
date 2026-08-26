@@ -1,0 +1,19 @@
+{
+  "evidence_refs": [],
+  "invocation_id": "inv_7d92ec178651810ea06c0a2f519d2ce5ad021df8fffd4fb919adb4def3ee548d",
+  "output_task_commit": "ce3862668b995de01da3d8442f060f30a87ddc3f",
+  "outputs": {
+    "CHECKS": [
+      "PASS: flat task root contains README.md, environment/, instruction.md, solution/, task.toml and tests/ with no private control-plane files inside the task package.",
+      "PASS: task.toml retains version 2.0, absolute artifact/workdir /app/fleet-automation, public network mode, separate verifier environment and bounded agent/verifier timeouts.",
+      "FIXED: added environment/.dockerignore so solver build context excludes git/cache/private control-plane/solution/tests material.",
+      "FIXED: added a separate verifier Dockerfile, pinned verifier dependency lock and tests/test.sh reward/CTRF runner.",
+      "FIXED: added LF enforcement for shell scripts and made solution/verifier entrypoints executable.",
+      "FIXED: solution/solve.sh now targets the declared runtime artifact /app/fleet-automation while preserving the approved repair body in solution/repair.sh.",
+      "PASS: verifier suite remains 27 F2P / 6 P2P with unchanged private test-map semantics; packaging repair does not add or remove behavioral cases."
+    ],
+    "RERUN": "Q7 same-chat reinspection of canonical materialized snapshot 9e9f68e7c747526a3ed556c7126e40844fd05811 and logical task snapshot ce3862668b995de01da3d8442f060f30a87ddc3f after packaging/runtime-entrypoint repair."
+  },
+  "schema_version": "1.0",
+  "status": "FIXED"
+}
