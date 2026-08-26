@@ -1,0 +1,75 @@
+{
+  "schema_version": "1.0",
+  "mode": "RECORD",
+  "task_id": "ansible-fleet-configuration-recovery",
+  "task_commit": "2285842424d9ad2e42df5e067a3dd5fe4a96e3f2",
+  "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+  "expected_repository_head": "f0f1062aa0815e40ecb4c3aeb17052dc4b74a057",
+  "stage_id": "INSTRUCTION_DRAFT",
+  "inputs": {
+    "CREATION_RULE_CONTEXT": {
+      "CONTROL_PLANE_COMMIT": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "CREATION_PROFILE": "large_system_strict",
+      "KNOWN_POLICY_CONFLICTS": []
+    },
+    "APPROVED_SOLVER_VISIBLE_REQUIREMENT_CONTRACT": {
+      "instruction_path": "ansible-fleet-configuration-recovery/instruction.md",
+      "objective": "Recover the inherited multi-site Ansible fleet automation under /app/fleet-automation as a supported, portable and convergent production configuration system.",
+      "material_requirements": [
+        "supported Ansible runtime with project-local configuration/bootstrap discovery",
+        "portable repository-local role discovery with correct role identity, dependency ordering, handler behavior and host boundaries",
+        "Vault-encrypted sensitive data at rest with noninteractive documented execution",
+        "valid Ansible YAML, task/action and module schemas without shell bypasses",
+        "correct heterogeneous endpoint/site/policy/telemetry rendering including cross-host aggregation, optional groups, numeric ordering, IPv4 and IPv6",
+        "preserve production service/policy catalogs, three-site inventory, operator evidence, state/rollout engines, destinations and operating contracts",
+        "full supplied fleet playbook and semantic validation succeed",
+        "unchanged second execution converges idempotently without churn, duplication or state drift"
+      ],
+      "referenced_contracts": [
+        "/app/fleet-automation/environment/runtime/logs/incident-bootstrap.log",
+        "/app/fleet-automation/environment/runtime/logs/incident-playbook.log",
+        "/app/fleet-automation/environment/runtime/reports/incident-handoff.json",
+        "/app/fleet-automation/environment/runtime/evidence/config-selection.txt",
+        "/app/fleet-automation/environment/docs/official-ansible-sources.txt",
+        "/app/fleet-automation/environment/inventory/hosts.yml",
+        "/app/fleet-automation/environment/inventory/group_vars/all.yml",
+        "/app/fleet-automation/environment/data/service-catalog.yml",
+        "/app/fleet-automation/environment/data/policy-catalog.yml"
+      ]
+    },
+    "TASK_WRITING_PROFILE": {
+      "avoid": ["invented incidents or personal claims", "rubric-like hidden-test enumeration", "style-driven omission of lifecycle constraints", "copied distinctive source wording", "task details copied from unrelated calibration domains"],
+      "must_preserve": ["Recover a realistic multi-site Ansible fleet configuration system from layered controller, discovery, Vault, orchestration, parser/schema, Jinja/data-shape, IPv6, telemetry, policy-ordering and convergence failures while preserving production-scale catalogs and operator evidence.", "ANSIBLE_FLEET_CONFIGURATION_RECOVERY", "Repair parser/task/module-schema errors without shell bypasses.", "Use a supported Ansible runtime and restore project-local config/bootstrap behavior.", "Full execution succeeds and unchanged second run is idempotent.", "Render heterogeneous endpoint/site/policy/telemetry data correctly including IPv6.", "Correct dependency ordering and host responsibility boundaries.", "Preserve production topology, catalogs, evidence and operating contracts.", "Project roles must resolve portably from the repository.", "Sensitive production data must be Vault-encrypted at rest and available noninteractively to the project run."],
+      "structure": ["state the approved engineering objective first", "preserve exact public contracts and hard safety/state constraints", "reference solver-visible technical contracts instead of reproducing hidden verifier rows", "keep implementation-neutral observable outcomes"],
+      "voice": "direct platform engineering change request"
+    },
+    "VALIDATED_HUMAN_WRITING_CALIBRATION": {
+      "CALIBRATION_PAIR_ID": "hwpair-657ac58f8c9cd24b98c1",
+      "DOMAIN_PROFILE": "compiler_runtime",
+      "EXTERNAL_DATASET_COVERAGE": "DEGRADED",
+      "REVIEWER_CALIBRATION_ID": "hwcal-reviewer-9a2b3a0ed9fe0900e317",
+      "WRITER_CALIBRATION_ID": "hwcal-writer-1d33be177ba353ee75c7"
+    }
+  },
+  "result": {
+    "status": "READY",
+    "output_task_commit": "6b519b95c6c25cdddb8efc284a9f7436cf0e55f6",
+    "outputs": {
+      "INSTRUCTION_PATH": "ansible-fleet-configuration-recovery/instruction.md",
+      "REQUIREMENT_COVERAGE": {
+        "controller_and_discovery": "supported controller, project-local config and role discovery are explicit",
+        "secrets_and_schema": "Vault-at-rest/noninteractive execution plus valid task/module schemas without shell bypass are explicit",
+        "data_and_networking": "heterogeneous data, aggregation, optional groups, numeric policy ordering, IPv4 and IPv6 are explicit",
+        "preservation": "production catalogs, inventory, evidence, state/rollout engines and operating contracts are explicit",
+        "runtime_and_convergence": "full execution, semantic validation and unchanged second-run idempotency are explicit"
+      },
+      "DOC_REFERENCES": ["/app/fleet-automation/environment/runtime/logs/incident-bootstrap.log", "/app/fleet-automation/environment/runtime/logs/incident-playbook.log", "/app/fleet-automation/environment/runtime/reports/incident-handoff.json", "/app/fleet-automation/environment/runtime/evidence/config-selection.txt", "/app/fleet-automation/environment/docs/official-ansible-sources.txt"],
+      "INSTRUCTION_SHAPE": "One direct platform-engineering orientation paragraph, nine concise requirements, and one generality/preservation close; within the Edition-3 <=20-bullet shape.",
+      "HANDOFF_TEST": "A platform engineer can identify the runtime root, controller/discovery, Vault, orchestration/schema, heterogeneous data/IPv6, preservation and convergence obligations using only solver-visible task evidence.",
+      "REVERSE_OUTLINE_RISK": "LOW: requirements are grouped by operator-visible engineering responsibility rather than verifier or private defect ordering.",
+      "SPEC_FILE_LOOPHOLE": "CLOSED: every material required outcome is owned by the instruction; referenced files provide inherited evidence/contracts rather than hidden grading requirements.",
+      "UNRESOLVED_GAPS": []
+    },
+    "evidence_refs": []
+  }
+}
