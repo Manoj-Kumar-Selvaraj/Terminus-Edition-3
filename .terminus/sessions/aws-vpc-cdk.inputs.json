@@ -1,0 +1,50 @@
+{
+  "CREATION_REQUEST": "Create a brand new Node.js AWS CDK module for an AWS VPC baseline, using a temporary local checkout of terraform-aws-modules/terraform-aws-vpc as feature-family reference only. The task is synthesis and testing only; no deployment is required.",
+  "CREATION_RULE_CONTEXT": {
+    "CONTROL_PLANE_COMMIT": "a4383c93b33d8078c9d5aaec885d9b666e5fc2f3",
+    "RULE_SOURCES": [
+      "TERMINUS_3_AI_INSTRUCTIONS.md",
+      ".terminus/AGENT_SYSTEM.md",
+      ".terminus/agents/CREATION_CONTROLLER.md",
+      ".terminus/agents/CREATION_PIPELINE.md",
+      ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+      ".terminus/reviewers/REVIEWER_CHECKLIST.md",
+      ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+      ".terminus/agents/STAGE_CONTRACTS.md",
+      ".terminus/agents/stage_contracts.json"
+    ],
+    "ACTIVE_VALIDATORS": [
+      ".terminus/validate_agent_system.py",
+      ".terminus/validate_stage_contracts.py",
+      ".terminus/validate_defect_topology.py",
+      ".terminus/validate_environment_complexity.py",
+      ".terminus/validate_task_complexity.py",
+      ".terminus/validate_runtime_authenticity.py",
+      ".terminus/validate_review_freshness.py",
+      ".terminus/validate_quality_interlock.py"
+    ],
+    "CREATION_PROFILE": "large_system",
+    "NETWORK_ENVIRONMENT_CONSTRAINTS": "Public network may be used for package installation during image build; task execution is local CDK synthesis only with no AWS deploy or credential dependency.",
+    "KNOWN_POLICY_CONFLICTS": []
+  },
+  "REQUESTED_DOMAIN": "AWS VPC network infrastructure authored as a Node.js AWS CDK module",
+  "REQUESTED_PROFILE": "large_system",
+  "CREATION_PROFILE": "large_system",
+  "NETWORK_ENVIRONMENT_CONSTRAINTS": "No AWS deployment. No AWS credentials. The verifier synthesizes CloudFormation locally and inspects resource semantics.",
+  "APPROVED_WORK_PACKAGE": {
+    "id": "AWS-VPC-CDK",
+    "objective": "Complete a Node.js AWS CDK construct that synthesizes a multi-AZ VPC baseline with routing, endpoints, ACLs, flow logs, validation, and stable outputs.",
+    "persona": "cloud platform engineer",
+    "scope_exclusions": ["AWS deployment", "live AWS account lookups", "credential use"]
+  },
+  "APPROVED_OPERATIONAL_REQUIREMENTS": [
+    "Synthesize VPC, secondary CIDR, IPv6 allocation, subnet tiers, route tables, gateway attachments, NAT gateways, egress-only gateway, endpoints, NACLs, flow logs, and outputs from JSON intent.",
+    "Honor per-AZ NAT, single-NAT, disabled-NAT, database isolation, endpoint tier selection, private DNS, and least-privilege flow-log policy semantics.",
+    "Reject invalid CIDR, endpoint service, tier, and NAT coverage inputs before synthesis.",
+    "Produce deterministic CloudFormation output for identical input."
+  ],
+  "SOLVER_VISIBLE_DOC_PLAN": [
+    "environment/docs/vpc-cdk-contract.md"
+  ],
+  "APPROVED_SOLVER_VISIBLE_REQUIREMENT_CONTRACT": ".terminus/contracts/aws-vpc-cdk/solver-visible-requirements.json"
+}
