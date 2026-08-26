@@ -1,0 +1,454 @@
+{
+  "authority": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "policy_versions": {},
+    "task_commit": "fdf8fbf78aabe59a1dc4403f51deda8657b17333",
+    "task_id": "ansible-fleet-configuration-recovery"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:4fcf50fda1aae06c5c19b161b993585a7c26522dedddc6359ca14be12d7874d9",
+      "kind": "COMMIT",
+      "ref": "commit:fdf8fbf78aabe59a1dc4403f51deda8657b17333"
+    },
+    {
+      "content_hash": "sha256:1e950e0ea5f6ce34ff813202df633c1eea7a948d3eaaa7fed4c8ebad3524e380",
+      "kind": "COMMIT",
+      "ref": "commit:df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe"
+    },
+    {
+      "content_hash": "sha256:70757714fb3ce6112a76acc17cb2befd61122587f4aac760420af66efbe8db52",
+      "kind": "RUN",
+      "ref": "run:github-actions:32990634158#sha256:70757714fb3ce6112a76acc17cb2befd61122587f4aac760420af66efbe8db52"
+    }
+  ],
+  "invocation_id": "inv_2d5d3bd41f397b7db580905a99983a609dcfc0686046040834a2f73f3de0a84d",
+  "invocation_snapshot": {
+    "acceptance_predicates": {
+      "PASS": [
+        {
+          "op": "eq",
+          "path": "ORACLE_REWARD",
+          "value": 1
+        },
+        {
+          "op": "eq",
+          "path": "NOP_REWARD",
+          "value": 0
+        },
+        {
+          "op": "nonempty",
+          "path": "F2P_EMPIRICAL_MATRIX"
+        },
+        {
+          "op": "nonempty",
+          "path": "P2P_EMPIRICAL_MATRIX"
+        }
+      ]
+    },
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "fdf8fbf78aabe59a1dc4403f51deda8657b17333",
+      "task_id": "ansible-fleet-configuration-recovery"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CONTROL_PLANE_POLICY",
+        "SOLUTION_ORACLE",
+        "SOLVER_VISIBLE_TASK",
+        "VERIFIER_PRIVATE"
+      ],
+      "evidence_required": [
+        "Oracle reward 1",
+        "NOP reward 0",
+        "every F2P starter/NOP-fail and Oracle-pass",
+        "intended P2P preservation"
+      ],
+      "excluded_evidence_classes": [
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PRIVATE_CREATION_DESIGN",
+        "PUBLIC_REFERENCE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+        ".terminus/agents/QUALITY_AGENT_PROMPTS.md"
+      ],
+      "retrieval_mode": "EXACT_ONLY"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "CURRENT_TASK_COMMIT": {
+          "evidence": "current exact task snapshot for hosted deterministic validation after Q2 durable F2P verifier repair",
+          "status": "CURRENT",
+          "task_commit": "fdf8fbf78aabe59a1dc4403f51deda8657b17333",
+          "task_id": "ansible-fleet-configuration-recovery"
+        },
+        "ORACLE": {
+          "evidence": "current reference solution bound to exact task snapshot; empirical scoring owned by hosted deterministic run",
+          "status": "CURRENT",
+          "task_commit": "fdf8fbf78aabe59a1dc4403f51deda8657b17333",
+          "task_id": "ansible-fleet-configuration-recovery"
+        },
+        "STARTER_NOP_STATE": {
+          "evidence": "current starter/NOP state bound to exact task snapshot; empirical scoring owned by hosted deterministic run",
+          "status": "CURRENT",
+          "task_commit": "fdf8fbf78aabe59a1dc4403f51deda8657b17333",
+          "task_id": "ansible-fleet-configuration-recovery"
+        },
+        "VERIFIER": {
+          "F2P_COUNT": 27,
+          "P2P_COUNT": 6,
+          "entrypoint": "ansible-fleet-configuration-recovery/tests/test.sh"
+        }
+      }
+    },
+    "invocation_id": "inv_2d5d3bd41f397b7db580905a99983a609dcfc0686046040834a2f73f3de0a84d",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "PASS",
+        "FAIL",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [
+        "task verifier execution",
+        "Oracle/NOP matrix"
+      ],
+      "optional_fields": [
+        "FAILURE_CLASS",
+        "FIRST_MEANINGFUL_ERROR"
+      ],
+      "persisted_artifacts": [
+        "run/job/artifact evidence references"
+      ],
+      "required_fields": [
+        "ORACLE_REWARD",
+        "NOP_REWARD",
+        "F2P_EMPIRICAL_MATRIX",
+        "P2P_EMPIRICAL_MATRIX"
+      ],
+      "semantic_reviewers": []
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "RUNTIME_OR_ORACLE_FAILURE": "Q5 Oracle & Runtime Repair Specialist",
+        "VERIFIER_CONTRACT_FAILURE": "Q2/Q3/Verifier Author as evidence indicates"
+      },
+      "stale_on": [
+        "task commit change",
+        "solution change",
+        "verifier change",
+        "runtime dependency change"
+      ],
+      "success_transition": "FROZEN_CANDIDATE"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "Creation Controller",
+      "role_class": "CONTROLLER",
+      "role_id": "CREATION_CONTROLLER",
+      "stage_id": "DETERMINISTIC_VALIDATION"
+    }
+  },
+  "outputs": {
+    "F2P_EMPIRICAL_MATRIX": [
+      {
+        "expected_nop_status": "failed",
+        "nop_status": "failed",
+        "oracle_status": "passed",
+        "requirement": "REQ_CONTROLLER_BOOTSTRAP",
+        "test": "test_f2p_controller_runtime_is_supported_major"
+      },
+      {
+        "expected_nop_status": "failed",
+        "nop_status": "failed",
+        "oracle_status": "passed",
+        "requirement": "REQ_CONTROLLER_BOOTSTRAP",
+        "test": "test_f2p_controller_config_init_capability_exists"
+      },
+      {
+        "expected_nop_status": "failed",
+        "nop_status": "failed",
+        "oracle_status": "passed",
+        "requirement": "REQ_CONTROLLER_BOOTSTRAP",
+        "test": "test_f2p_controller_project_config_is_selected"
+      },
+      {
+        "expected_nop_status": "failed",
+        "nop_status": "failed",
+        "oracle_status": "passed",
+        "requirement": "REQ_CONTROLLER_BOOTSTRAP",
+        "test": "test_f2p_controller_durable_container_version_is_current"
+      },
+      {
+        "expected_nop_status": "failed",
+        "nop_status": "failed",
+        "oracle_status": "passed",
+        "requirement": "REQ_PROJECT_DISCOVERY",
+        "test": "test_f2p_discovery_project_roles_path_is_active"
+      },
+      {
+        "expected_nop_status": "failed",
+        "nop_status": "failed",
+        "oracle_status": "passed",
+        "requirement": "REQ_PROJECT_DISCOVERY",
+        "test": "test_f2p_discovery_site_roles_resolve_locally"
+      },
+      {
+        "expected_nop_status": "failed",
+        "nop_status": "failed",
+        "oracle_status": "passed",
+        "requirement": "REQ_PROJECT_DISCOVERY",
+        "test": "test_f2p_discovery_site_syntax_check_passes"
+      },
+      {
+        "expected_nop_status": "failed",
+        "nop_status": "failed",
+        "oracle_status": "passed",
+        "requirement": "REQ_SECRET_BOUNDARY",
+        "test": "test_f2p_secret_vault_is_encrypted_at_rest"
+      },
+      {
+        "expected_nop_status": "failed",
+        "nop_status": "failed",
+        "oracle_status": "passed",
+        "requirement": "REQ_SECRET_BOUNDARY",
+        "test": "test_f2p_secret_plaintext_markers_are_absent"
+      },
+      {
+        "expected_nop_status": "failed",
+        "nop_status": "failed",
+        "oracle_status": "passed",
+        "requirement": "REQ_SECRET_BOUNDARY",
+        "test": "test_f2p_secret_vault_can_be_loaded_noninteractively"
+      },
+      {
+        "expected_nop_status": "failed",
+        "nop_status": "failed",
+        "oracle_status": "passed",
+        "requirement": "REQ_ORCHESTRATION_GRAPH",
+        "test": "test_f2p_orchestration_trust_precedes_application_release"
+      },
+      {
+        "expected_nop_status": "failed",
+        "nop_status": "failed",
+        "oracle_status": "passed",
+        "requirement": "REQ_ORCHESTRATION_GRAPH",
+        "test": "test_f2p_orchestration_proxy_role_is_not_swapped_or_missing"
+      },
+      {
+        "expected_nop_status": "failed",
+        "nop_status": "failed",
+        "oracle_status": "passed",
+        "requirement": "REQ_ORCHESTRATION_GRAPH",
+        "test": "test_f2p_orchestration_telemetry_executes_for_fleet"
+      },
+      {
+        "expected_nop_status": "failed",
+        "nop_status": "failed",
+        "oracle_status": "passed",
+        "requirement": "REQ_ORCHESTRATION_GRAPH",
+        "test": "test_f2p_orchestration_application_is_scoped_to_application_nodes"
+      },
+      {
+        "expected_nop_status": "failed",
+        "nop_status": "failed",
+        "oracle_status": "passed",
+        "requirement": "REQ_ANSIBLE_SCHEMA",
+        "test": "test_f2p_syntax_common_baseline_has_single_action_per_task"
+      },
+      {
+        "expected_nop_status": "failed",
+        "nop_status": "failed",
+        "oracle_status": "passed",
+        "requirement": "REQ_ANSIBLE_SCHEMA",
+        "test": "test_f2p_syntax_validate_playbook_loop_control_is_well_formed"
+      },
+      {
+        "expected_nop_status": "failed",
+        "nop_status": "failed",
+        "oracle_status": "passed",
+        "requirement": "REQ_ANSIBLE_SCHEMA",
+        "test": "test_f2p_schema_copy_module_has_no_directory_mode_parameter"
+      },
+      {
+        "expected_nop_status": "failed",
+        "nop_status": "failed",
+        "oracle_status": "passed",
+        "requirement": "REQ_JINJA_DATA_MODEL",
+        "test": "test_f2p_jinja_hyd_dependencies_remain_structured"
+      },
+      {
+        "expected_nop_status": "failed",
+        "nop_status": "failed",
+        "oracle_status": "passed",
+        "requirement": "REQ_JINJA_DATA_MODEL",
+        "test": "test_f2p_jinja_proxy_template_handles_all_endpoint_shapes"
+      },
+      {
+        "expected_nop_status": "failed",
+        "nop_status": "failed",
+        "oracle_status": "passed",
+        "requirement": "REQ_JINJA_DATA_MODEL",
+        "test": "test_f2p_jinja_proxy_template_brackets_ipv6_conditionally"
+      },
+      {
+        "expected_nop_status": "failed",
+        "nop_status": "failed",
+        "oracle_status": "passed",
+        "requirement": "REQ_JINJA_DATA_MODEL",
+        "test": "test_f2p_jinja_telemetry_missing_optional_group_is_safe"
+      },
+      {
+        "expected_nop_status": "failed",
+        "nop_status": "failed",
+        "oracle_status": "passed",
+        "requirement": "REQ_JINJA_DATA_MODEL",
+        "test": "test_f2p_jinja_policy_priorities_are_rendered_numeric"
+      },
+      {
+        "expected_nop_status": "failed",
+        "nop_status": "failed",
+        "oracle_status": "passed",
+        "requirement": "REQ_JINJA_DATA_MODEL",
+        "test": "test_f2p_jinja_application_dependency_output_is_a_list"
+      },
+      {
+        "expected_nop_status": "failed",
+        "nop_status": "failed",
+        "oracle_status": "passed",
+        "requirement": "REQ_CONVERGENCE",
+        "test": "test_f2p_runtime_full_site_run_converges"
+      },
+      {
+        "expected_nop_status": "failed",
+        "nop_status": "failed",
+        "oracle_status": "passed",
+        "requirement": "REQ_CONVERGENCE",
+        "test": "test_f2p_runtime_second_run_is_idempotent"
+      },
+      {
+        "expected_nop_status": "failed",
+        "nop_status": "failed",
+        "oracle_status": "passed",
+        "requirement": "REQ_REPAIR_PRESERVATION",
+        "test": "test_f2p_repair_preserves_sites_while_fixing_hyd_override"
+      },
+      {
+        "expected_nop_status": "failed",
+        "nop_status": "failed",
+        "oracle_status": "passed",
+        "requirement": "REQ_REPAIR_PRESERVATION",
+        "test": "test_f2p_repair_preserves_evidence_while_vaulting_secret"
+      }
+    ],
+    "NOP_REWARD": 0,
+    "ORACLE_REWARD": 1,
+    "P2P_EMPIRICAL_MATRIX": [
+      {
+        "expected_nop_status": "passed",
+        "nop_status": "passed",
+        "oracle_status": "passed",
+        "requirement": "REQ_PRODUCTION_BREADTH",
+        "test": "test_p2p_service_catalog_retains_production_breadth"
+      },
+      {
+        "expected_nop_status": "passed",
+        "nop_status": "passed",
+        "oracle_status": "passed",
+        "requirement": "REQ_PRODUCTION_BREADTH",
+        "test": "test_p2p_policy_catalog_retains_sixty_owned_rules"
+      },
+      {
+        "expected_nop_status": "passed",
+        "nop_status": "passed",
+        "oracle_status": "passed",
+        "requirement": "REQ_PRODUCTION_BREADTH",
+        "test": "test_p2p_inventory_retains_ipv4_and_ipv6_endpoints"
+      },
+      {
+        "expected_nop_status": "passed",
+        "nop_status": "passed",
+        "oracle_status": "passed",
+        "requirement": "REQ_PRODUCTION_BREADTH",
+        "test": "test_p2p_operator_logs_retain_sequential_failure_evidence"
+      },
+      {
+        "expected_nop_status": "passed",
+        "nop_status": "passed",
+        "oracle_status": "passed",
+        "requirement": "REQ_PRODUCTION_BREADTH",
+        "test": "test_p2p_official_helper_sources_are_upstream_ansible_only"
+      },
+      {
+        "expected_nop_status": "passed",
+        "nop_status": "passed",
+        "oracle_status": "passed",
+        "requirement": "REQ_PRODUCTION_BREADTH",
+        "test": "test_p2p_state_and_rollout_engines_remain_present"
+      }
+    ]
+  },
+  "record_id": "rec_8663400e1dc1e13e6bb318660478b11a2f7f222f6a36c6f40f39f751f3ce8222",
+  "role_id": "CREATION_CONTROLLER",
+  "schema_version": "1.0",
+  "stage_id": "DETERMINISTIC_VALIDATION",
+  "status": "PASS",
+  "task_lineage": {
+    "input_task_commit": "fdf8fbf78aabe59a1dc4403f51deda8657b17333",
+    "output_task_commit": "fdf8fbf78aabe59a1dc4403f51deda8657b17333",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": true,
+    "target": "FROZEN_CANDIDATE",
+    "target_kind": "STATE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 3,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}
