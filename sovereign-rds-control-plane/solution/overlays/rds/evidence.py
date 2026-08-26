@@ -57,7 +57,6 @@ class EvidencePublisher:
             "available_instances": stable_subset["available_instances"],
             "active_replicas": stable_subset["active_replicas"],
             "pending_events": stable_subset["pending_events"],
-            "report_digest": digest,
         }
         (output_dir / "health.json").write_text(
             json.dumps(health, indent=2, sort_keys=True, default=str) + "\n",

@@ -30,9 +30,9 @@ Operators (and verifier tooling) expect:
 | `/app/rds/out/rds-snapshot.json` | Canonical sorted keys; SHA-256 `report_digest` over the stable field subset below |
 | `/app/rds/out/instances.jsonl` | UTF-8 JSON lines, deterministic order |
 | `/app/rds/out/events.jsonl` | UTF-8 JSON lines, deterministic order |
-| `/app/rds/out/health.json` | Health / lag / readiness summary with stable key ordering |
+| `/app/rds/out/health.json` | Health / lag / readiness summary with stable key ordering (no digest field) |
 
-Companion JSONL/health files do not require a per-file digest.
+Companion JSONL/health files do not require a per-file digest. Only `rds-snapshot.json` carries `report_digest`.
 
 ### `report_digest` stable subset
 
