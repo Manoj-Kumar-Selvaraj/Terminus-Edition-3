@@ -28,11 +28,11 @@ Operators (and verifier tooling) expect:
 | Path | Notes |
 |------|--------|
 | `/app/rds/out/rds-snapshot.json` | Canonical sorted keys; SHA-256 `report_digest` over the stable field subset below |
-| `/app/rds/out/instances.jsonl` | UTF-8 JSON lines, deterministic order |
-| `/app/rds/out/events.jsonl` | UTF-8 JSON lines, deterministic order |
-| `/app/rds/out/health.json` | Health / lag / readiness summary with stable key ordering (no digest field) |
+| `/app/rds/out/instances.jsonl` | Required UTF-8 JSON lines companion (no digest; ordering not separately graded) |
+| `/app/rds/out/events.jsonl` | Required UTF-8 JSON lines companion (no digest; ordering not separately graded) |
+| `/app/rds/out/health.json` | Required UTF-8 health / lag / readiness companion (no digest field; key order not separately graded) |
 
-Companion JSONL/health files do not require a per-file digest. Only `rds-snapshot.json` carries `report_digest`.
+Only `rds-snapshot.json` is graded for canonical key ordering and `report_digest`. Companion files must exist as UTF-8 JSON/JSONL without per-file digests.
 
 ### `report_digest` stable subset
 
