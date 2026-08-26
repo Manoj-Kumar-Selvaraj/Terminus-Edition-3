@@ -9,27 +9,11 @@ if [[ ! -d "$TARGET" ]]; then
   exit 1
 fi
 
-# Harbor's solution container does not guarantee that pip's console scripts
-# land on the inherited PATH. Install the reference controller first, then
-# resolve ansible-core's actual script directory from installed package metadata.
+# Harbor's solution container does not guarantee pip console scripts on PATH.
+# Install the reference controller, then provide deterministic CLI shims that
+# execute Ansible's Python CLI modules directly. This is independent of the
+# wheel's console-script installation location.
 python -m pip install --disable-pip-version-check --no-cache-dir 'ansible==12.0.0' >/dev/null
-PYTHON_SCRIPTS="$(python - <<'PY'
-from importlib.metadata import distribution
-from pathlib import Path
-
-dist = distribution("ansible-core")
-for entry in dist.files or ():
-    if Path(str(entry)).name == "ansible-config":
-        candidate = Path(dist.locate_file(entry)).resolve()
-        if candidate.is_file():
-            print(candidate.parent)
-            break
-else:
-    raise SystemExit("ansible-config console script not found after installation")
-PY
-)"
-export PATH="$PYTHON_SCRIPTS:$PATH"
-command -v ansible-config >/dev/null
 
 WORK="$(mktemp -d)"
 cleanup() {
@@ -46,7 +30,22 @@ cleanup() {
 }
 trap cleanup EXIT
 
-mkdir -p "$WORK/solution"
+mkdir -p "$WORK/bin" "$WORK/solution"
+cat > "$WORK/bin/ansible-config" <<'SH'
+#!/usr/bin/env bash
+exec python -m ansible.cli.config "$@"
+SH
+cat > "$WORK/bin/ansible-vault" <<'SH'
+#!/usr/bin/env bash
+exec python -m ansible.cli.vault "$@"
+SH
+cat > "$WORK/bin/ansible-playbook" <<'SH'
+#!/usr/bin/env bash
+exec python -m ansible.cli.playbook "$@"
+SH
+chmod 0755 "$WORK/bin/ansible-config" "$WORK/bin/ansible-vault" "$WORK/bin/ansible-playbook"
+export PATH="$WORK/bin:$PATH"
+
 ln -s "$TARGET" "$WORK/environment"
 cp "$HERE/repair.sh" "$WORK/solution/repair.sh"
 chmod 0755 "$WORK/solution/repair.sh"
