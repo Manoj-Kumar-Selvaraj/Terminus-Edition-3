@@ -1,0 +1,216 @@
+{
+  "authority": {
+    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "policy_versions": {},
+    "task_commit": "475ff014df7bae9ab6b0bb49fcab7454e40195ba",
+    "task_id": "ansible-fleet-configuration-recovery"
+  },
+  "disposition": "RETRY",
+  "evidence_refs": [],
+  "invocation_id": "inv_7d92ec178651810ea06c0a2f519d2ce5ad021df8fffd4fb919adb4def3ee548d",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+      "policy_versions": {},
+      "task_commit": "475ff014df7bae9ab6b0bb49fcab7454e40195ba",
+      "task_id": "ansible-fleet-configuration-recovery"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CONTROL_PLANE_POLICY",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "task structure",
+        "task.toml",
+        "Docker/verifier/solution layout",
+        "artifact/isolation checks"
+      ],
+      "excluded_evidence_classes": [
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PRIVATE_CREATION_DESIGN",
+        "PUBLIC_REFERENCE",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        "TERMINUS_3_AI_INSTRUCTIONS.md",
+        ".terminus/reviewers/REVIEWER_CHECKLIST.md",
+        ".terminus/agents/QUALITY_AGENT_PROMPTS.md"
+      ],
+      "retrieval_mode": "EXACT_ONLY"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "ACTIVE_FORMAT_VALIDATORS": [
+          "flat Edition-3 task layout",
+          "task.toml canonical field and absolute artifact/workdir checks",
+          "separate verifier packaging and reward contract",
+          "solution/tests isolation from solver image",
+          "shell LF/shebang contract",
+          "Q7 same-chat format review"
+        ],
+        "CREATION_RULE_CONTEXT": {
+          "CONTROL_PLANE_COMMIT": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+          "CREATION_PROFILE": "large_system_strict",
+          "KNOWN_POLICY_CONFLICTS": [],
+          "NETWORK_ENVIRONMENT_CONSTRAINTS": "public task network with separate verifier environment"
+        },
+        "CURRENT_TASK_TREE": {
+          "environment": {
+            ".dockerignore": "excludes git/cache/private control-plane/solution/tests material from solver build context",
+            "Dockerfile": "starter image rooted at /app/fleet-automation"
+          },
+          "snapshot_commit": "ce3862668b995de01da3d8442f060f30a87ddc3f",
+          "solution": {
+            "entrypoint": "solution/solve.sh",
+            "repair_body": "solution/repair.sh",
+            "runtime_target": "/app/fleet-automation"
+          },
+          "task_root": "ansible-fleet-configuration-recovery",
+          "task_toml": {
+            "agent_timeout_sec": 7200,
+            "artifacts": [
+              "/app/fleet-automation"
+            ],
+            "network_mode": "public",
+            "verifier_environment_mode": "separate",
+            "verifier_timeout_sec": 1800,
+            "version": "2.0",
+            "workdir": "/app/fleet-automation"
+          },
+          "tests": {
+            "Dockerfile": "separate Python/Ansible verifier image",
+            "requirements_lock": "pinned Ansible/PyYAML/pytest/pytest-json-ctrf dependencies",
+            "test_sh": "runtime reward contract writes /logs/verifier/reward.txt and CTRF output",
+            "test_suite": "tests/test_fleet_recovery.py with 27 F2P and 6 P2P behavioral cases"
+          },
+          "top_level": [
+            ".gitattributes",
+            "README.md",
+            "environment/",
+            "instruction.md",
+            "solution/",
+            "task.toml",
+            "tests/"
+          ]
+        }
+      }
+    },
+    "invocation_id": "inv_7d92ec178651810ea06c0a2f519d2ce5ad021df8fffd4fb919adb4def3ee548d",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "FORMAT_PASS",
+        "FIXED",
+        "BLOCKED",
+        "POLICY_CONFLICT"
+      ],
+      "deterministic_validators": [
+        "current task-format/packaging CI and validators"
+      ],
+      "optional_fields": [],
+      "persisted_artifacts": [],
+      "required_fields": [
+        "CHECKS",
+        "RERUN"
+      ],
+      "semantic_reviewers": [
+        "Compliance Auditor"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "FORMAT_DEFECT": "Q7 Task Format Enforcer",
+        "POLICY_CONFLICT": "Creation Controller",
+        "SEMANTIC_DEFECT": "route to semantic owner"
+      },
+      "stale_on": [
+        "task structure change",
+        "task.toml change",
+        "Docker/test/solution/package change",
+        "format-rule change"
+      ],
+      "success_transition": "ASSEMBLY"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "Q7 Task Format Enforcer",
+      "role_class": "FIXER",
+      "role_id": "Q7_TASK_FORMAT_ENFORCER",
+      "stage_id": "FORMAT_GATE"
+    }
+  },
+  "outputs": {
+    "CHECKS": [
+      "PASS: flat task root contains README.md, environment/, instruction.md, solution/, task.toml and tests/ with no private control-plane files inside the task package.",
+      "PASS: task.toml retains version 2.0, absolute artifact/workdir /app/fleet-automation, public network mode, separate verifier environment and bounded agent/verifier timeouts.",
+      "FIXED: added environment/.dockerignore so solver build context excludes git/cache/private control-plane/solution/tests material.",
+      "FIXED: added a separate verifier Dockerfile, pinned verifier dependency lock and tests/test.sh reward/CTRF runner.",
+      "FIXED: added LF enforcement for shell scripts and made solution/verifier entrypoints executable.",
+      "FIXED: solution/solve.sh now targets the declared runtime artifact /app/fleet-automation while preserving the approved repair body in solution/repair.sh.",
+      "PASS: verifier suite remains 27 F2P / 6 P2P with unchanged private test-map semantics; packaging repair does not add or remove behavioral cases."
+    ],
+    "RERUN": "Q7 same-chat reinspection of canonical materialized snapshot 9e9f68e7c747526a3ed556c7126e40844fd05811 and logical task snapshot ce3862668b995de01da3d8442f060f30a87ddc3f after packaging/runtime-entrypoint repair."
+  },
+  "record_id": "rec_15099c37d19ba8ac6f84140737854bee7b59c00458456fbabe8494414f92a4c0",
+  "role_id": "Q7_TASK_FORMAT_ENFORCER",
+  "schema_version": "1.0",
+  "stage_id": "FORMAT_GATE",
+  "status": "FIXED",
+  "task_lineage": {
+    "input_task_commit": "475ff014df7bae9ab6b0bb49fcab7454e40195ba",
+    "output_task_commit": "ce3862668b995de01da3d8442f060f30a87ddc3f",
+    "task_changed": true
+  },
+  "transition": {
+    "action": "RETRY",
+    "requires_state_validation": false,
+    "target": "FORMAT_GATE",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 0,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}
