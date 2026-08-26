@@ -1,0 +1,52 @@
+{
+  "schema_version": "1.0",
+  "mode": "RECORD",
+  "task_id": "ansible-fleet-configuration-recovery",
+  "task_commit": "6b519b95c6c25cdddb8efc284a9f7436cf0e55f6",
+  "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+  "expected_repository_head": "4d4b5b2cda488fd9afd0a030cd069b40b65486a0",
+  "stage_id": "SPEC_ALIGNMENT",
+  "inputs": {
+    "CURRENT_INSTRUCTION": {
+      "path": "ansible-fleet-configuration-recovery/instruction.md",
+      "objective": "Recover the inherited multi-site Ansible fleet automation under /app/fleet-automation as a supported, portable and convergent production configuration system.",
+      "material_requirements": [
+        "supported Ansible runtime and project-local config/bootstrap discovery",
+        "portable repository-local role discovery, correct role identity/dependency/handlers/host boundaries",
+        "Vault-encrypted sensitive data at rest with noninteractive documented execution",
+        "valid Ansible YAML/task/action/module schemas without shell bypasses",
+        "heterogeneous endpoint/site/policy/telemetry rendering with aggregation, optional groups, numeric ordering, IPv4 and IPv6",
+        "preserve production catalogs, three-site inventory, evidence, rollout/state engines, destinations and operating contracts",
+        "full playbook and semantic validation succeed",
+        "unchanged second run converges idempotently without churn, duplication or state drift"
+      ]
+    },
+    "REFERENCED_SOLVER_VISIBLE_CONTRACTS": [
+      "/app/fleet-automation/environment/runtime/logs/incident-bootstrap.log",
+      "/app/fleet-automation/environment/runtime/logs/incident-playbook.log",
+      "/app/fleet-automation/environment/runtime/reports/incident-handoff.json",
+      "/app/fleet-automation/environment/runtime/evidence/config-selection.txt",
+      "/app/fleet-automation/environment/docs/official-ansible-sources.txt",
+      "/app/fleet-automation/environment/inventory/hosts.yml",
+      "/app/fleet-automation/environment/inventory/group_vars/all.yml",
+      "/app/fleet-automation/environment/data/service-catalog.yml",
+      "/app/fleet-automation/environment/data/policy-catalog.yml"
+    ],
+    "CURRENT_VERIFIER": {
+      "test_map": ".terminus/designs/ansible-fleet-configuration-recovery-test-map.json",
+      "F2P_COUNT": 27,
+      "P2P_COUNT": 6,
+      "requirements": ["controller_bootstrap", "project_discovery", "secret_boundary", "orchestration", "ansible_schema", "jinja_data_model", "ipv6_and_aggregation", "convergence", "preservation"]
+    },
+    "PRIVATE_TEST_MAP": ".terminus/designs/ansible-fleet-configuration-recovery-test-map.json"
+  },
+  "result": {
+    "status": "ALIGNED",
+    "outputs": {
+      "Q1_STATUS": "ALIGNED: every verifier-visible material behavior is owned by the instruction or an explicitly referenced inherited public contract; no hidden verifier-to-spec requirement remains.",
+      "Q2_STATUS": "ALIGNED: all instruction-owned material requirements have verifier coverage across the 27 F2P and 6 P2P behavioral cases; no spec-to-verifier gap remains.",
+      "Q3_STATUS": "ALIGNED: grading-relevant terms have observable boundaries for supported controller/config discovery, Vault-at-rest/noninteractive use, Ansible schema validity, heterogeneous data/IPv6 rendering, preservation, successful execution and unchanged second-run convergence."
+    },
+    "evidence_refs": []
+  }
+}
