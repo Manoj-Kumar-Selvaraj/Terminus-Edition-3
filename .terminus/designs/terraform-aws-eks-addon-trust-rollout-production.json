@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "task": "terraform-aws-eks-addon-trust-rollout",
+  "production_authenticity": {
+    "incident_evidence": [
+      "environment/evidence/failed-upgrade-trace.txt",
+      "environment/evidence/failed-upgrade.log"
+    ],
+    "instruction_evidence_paths": [
+      "/app/docs",
+      "/app/evidence"
+    ],
+    "stateful_dataset_exemption": {
+      "approved": true,
+      "approved_by": "creation-controller",
+      "reason": "Durable operational state for this EKS upgrade lab is the offline Terraform plan graph, Kubernetes manifests, step checkpoints under /app/var/upgrade, and deterministic upgrade-report digests rather than a business SQL seed corpus. Estate telemetry and interruption histories are deterministic JSON inventories consumed by the local upgrade lab; a 10k-row relational payments database would not exercise add-on trust, IRSA, PDB drain, or regulated placement semantics."
+    },
+    "domain_state_model": [
+      "compatibility-ordered EKS add-on and controller version plans",
+      "IRSA assume-role subjects and scoped IAM policy actions",
+      "PodDisruptionBudget coverage during system node drain",
+      "regulated workload nodeSelectors and Karpenter on-demand fencing",
+      "step checkpoints with atomic restart recovery",
+      "canonical READY/FAILED upgrade reports with SHA-256 digests"
+    ],
+    "reachability_evidence": "All graded state is planned through /app/terraform, applied via /app/k8s manifests, and exercised by /app/bin/addon-trust-rollout against the local upgrade_lab without live AWS or cluster calls."
+  },
+  "status": "PRODUCER_EVIDENCE_ONLY_NOT_Q6_APPROVAL"
+}

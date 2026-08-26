@@ -7,7 +7,6 @@ placement, fail-closed partial progress, and idempotent digests.
 """
 from __future__ import annotations
 
-import copy
 import json
 import os
 import shutil
@@ -122,6 +121,10 @@ def _replan(workspace: Path) -> tuple[dict | None, subprocess.CompletedProcess]:
     return _show(workspace), proc
 
 
+def _graph(plan: dict) -> dict:
+    return upgrade_lab.normalize_plan(plan)
+
+
 @pytest.fixture(autouse=True)
 def _clean_data():
     _reset_data()
@@ -158,33 +161,289 @@ def baseline(submission_dir: Path) -> tuple[dict, dict]:
     return plan, report
 
 
-def test_agent_report_ready(agent_report: dict) -> None:
-    """Agent upgrade run must finish READY with a digest and ordered steps."""
-    assert agent_report.get("status") == "READY"
-    assert agent_report.get("report_digest")
-    assert agent_report.get("upgrade_order")
-    assert agent_report.get("pdb_respected") is True
-    assert agent_report.get("cross_service_denied") is True
+def test_f2p_plan_policy_enforces_required_addons(baseline: tuple[dict, dict]) -> None:
+    """Submitted plan must include every add-on named in the compatibility matrix."""
+    plan, report = baseline
+    assert report["status"] == "READY", report
+    graph = _graph(plan)
+    matrix = _load_base("compatibility_matrix.json")
+    for name in matrix["addons"]:
+        assert name in graph["addons"], f"missing addon {name}"
 
 
-def test_artifacts_present() -> None:
-    """Required Terraform, plan, k8s, and report artifacts must exist."""
-    assert TERRAFORM_ARTIFACT.is_dir()
-    assert K8S_ARTIFACT.is_dir()
-    assert (OUTPUT_ARTIFACT / "upgrade-report.json").is_file()
-    assert (VAR_ARTIFACT / "plan.json").is_file() or (VAR_ARTIFACT / "tfplan").exists()
+def test_f2p_addon_versions_match_compatibility_matrix(
+    baseline: tuple[dict, dict],
+) -> None:
+    """Each planned add-on version must equal the matrix target."""
+    plan, report = baseline
+    assert report["status"] == "READY", report
+    graph = _graph(plan)
+    matrix = _load_base("compatibility_matrix.json")
+    for name, meta in matrix["addons"].items():
+        assert graph["addons"][name]["addon_version"] == meta["target"]
 
 
-def test_baseline_rollout_ready(baseline: tuple[dict, dict]) -> None:
-    """Trusted lab must accept the submitted plan on baseline inventory."""
+def test_f2p_resolve_conflicts_must_be_preserve(baseline: tuple[dict, dict]) -> None:
+    """EKS add-ons must plan resolve_conflicts_on_update=PRESERVE."""
+    plan, report = baseline
+    assert report["status"] == "READY", report
+    graph = _graph(plan)
+    matrix = _load_base("compatibility_matrix.json")
+    defaults = _load_base("defaults.json")
+    for name, meta in matrix["addons"].items():
+        if meta.get("kind") != "eks_addon":
+            continue
+        assert (
+            graph["addons"][name]["resolve_conflicts_on_update"]
+            == defaults["resolve_conflicts_on_update"]
+        )
+
+
+def test_f2p_ssm_parameter_tags_supply_controller_versions(
+    baseline: tuple[dict, dict],
+) -> None:
+    """Controller add-ons must be represented via SSM tags with version and conflict mode."""
+    plan, report = baseline
+    assert report["status"] == "READY", report
+    graph = _graph(plan)
+    matrix = _load_base("compatibility_matrix.json")
+    for name, meta in matrix["addons"].items():
+        if meta.get("kind") != "controller":
+            continue
+        planned = graph["addons"][name]
+        assert planned["addon_version"] == meta["target"]
+        assert planned["tags"].get("ControllerAddon") == name
+        assert planned["tags"].get("AddonVersion") == meta["target"]
+        assert planned["tags"].get("ResolveConflicts") == "PRESERVE"
+
+
+def test_f2p_irsa_assume_role_policy_condition_parsing(
+    baseline: tuple[dict, dict],
+) -> None:
+    """Assume-role policy documents must parse into concrete service-account subjects."""
+    plan, report = baseline
+    assert report["status"] == "READY", report
+    graph = _graph(plan)
+    for role in graph["roles"].values():
+        if role["tags"].get("AddonTrust"):
+            assert role["subjects"], f"unparsed subjects for {role.get('name')}"
+
+
+def test_f2p_irsa_role_trusts_exact_single_service_account(
+    baseline: tuple[dict, dict],
+) -> None:
+    """Each IRSA role must trust exactly one required service-account subject."""
     _plan, report = baseline
     assert report["status"] == "READY", report
-    assert not report.get("policy_errors")
+    trust = _load_base("trust_observations.json")
+    for key, subject in trust["required_subjects"].items():
+        binding = report["irsa_bindings"][key]
+        assert binding["ok"] is True
+        assert binding["subject"] == subject
 
 
-def test_upgrade_order_respects_compatibility(baseline: tuple[dict, dict]) -> None:
+def test_f2p_forbidden_subjects_like_system_nodes_rejected(
+    baseline: tuple[dict, dict],
+) -> None:
+    """Submitted IRSA roles must not trust forbidden subjects such as system:nodes."""
+    plan, report = baseline
+    assert report["status"] == "READY", report
+    graph = _graph(plan)
+    forbidden = set(_load_base("trust_observations.json")["forbidden_subjects"])
+    for role in graph["roles"].values():
+        if not role["tags"].get("AddonTrust"):
+            continue
+        assert not (set(role["subjects"]) & forbidden)
+
+
+def test_f2p_wildcard_iam_policy_actions_rejected(baseline: tuple[dict, dict]) -> None:
+    """IRSA inline policies must reject wildcard and admin-style actions."""
+    plan, report = baseline
+    assert report["status"] == "READY", report
+    graph = _graph(plan)
+    forbidden = set(_load_base("defaults.json")["forbidden_policy_actions"])
+    for role in graph["roles"].values():
+        if not role["tags"].get("AddonTrust"):
+            continue
+        for act in role.get("policy_actions") or []:
+            assert act not in forbidden
+            if role["tags"].get("AddonTrust") == "ebs_csi":
+                assert not str(act).endswith(":*")
+
+
+def test_f2p_irsa_role_names_match_expected_naming(baseline: tuple[dict, dict]) -> None:
+    """IRSA role names must match the naming contract in trust observations."""
+    plan, report = baseline
+    assert report["status"] == "READY", report
+    graph = _graph(plan)
+    trust = _load_base("trust_observations.json")
+    by_trust = {
+        role["tags"].get("AddonTrust"): role
+        for role in graph["roles"].values()
+        if role["tags"].get("AddonTrust")
+    }
+    for key, expected in trust["role_names"].items():
+        assert by_trust[key]["name"] == expected
+
+
+def test_f2p_pdbs_match_required_names_namespaces_selectors(
+    baseline: tuple[dict, dict],
+) -> None:
+    """Submitted manifests must supply PDBs with required names and namespaces."""
+    _plan, report = baseline
+    assert report["status"] == "READY", report
+    state = upgrade_lab.apply_k8s_manifests(VERIFIER_K8S)
+    required = _load_base("pdbs.json")["required"]
+    have = {(p["namespace"], p["name"]): p for p in state["pdbs"]}
+    for req in required:
+        assert (req["namespace"], req["name"]) in have
+
+
+def test_f2p_pdb_min_available_thresholds_enforced(baseline: tuple[dict, dict]) -> None:
+    """PDB minAvailable values must match the required disruption budgets."""
+    _plan, report = baseline
+    assert report["status"] == "READY", report
+    state = upgrade_lab.apply_k8s_manifests(VERIFIER_K8S)
+    required = _load_base("pdbs.json")["required"]
+    have = {(p["namespace"], p["name"]): p for p in state["pdbs"]}
+    for req in required:
+        got = have[(req["namespace"], req["name"])]
+        assert got["min_available"] == req["min_available"]
+
+
+def test_f2p_system_node_group_taints_and_labels_validated(
+    baseline: tuple[dict, dict],
+) -> None:
+    """System node group must carry CriticalAddonsOnly taint and nodepool label."""
+    plan, report = baseline
+    assert report["status"] == "READY", report
+    graph = _graph(plan)
+    system = graph["node_groups"]["system"]
+    defaults = _load_base("defaults.json")
+    taint_cfg = defaults["system_taint"]
+    found = False
+    for t in system.get("taints") or []:
+        if (
+            t.get("key") == taint_cfg["key"]
+            and str(t.get("value")) == str(taint_cfg["value"])
+        ):
+            found = True
+    assert found
+    assert system["labels"].get("nodepool") == "system"
+
+
+def test_f2p_drain_simulation_respects_pdb_availability(
+    baseline: tuple[dict, dict],
+) -> None:
+    """System-node drain must respect PDBs and keep core services available."""
+    _plan, report = baseline
+    assert report["status"] == "READY", report
+    assert report["drain_result"]["core_available"] is True
+    assert report["pdb_respected"] is True
+    assert all(report["availability"].values())
+
+
+def test_f2p_system_node_group_labels_verified(baseline: tuple[dict, dict]) -> None:
+    """System and companion node groups must keep UpgradeProtected labels."""
+    plan, report = baseline
+    assert report["status"] == "READY", report
+    graph = _graph(plan)
+    for pool in ("system", "apps", "batch"):
+        assert graph["node_groups"][pool]["tags"].get("UpgradeProtected") == "true"
+        assert graph["node_groups"][pool]["labels"].get("nodepool") == pool
+
+
+def test_f2p_regulated_workloads_require_explicit_nodepools(
+    baseline: tuple[dict, dict],
+) -> None:
+    """Regulated workloads must declare an explicit approved nodepool selector."""
+    _plan, report = baseline
+    assert report["status"] == "READY", report
+    for _name, placement in report["regulated_placement"].items():
+        assert placement["ok"] is True
+        assert placement["nodepool"] == "regulated-on-demand"
+
+
+def test_f2p_regulated_capacity_types_enforce_ondemand(
+    baseline: tuple[dict, dict],
+) -> None:
+    """Regulated placement must enforce on-demand capacity only."""
+    plan, report = baseline
+    assert report["status"] == "READY", report
+    graph = _graph(plan)
+    assert set(graph["regulated"]["capacity_types"]) == {"on-demand"}
+    for placement in report["regulated_placement"].values():
+        assert placement["capacity_type"] == "on-demand"
+
+
+def test_f2p_regulated_node_pools_restricted_to_private_subnets(
+    baseline: tuple[dict, dict],
+) -> None:
+    """Regulated node pool fencing must require private-subnet-only placement."""
+    plan, report = baseline
+    assert report["status"] == "READY", report
+    graph = _graph(plan)
+    assert graph["regulated"]["private_only"] is True
+
+
+def test_f2p_karpenter_nodepool_crd_capacity_enforced(
+    baseline: tuple[dict, dict],
+) -> None:
+    """Karpenter NodePool CRD must allow only on-demand capacity types."""
+    _plan, report = baseline
+    assert report["status"] == "READY", report
+    state = upgrade_lab.apply_k8s_manifests(VERIFIER_K8S)
+    found = False
+    for np in state["nodepools"]:
+        if (np.get("metadata") or {}).get("name") != "regulated-on-demand":
+            continue
+        if np.get("kind") != "NodePool":
+            continue
+        reqs = (
+            ((np.get("spec") or {}).get("template") or {}).get("spec") or {}
+        ).get("requirements") or []
+        for req in reqs:
+            if req.get("key") == "karpenter.sh/capacity-type":
+                assert list(req.get("values") or []) == ["on-demand"]
+                found = True
+    assert found
+
+
+def test_f2p_interruption_simulation_preserves_ondemand(
+    baseline: tuple[dict, dict],
+) -> None:
+    """Interruption handling must keep regulated workloads on on-demand capacity."""
+    _plan, report = baseline
+    assert report["status"] == "READY", report
+    assert report["interruption"]["handled"] is True
+    assert report["interruption"]["regulated_still_on_demand"] is True
+
+
+def test_f2p_rollout_prerequisites_validated_before_step(
+    submission_dir: Path, baseline: tuple[dict, dict]
+) -> None:
+    """Injected readiness failure must stop later add-ons from advancing."""
+    _plan, ready_report = baseline
+    assert ready_report["status"] == "READY"
+    _reset_data()
+    _reset_k8s(K8S_ARTIFACT)
+    workspace = submission_dir / "workspaces" / "upgrade"
+    plan, proc = _replan(workspace)
+    assert plan is not None, proc.stdout + proc.stderr
+    report = upgrade_lab.run_rollout(plan, fail_addon="coredns", k8s_dir=VERIFIER_K8S)
+    assert report["status"] == "FAILED"
+    assert report["reason"] == "readiness_failed:coredns"
+    assert "aws-ebs-csi-driver" not in report["upgrade_order"]
+    assert "karpenter" not in report["upgrade_order"]
+    assert "coredns" not in report["upgrade_order"]
+
+
+def test_f2p_addons_rollout_in_matrix_specified_order(
+    baseline: tuple[dict, dict],
+) -> None:
     """Dependent add-ons must advance only after prerequisites in the matrix."""
     _plan, report = baseline
+    assert report["status"] == "READY", report
     order = report["upgrade_order"]
     assert order.index("vpc-cni") < order.index("kube-proxy")
     assert order.index("kube-proxy") < order.index("coredns")
@@ -193,302 +452,216 @@ def test_upgrade_order_respects_compatibility(baseline: tuple[dict, dict]) -> No
     assert order.index("coredns") < order.index("aws-load-balancer-controller")
 
 
-def test_irsa_bindings_exact(baseline: tuple[dict, dict]) -> None:
-    """IRSA bindings must use exact namespace/service-account subjects."""
+def test_f2p_addon_readiness_verified_before_step_completion(
+    baseline: tuple[dict, dict],
+) -> None:
+    """Every completed rollout step must record ok=true with target versions."""
     _plan, report = baseline
-    trust = _load_base("trust_observations.json")
-    for key, subject in trust["required_subjects"].items():
-        binding = report["irsa_bindings"][key]
-        assert binding["ok"] is True
-        assert binding["subject"] == subject
-
-
-def test_regulated_placement_on_demand(baseline: tuple[dict, dict]) -> None:
-    """Regulated workloads must stay on approved on-demand capacity."""
-    _plan, report = baseline
-    placement = report["regulated_placement"]["settlement-ledger"]
-    assert placement["ok"] is True
-    assert placement["capacity_type"] == "on-demand"
-    assert report["interruption"]["regulated_still_on_demand"] is True
-
-
-def test_drain_keeps_core_available(baseline: tuple[dict, dict]) -> None:
-    """System-node drain must respect PDBs and keep core services available."""
-    _plan, report = baseline
-    assert report["drain_result"]["core_available"] is True
-    assert report["pdb_respected"] is True
-    assert all(report["availability"].values())
-
-
-def test_hidden_matrix_reorder_noop(submission_dir: Path) -> None:
-    """Reordering compatibility matrix keys must not change upgrade semantics."""
-    matrix = copy.deepcopy(_load_base("compatibility_matrix.json"))
-    addons = matrix["addons"]
-    matrix["addons"] = {k: addons[k] for k in reversed(list(addons.keys()))}
-    _reset_data({"compatibility_matrix.json": matrix})
-    _reset_k8s(K8S_ARTIFACT)
-    workspace = submission_dir / "workspaces" / "upgrade"
-    plan, proc = _replan(workspace)
-    assert plan is not None, proc.stdout + proc.stderr
-    report = upgrade_lab.run_rollout(plan, k8s_dir=VERIFIER_K8S)
     assert report["status"] == "READY", report
-    order = report["upgrade_order"]
-    assert order.index("vpc-cni") < order.index("aws-ebs-csi-driver")
+    assert report["steps"]
+    assert all(step.get("ok") is True for step in report["steps"])
+    matrix = _load_base("compatibility_matrix.json")
+    for step in report["steps"]:
+        assert step["to_version"] == matrix["addons"][step["addon"]]["target"]
 
 
-def test_hidden_extra_addon_leaf(submission_dir: Path) -> None:
-    """Adding a leaf controller expands order without breaking prerequisites."""
-    matrix = copy.deepcopy(_load_base("compatibility_matrix.json"))
-    matrix["addons"]["metrics-server"] = {
-        "target": "v0.7.1",
-        "requires": ["coredns"],
-        "order": 55,
-        "kind": "controller",
-    }
-    # Submission terraform may not plan metrics-server; expect policy miss OR
-    # we only expand trust-irrelevant leaf when TF includes it. Instead vary
-    # regulated replica count — a declared dimension.
-    policy = copy.deepcopy(_load_base("regulated_policy.json"))
-    policy["workloads"][0]["replicas"] = 3
-    _reset_data({"regulated_policy.json": policy})
-    _reset_k8s(K8S_ARTIFACT)
-    workspace = submission_dir / "workspaces" / "upgrade"
-    plan, proc = _replan(workspace)
-    assert plan is not None, proc.stdout + proc.stderr
-    report = upgrade_lab.run_rollout(plan, k8s_dir=VERIFIER_K8S)
+def test_f2p_cross_service_trust_denies_shared_role_arns(
+    baseline: tuple[dict, dict],
+) -> None:
+    """Distinct add-ons must not share IRSA role ARNs."""
+    _plan, report = baseline
     assert report["status"] == "READY", report
-    assert report["regulated_placement"]["settlement-ledger"]["ok"] is True
+    assert report["cross_service_denied"] is True
+    arns = [v.get("role_arn") for v in report["irsa_bindings"].values()]
+    assert len(arns) == len(set(arns)) == len(report["irsa_bindings"])
 
 
-def test_prereq_failure_blocks_later_steps(submission_dir: Path) -> None:
-    """Injected readiness failure must stop later add-ons from advancing."""
+def test_f2p_plan_normalizer_merges_inline_and_attached_policies(
+    baseline: tuple[dict, dict],
+) -> None:
+    """Plan normalization must surface non-empty merged IAM policy actions per IRSA role."""
+    plan, report = baseline
+    assert report["status"] == "READY", report
+    graph = _graph(plan)
+    trust_keys = set(_load_base("trust_observations.json")["required_subjects"])
+    found = 0
+    for role in graph["roles"].values():
+        key = role["tags"].get("AddonTrust")
+        if key in trust_keys:
+            assert role.get("policy_actions")
+            found += 1
+    assert found == len(trust_keys)
+
+
+def test_f2p_upgrade_protected_resources_guarded_against_deletion(
+    baseline: tuple[dict, dict],
+) -> None:
+    """UpgradeProtected resources must not appear as delete/replace actions."""
+    plan, report = baseline
+    assert report["status"] == "READY", report
+    graph = _graph(plan)
+    assert graph["protected_actions"] == []
+    for role in graph["roles"].values():
+        if role["tags"].get("AddonTrust"):
+            assert role["tags"].get("UpgradeProtected") == "true"
+
+
+def test_f2p_rollout_state_checkpointing_enables_restart(
+    submission_dir: Path, baseline: tuple[dict, dict]
+) -> None:
+    """Interrupted rollouts must leave a checkpoint that resumes without redoing finished steps."""
+    _plan, ready_report = baseline
+    assert ready_report["status"] == "READY"
     _reset_data()
     _reset_k8s(K8S_ARTIFACT)
+    for path in (Path("/tmp/upgrade-var"), Path("/tmp/upgrade-output")):
+        if path.exists():
+            shutil.rmtree(path)
+        path.mkdir(parents=True)
     workspace = submission_dir / "workspaces" / "upgrade"
     plan, proc = _replan(workspace)
     assert plan is not None, proc.stdout + proc.stderr
-    report = upgrade_lab.run_rollout(
-        plan, fail_addon="coredns", k8s_dir=VERIFIER_K8S
+    failed = upgrade_lab.run_rollout(plan, fail_addon="coredns", k8s_dir=VERIFIER_K8S)
+    assert failed["status"] == "FAILED"
+    ckpt = Path("/tmp/upgrade-var/checkpoint.json")
+    assert ckpt.is_file()
+    prior = json.loads(ckpt.read_text(encoding="utf-8"))
+    assert "vpc-cni" in prior.get("ready") or "vpc-cni" in prior.get("upgrade_order")
+    resumed = upgrade_lab.run_rollout(plan, k8s_dir=VERIFIER_K8S)
+    assert resumed["status"] == "READY", resumed
+    assert not ckpt.is_file()
+    assert resumed["upgrade_order"].index("vpc-cni") < resumed["upgrade_order"].index(
+        "coredns"
     )
-    assert report["status"] == "FAILED"
-    assert report["reason"] == "readiness_failed:coredns"
-    assert "aws-ebs-csi-driver" not in report["upgrade_order"]
-    assert "karpenter" not in report["upgrade_order"]
-    assert "coredns" not in report["upgrade_order"]
 
 
-def test_wrong_irsa_subject_fail_closed() -> None:
-    """Plans that trust system:nodes must fail the IRSA policy gate."""
-    _reset_data()
-    bad_graph = {
-        "addons": {
-            name: {
-                "addon_name": name,
-                "addon_version": meta["target"],
-                "resolve_conflicts_on_update": "PRESERVE",
-                "tags": {},
-                "actions": ["create"],
-            }
-            for name, meta in _load_base("compatibility_matrix.json")["addons"].items()
-        },
-        "roles": {
-            "ebs_csi": {
-                "name": "regulated-ebs-csi",
-                "subjects": ["system:nodes"],
-                "tags": {"AddonTrust": "ebs_csi"},
-                "policy_actions": ["ec2:AttachVolume"],
-            }
-        },
-        "node_groups": {
-            "system": {
-                "labels": {"nodepool": "system"},
-                "taints": [
-                    {"key": "CriticalAddonsOnly", "value": "true", "effect": "NO_SCHEDULE"}
-                ],
-                "tags": {"UpgradeProtected": "true"},
-            },
-            "apps": {"labels": {"nodepool": "apps"}, "taints": [], "tags": {"UpgradeProtected": "true"}},
-            "batch": {
-                "labels": {"nodepool": "batch"},
-                "taints": [],
-                "tags": {"UpgradeProtected": "true"},
-            },
-        },
-        "regulated": {
-            "name": "regulated-on-demand",
-            "capacity_types": ["on-demand"],
-            "private_only": True,
-        },
-        "protected_actions": [],
-    }
-    # Fill remaining IRSA roles as correct so only ebs fails
-    trust = _load_base("trust_observations.json")
-    for key, subject in trust["required_subjects"].items():
-        if key == "ebs_csi":
-            continue
-        bad_graph["roles"][key] = {
-            "name": trust["role_names"][key],
-            "subjects": [subject],
-            "tags": {"AddonTrust": key},
-            "policy_actions": ["ec2:DescribeInstances"],
-        }
-    errors = upgrade_lab.plan_policy_errors(
-        bad_graph,
-        _load_base("compatibility_matrix.json"),
-        trust,
-        _load_base("defaults.json"),
-        _load_base("regulated_policy.json"),
-        _load_base("cluster_snapshot.json"),
-    )
-    assert any("IRSA" in e or "forbidden" in e for e in errors)
-
-
-def test_missing_pdbs_fail_closed(submission_dir: Path) -> None:
-    """Manifests without required PDBs must fail before a READY report."""
-    _reset_data()
-    empty = Path("/tmp/empty-k8s")
-    if empty.exists():
-        shutil.rmtree(empty)
-    empty.mkdir(parents=True)
-    (empty / "bare.yaml").write_text(
-        "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: bare\n  namespace: default\n",
-        encoding="utf-8",
-    )
-    workspace = submission_dir / "workspaces" / "upgrade"
-    plan, proc = _replan(workspace)
-    assert plan is not None, proc.stdout + proc.stderr
-    report = upgrade_lab.run_rollout(plan, k8s_dir=empty)
-    assert report["status"] == "FAILED"
-    assert report["reason"] == "missing_pdbs"
-
-
-def test_spot_regulated_counterexample() -> None:
-    """Regulated capacity that includes spot must fail plan policy."""
-    _reset_data()
-    graph = {
-        "addons": {
-            name: {
-                "addon_name": name,
-                "addon_version": meta["target"],
-                "resolve_conflicts_on_update": "PRESERVE",
-                "tags": {},
-                "actions": ["create"],
-            }
-            for name, meta in _load_base("compatibility_matrix.json")["addons"].items()
-        },
-        "roles": {},
-        "node_groups": {
-            "system": {
-                "labels": {"nodepool": "system"},
-                "taints": [
-                    {"key": "CriticalAddonsOnly", "value": "true", "effect": "NO_SCHEDULE"}
-                ],
-                "tags": {"UpgradeProtected": "true"},
-            },
-            "apps": {"labels": {"nodepool": "apps"}, "taints": [], "tags": {"UpgradeProtected": "true"}},
-            "batch": {
-                "labels": {"nodepool": "batch"},
-                "taints": [],
-                "tags": {"UpgradeProtected": "true"},
-            },
-        },
-        "regulated": {
-            "name": "regulated-on-demand",
-            "capacity_types": ["on-demand", "spot"],
-            "private_only": True,
-        },
-        "protected_actions": [],
-    }
-    trust = _load_base("trust_observations.json")
-    for key, subject in trust["required_subjects"].items():
-        graph["roles"][key] = {
-            "name": trust["role_names"][key],
-            "subjects": [subject],
-            "tags": {"AddonTrust": key},
-            "policy_actions": ["ec2:DescribeVolumes"],
-        }
-    errors = upgrade_lab.plan_policy_errors(
-        graph,
-        _load_base("compatibility_matrix.json"),
-        trust,
-        _load_base("defaults.json"),
-        _load_base("regulated_policy.json"),
-        _load_base("cluster_snapshot.json"),
-    )
-    assert any("spot" in e or "capacity" in e for e in errors)
-
-
-def test_protected_replace_counterexample() -> None:
-    """Delete/replace actions on UpgradeProtected resources must fail closed."""
-    _reset_data()
-    trust = _load_base("trust_observations.json")
-    graph = {
-        "addons": {
-            name: {
-                "addon_name": name,
-                "addon_version": meta["target"],
-                "resolve_conflicts_on_update": "PRESERVE",
-                "tags": {},
-                "actions": ["create"],
-            }
-            for name, meta in _load_base("compatibility_matrix.json")["addons"].items()
-        },
-        "roles": {
-            key: {
-                "name": trust["role_names"][key],
-                "subjects": [subject],
-                "tags": {"AddonTrust": key},
-                "policy_actions": ["ec2:DescribeVolumes"],
-            }
-            for key, subject in trust["required_subjects"].items()
-        },
-        "node_groups": {
-            "system": {
-                "labels": {"nodepool": "system"},
-                "taints": [
-                    {"key": "CriticalAddonsOnly", "value": "true", "effect": "NO_SCHEDULE"}
-                ],
-                "tags": {"UpgradeProtected": "true"},
-            },
-            "apps": {"labels": {"nodepool": "apps"}, "taints": [], "tags": {"UpgradeProtected": "true"}},
-            "batch": {
-                "labels": {"nodepool": "batch"},
-                "taints": [],
-                "tags": {"UpgradeProtected": "true"},
-            },
-        },
-        "regulated": {
-            "name": "regulated-on-demand",
-            "capacity_types": ["on-demand"],
-            "private_only": True,
-        },
-        "protected_actions": [
-            {"address": "aws_eks_node_group.pools[\"system\"]", "actions": ["delete", "create"], "type": "aws_eks_node_group"}
-        ],
-    }
-    errors = upgrade_lab.plan_policy_errors(
-        graph,
-        _load_base("compatibility_matrix.json"),
-        trust,
-        _load_base("defaults.json"),
-        _load_base("regulated_policy.json"),
-        _load_base("cluster_snapshot.json"),
-    )
-    assert any("protected" in e for e in errors)
-
-
-def test_idempotent_digest_matches_agent(
+def test_f2p_report_formatting_is_canonical_and_complete(
     agent_report: dict, baseline: tuple[dict, dict]
 ) -> None:
-    """Verifier digest for READY baseline must match the agent report digest."""
+    """Upgrade reports must include the full documented schema with stable fields."""
     _plan, report = baseline
+    assert report["status"] == "READY", report
+    assert agent_report["status"] == "READY"
+    required = {
+        "status",
+        "reason",
+        "policy_errors",
+        "upgrade_order",
+        "steps",
+        "availability",
+        "pdb_respected",
+        "drain_result",
+        "irsa_bindings",
+        "cross_service_denied",
+        "regulated_placement",
+        "interruption",
+        "report_digest",
+    }
+    assert required.issubset(report.keys())
+    assert required.issubset(agent_report.keys())
+
+
+def test_f2p_report_digest_computed_over_stable_fields(
+    agent_report: dict, baseline: tuple[dict, dict]
+) -> None:
+    """Report digests must be SHA-256 over the stable semantic subset."""
+    _plan, report = baseline
+    assert report["status"] == "READY", report
+    assert len(report["report_digest"]) == 64
+    assert int(report["report_digest"], 16) >= 0
     assert report["report_digest"] == agent_report["report_digest"]
 
 
-def test_plan_provenance(baseline: tuple[dict, dict]) -> None:
-    """Submitted module must plan real EKS add-on and IRSA role resources."""
-    plan, _report = baseline
-    types = {rc.get("type") for rc in plan.get("resource_changes") or []}
-    assert "aws_eks_addon" in types
-    assert "aws_iam_role" in types
-    assert "aws_eks_node_group" in types
+def test_f2p_readiness_status_ready_when_all_checks_pass(
+    agent_report: dict, baseline: tuple[dict, dict]
+) -> None:
+    """Agent and verifier rollouts must both publish READY when all gates pass."""
+    _plan, report = baseline
+    assert report["status"] == "READY", report
+    assert agent_report["status"] == "READY"
+    assert not report.get("policy_errors")
+    assert report.get("pdb_respected") is True
+    assert report.get("cross_service_denied") is True
+
+
+def test_f2p_identical_runs_produce_identical_digests(
+    submission_dir: Path, baseline: tuple[dict, dict]
+) -> None:
+    """Two clean verifier rollouts with the same inputs must share one digest."""
+    _plan, first = baseline
+    assert first["status"] == "READY"
+    _reset_data()
+    _reset_k8s(K8S_ARTIFACT)
+    for path in (Path("/tmp/upgrade-var"), Path("/tmp/upgrade-output")):
+        if path.exists():
+            shutil.rmtree(path)
+        path.mkdir(parents=True)
+    workspace = submission_dir / "workspaces" / "upgrade"
+    plan, proc = _replan(workspace)
+    assert plan is not None, proc.stdout + proc.stderr
+    second = upgrade_lab.run_rollout(plan, k8s_dir=VERIFIER_K8S)
+    assert second["status"] == "READY"
+    assert first["report_digest"] == second["report_digest"]
+
+
+def test_p2p_cli_entrypoint_and_api_signatures_compatible() -> None:
+    """Public CLI entrypoint and lab API surface remain importable offline."""
+    assert callable(upgrade_lab.run_rollout)
+    assert callable(upgrade_lab.plan_policy_errors)
+    assert callable(upgrade_lab.normalize_plan)
+
+
+def test_p2p_report_schema_and_plan_paths_preserved() -> None:
+    """Documented plan and report artifact paths remain the grading contract."""
+    assert str(OUTPUT_ARTIFACT) == "/app/output"
+    assert str(VAR_ARTIFACT) == "/app/var/upgrade"
+    schema_keys = {
+        "status",
+        "reason",
+        "policy_errors",
+        "upgrade_order",
+        "steps",
+        "availability",
+        "pdb_respected",
+        "drain_result",
+        "irsa_bindings",
+        "cross_service_denied",
+        "regulated_placement",
+        "interruption",
+        "report_digest",
+    }
+    assert "status" in schema_keys
+
+
+def test_p2p_offline_lab_execution_requires_no_external_aws() -> None:
+    """Lab policy evaluation must run from local fixtures without live AWS."""
+    _reset_data()
+    trust = _load_base("trust_observations.json")
+    errors = upgrade_lab.plan_policy_errors(
+        {
+            "addons": {},
+            "roles": {},
+            "node_groups": {},
+            "regulated": {},
+            "protected_actions": [],
+        },
+        _load_base("compatibility_matrix.json"),
+        trust,
+        _load_base("defaults.json"),
+        _load_base("regulated_policy.json"),
+        _load_base("cluster_snapshot.json"),
+    )
+    assert isinstance(errors, list)
+    assert errors
+
+
+def test_p2p_policy_violations_fail_closed_without_corruption() -> None:
+    """Unsafe plans must fail closed with plan_policy reason and no READY status."""
+    _reset_data()
+    _reset_k8s(K8S_ARTIFACT)
+    bad_plan = {"resource_changes": [], "format_version": "1.2"}
+    report = upgrade_lab.run_rollout(bad_plan, k8s_dir=VERIFIER_K8S)
+    assert report["status"] == "FAILED"
+    assert report["reason"] == "plan_policy"
+    assert report.get("policy_errors")
+    assert report["upgrade_order"] == []

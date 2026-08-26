@@ -1,5 +1,20 @@
-Last weekend's EKS add-on bump left the regulated payments cluster half-upgraded: controllers drifted ahead of their prerequisites, IRSA subjects widened toward node identity, and a drain during the window took CoreDNS below its budget. We still have to finish the in-place upgrade against the live cluster snapshot — not stand up a fresh fleet.
-
-Inventory and failure evidence are under `/app/data` and `/app/evidence`. The upgrade contract is `/app/docs/addon-trust-rollout-contract.md`. Repair Terraform under `/app/terraform` and the Kubernetes manifests under `/app/k8s`, then run `/app/bin/addon-trust-rollout`. That command must regenerate `/app/var/upgrade/plan.json`, apply the submitted manifests into the local upgrade lab, roll system controllers in compatibility order, drain a system node, inject an interruption, and leave `/app/output/upgrade-report.json` with status `READY`. 
-
-Core services must stay available under PDBs, IRSA must bind exact namespace/service-account subjects with no cross-service assume, regulated workloads must remain on approved on-demand capacity, and protected identities must not be deleted or replaced. A second identical run must keep the same report digest.
+- Complete the inherited Terraform and Kubernetes EKS add-on trust rollout system at `/app` using contracts in `/app/docs` and incident evidence in `/app/evidence` so add-on controllers, IRSA subjects, PodDisruptionBudgets, and regulated placement achieve policy-compliant upgrade readiness.
+- Execute and validate through the public operator CLI command at `/app/bin/addon-trust-rollout`.
+- Plan Terraform under `/app/terraform` so the generated plan at `/app/var/upgrade/plan.json` includes all required add-ons matching target versions in `/app/data/compatibility_matrix.json`.
+- Configure `resolve_conflicts_on_update = 'PRESERVE'` for all EKS add-ons in the Terraform plan.
+- Support SSM parameter tags for controller add-ons to extract version overrides and conflict resolution modes.
+- Configure each IRSA role in Terraform to trust exactly one service account subject matching `/app/data/trust_observations.json` and reject wildcards or forbidden subjects.
+- Ensure IAM role policies contain no wildcard actions (`*` or `ebs:*`) and role names follow required naming conventions.
+- Supply required PodDisruptionBudgets in `/app/k8s` matching required names, namespaces, and minAvailable thresholds in `/app/data/pdbs.json`.
+- Preserve `CriticalAddonsOnly=true:NoSchedule` taints and nodepool labels on the system node group.
+- Simulate system node draining while enforcing PodDisruptionBudget minAvailable limits and maintaining core service availability.
+- Enforce explicit nodepool selectors and capacity-type constraints for regulated workloads, restricting placement to private on-demand node pools.
+- Enforce Karpenter NodePool CRD requirements to ensure regulated capacity excludes spot instances.
+- Simulate spot/on-demand node interruptions and verify regulated workloads remain on on-demand capacity after rebalancing.
+- Validate add-on rollout prerequisites before advancing each add-on, executing rollouts in exact compatibility matrix order.
+- Poll and verify add-on readiness before marking steps complete, reporting status `READY` only when all readiness conditions pass.
+- Audit cross-service trust to prevent IAM role ARN sharing across distinct add-ons.
+- Merge inline policies and standalone role policy attachments in plan normalization.
+- Guard resources tagged `UpgradeProtected=true` against delete or replace actions in the Terraform plan.
+- Record step-by-step rollout state checkpoints to enable atomic restart recovery upon interruption.
+- Publish deterministic reports to `/app/output/upgrade-report.json` with canonical formatting, sorted keys, stable semantic fields, and repeatable SHA-256 report digests.

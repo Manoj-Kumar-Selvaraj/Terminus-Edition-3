@@ -1,0 +1,54 @@
+{
+  "contract_version": "1.0",
+  "task_id": "terraform-aws-eks-addon-trust-rollout",
+  "requirement_contract_hash": "sha256:39eb93532fc109851098ac0a125b0d7afddb1097e712e41d7aa7769b50859a50",
+  "engineering_objective": "Complete the inherited Terraform and Kubernetes EKS add-on trust rollout system so add-on controllers, IRSA subjects, PodDisruptionBudgets, node pool taints, and regulated workload placement achieve policy-compliant, interruption-safe upgrade readiness.",
+  "affected_system_location": "/app",
+  "required_end_state": "The Terraform workspace at /app/terraform, Kubernetes manifests under /app/k8s, and upgrade lab engine under /app/upgrade_lab correctly plan target add-on versions, enforce single-subject IRSA roles with narrow IAM policies, maintain required PodDisruptionBudgets during node drains, restrict regulated workloads to private on-demand node pools, advance add-ons in prerequisite order, and produce deterministic READY upgrade reports.",
+  "functional_requirements": [
+    "Operate the upgrade system through the public operator CLI at /app/bin/addon-trust-rollout.",
+    "Validate that the Terraform plan at /app/var/upgrade/plan.json includes all required add-ons (vpc-cni, ebs-csi, coredns, kube-proxy, aws-load-balancer-controller, karpenter) matching exact target versions in /app/data/compatibility_matrix.json.",
+    "Enforce resolve_conflicts_on_update = 'PRESERVE' for all EKS add-ons in the Terraform plan.",
+    "Parse SSM parameter tags for controller add-ons to extract version overrides and conflict resolution settings.",
+    "Ensure each IRSA role in Terraform trusts exactly one service account subject matching /app/data/trust_observations.json and rejects wildcards or forbidden subjects (e.g. system:nodes).",
+    "Verify that IAM role policy statements contain no wildcard actions (* or ebs:*) and that role names match expected naming conventions.",
+    "Validate that submitted Kubernetes manifests under /app/k8s supply required PodDisruptionBudgets matching names, namespaces, and minAvailable thresholds in /app/data/pdbs.json.",
+    "Verify that the system node group retains CriticalAddonsOnly=true:NoSchedule taints and correct nodepool labels.",
+    "Simulate system node draining while respecting PodDisruptionBudget minAvailable limits and tracking core service availability.",
+    "Enforce explicit nodepool selectors and capacity-type constraints for regulated workloads, restricting them to private on-demand node pools.",
+    "Verify Karpenter NodePool CRD specifications to ensure regulated capacity requirements exclude spot instances.",
+    "Simulate spot/on-demand node interruptions and verify that regulated workloads remain on on-demand capacity after rebalancing.",
+    "Validate add-on rollout prerequisites before advancing each add-on, rolling out add-ons in exact compatibility matrix order.",
+    "Verify add-on readiness before marking each step complete and report status = READY only when all readiness conditions pass.",
+    "Audit cross-service trust to ensure no IAM role ARN is shared across distinct add-ons.",
+    "Merge inline role policies and standalone role policy attachments in plan normalization.",
+    "Strictly guard resources tagged UpgradeProtected=true against delete or replace actions in the Terraform plan.",
+    "Record step-by-step rollout state checkpoints to enable atomic restart recovery upon interruption.",
+    "Publish deterministic reports to /app/output/upgrade-report.json with canonical formatting, sorted keys, stable semantic fields, and repeatable SHA-256 report digests."
+  ],
+  "preservation_requirements": [
+    "Preserve documented CLI entrypoint /app/bin/addon-trust-rollout, report schema, and plan path /app/var/upgrade/plan.json.",
+    "Keep the Python upgrade_lab, Terraform workspace structure, and Kubernetes manifest boundaries intact.",
+    "Do not mutate cluster snapshot data or test fixtures outside documented state and output paths."
+  ],
+  "compatibility_requirements": [
+    "Maintain compatibility with datasets under /app/data, manifests under /app/k8s, and Terraform files under /app/terraform.",
+    "Treat technical contract at /app/docs/addon-trust-rollout-contract.md as binding.",
+    "Generate 12,500 deterministic synthetic primary records across cluster snapshots, trust observations, telemetry, matrix entries, and interruption events without live AWS calls."
+  ],
+  "safety_requirements": [
+    "Deterministic execution must use the local upgrade lab and must not contact live AWS APIs or Kubernetes clusters.",
+    "Never leak credentials or volatile runtime facts into output reports or state checkpoints.",
+    "Policy violations, missing add-ons, or malformed manifests must fail closed with clear error reasons without corrupting state."
+  ],
+  "referenced_docs": [
+    "/app/docs/addon-trust-rollout-contract.md"
+  ],
+  "required_outputs": [
+    {"path":"/app/output/upgrade-report.json","notes":"Deterministic upgrade readiness report with stable semantic fields and SHA-256 digest."},
+    {"path":"/app/var/upgrade/plan.json","notes":"Regenerated terraform show -json plan."}
+  ],
+  "source_task_commit": "6298f2cf2247c35c04a855b5e1217af85e6d03dc",
+  "control_plane_commit": "6298f2cf2247c35c04a855b5e1217af85e6d03dc",
+  "private_sources_excluded": true
+}

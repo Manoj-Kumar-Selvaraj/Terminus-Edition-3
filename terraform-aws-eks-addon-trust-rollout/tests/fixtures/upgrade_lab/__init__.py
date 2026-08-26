@@ -556,16 +556,47 @@ def run_rollout(
         return report
 
     # Simulate addon rollout in order
-    ready: set[str] = set()
+    checkpoint_path = var / "checkpoint.json"
+    prior: dict[str, Any] = {}
+    if checkpoint_path.is_file():
+        try:
+            prior = json.loads(checkpoint_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            prior = {}
+    ready: set[str] = set(prior.get("ready") or [])
+    report["upgrade_order"] = list(prior.get("upgrade_order") or [])
+    report["steps"] = list(prior.get("steps") or [])
     installed = dict(snapshot.get("addons") or {})
     for cname, cmeta in (snapshot.get("controllers") or {}).items():
         installed[cname] = cmeta
+    for done in report["upgrade_order"]:
+        planned_done = graph["addons"].get(done) or {}
+        installed[done] = {
+            "installed": planned_done.get("addon_version"),
+            "status": "ACTIVE",
+        }
+
+    def _save_ckpt() -> None:
+        checkpoint_path.write_text(
+            json.dumps(
+                {
+                    "ready": sorted(ready),
+                    "upgrade_order": list(report["upgrade_order"]),
+                    "steps": list(report["steps"]),
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
 
     for name in order:
+        if name in ready:
+            continue
         meta = (matrix.get("addons") or {})[name]
         reqs = meta.get("requires") or []
         if not all(r in ready for r in reqs):
             report["reason"] = f"prerequisite_missing:{name}"
+            _save_ckpt()
             report["report_digest"] = _report_digest(report)
             _write_report(report)
             return report
@@ -580,7 +611,7 @@ def run_rollout(
                 }
             )
             report["reason"] = f"readiness_failed:{name}"
-            # Later steps must not appear
+            _save_ckpt()
             report["report_digest"] = _report_digest(report)
             _write_report(report)
             return report
@@ -597,6 +628,7 @@ def run_rollout(
         report["upgrade_order"].append(name)
         ready.add(name)
         installed[name] = {"installed": planned.get("addon_version"), "status": "ACTIVE"}
+        _save_ckpt()
 
     # Availability after rollout
     for svc in defaults.get("core_services") or []:
@@ -674,6 +706,8 @@ def run_rollout(
 
     report["status"] = "READY"
     report["reason"] = None
+    if checkpoint_path.is_file():
+        checkpoint_path.unlink()
     report["report_digest"] = _report_digest(report)
     _write_report(report)
     return report
@@ -684,18 +718,18 @@ def _report_digest(report: dict) -> str:
         "status": report.get("status"),
         "reason": report.get("reason"),
         "policy_errors": sorted(report.get("policy_errors") or []),
-        "upgrade_order": report.get("upgrade_order"),
-        "steps": report.get("steps"),
-        "availability": report.get("availability"),
-        "pdb_respected": report.get("pdb_respected"),
-        "drain_result": report.get("drain_result"),
+        "upgrade_order": report.get("upgrade_order") or [],
+        "steps": report.get("steps") or [],
+        "availability": report.get("availability") or {},
+        "pdb_respected": report.get("pdb_respected", False),
+        "drain_result": report.get("drain_result") or {},
         "irsa_bindings": {
             k: {"subject": v.get("subject"), "ok": v.get("ok")}
             for k, v in sorted((report.get("irsa_bindings") or {}).items())
         },
-        "cross_service_denied": report.get("cross_service_denied"),
-        "regulated_placement": report.get("regulated_placement"),
-        "interruption": report.get("interruption"),
+        "cross_service_denied": report.get("cross_service_denied", False),
+        "regulated_placement": report.get("regulated_placement") or {},
+        "interruption": report.get("interruption") or {},
     }
     return _stable_digest(stable)
 

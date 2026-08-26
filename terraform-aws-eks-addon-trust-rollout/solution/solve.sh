@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 rm -rf /app/terraform /app/k8s
-mkdir -p /app/terraform /app/k8s
+mkdir -p /app/terraform /app/k8s /app/var/upgrade /app/output
 cp -a "${SCRIPT_DIR}/terraform/." /app/terraform/
 cp -a "${SCRIPT_DIR}/k8s/." /app/k8s/
 

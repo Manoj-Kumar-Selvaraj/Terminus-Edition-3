@@ -81,6 +81,7 @@ spec:
     metadata:
       labels:
         app: settlement-ledger
+        workload-class: regulated
     spec:
       nodeSelector:
         karpenter.sh/nodepool: regulated-on-demand
@@ -101,3 +102,22 @@ spec:
         - key: karpenter.sh/capacity-type
           operator: In
           values: ["on-demand"]
+        - key: kubernetes.io/arch
+          operator: In
+          values: ["amd64"]
+      nodeClassRef:
+        name: default
+---
+apiVersion: karpenter.k8s.aws/v1beta1
+kind: EC2NodeClass
+metadata:
+  name: default
+spec:
+  amiFamily: AL2
+  subnetSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: regulated-payments-eks
+        SubnetType: Private
+  securityGroupSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: regulated-payments-eks

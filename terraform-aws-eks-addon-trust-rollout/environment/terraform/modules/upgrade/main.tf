@@ -11,12 +11,6 @@ terraform {
   }
 }
 
-variable "cluster_snapshot" { type = any }
-variable "compatibility_matrix" { type = any }
-variable "trust_observations" { type = any }
-variable "regulated_policy" { type = any }
-variable "defaults" { type = any }
-
 locals {
   oidc_host = var.defaults.oidc_issuer_host
   oidc_arn  = var.defaults.oidc_provider_arn
@@ -129,10 +123,10 @@ resource "aws_iam_role" "karpenter" {
 
 resource "aws_eks_addon" "core" {
   for_each = {
-    "vpc-cni"              = "v1.16.0-eksbuild.1"
-    "kube-proxy"           = "v1.29.0-eksbuild.1"
-    "coredns"              = "v1.11.1-eksbuild.4"
-    "aws-ebs-csi-driver"   = "v1.31.0-eksbuild.1"
+    "vpc-cni"            = "v1.16.0-eksbuild.1"
+    "kube-proxy"         = "v1.29.0-eksbuild.1"
+    "coredns"            = "v1.11.1-eksbuild.4"
+    "aws-ebs-csi-driver" = "v1.31.0-eksbuild.1"
   }
 
   cluster_name                = local.cluster
@@ -193,17 +187,5 @@ resource "aws_ssm_parameter" "regulated_nodepool" {
     NodePoolName       = "regulated-on-demand"
     CapacityTypes      = "on-demand,spot"
     PrivateSubnetsOnly = "false"
-  }
-}
-
-output "addon_versions" {
-  value = { for k, v in aws_eks_addon.core : k => v.addon_version }
-}
-
-output "irsa_role_arns" {
-  value = {
-    ebs_csi       = aws_iam_role.ebs_csi.arn
-    load_balancer = aws_iam_role.load_balancer.arn
-    karpenter     = aws_iam_role.karpenter.arn
   }
 }

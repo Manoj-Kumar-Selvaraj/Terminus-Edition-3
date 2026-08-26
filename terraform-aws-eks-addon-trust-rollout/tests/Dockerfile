@@ -27,11 +27,12 @@ RUN curl -fsSL -o /tmp/terraform.zip \
     && rm -f /tmp/terraform.zip \
     && chmod 0755 /usr/local/bin/terraform
 
-RUN pip install --no-cache-dir \
+RUN pip install --no-cache-dir --break-system-packages \
         pytest==8.3.5 \
         pytest-json-ctrf==0.5.3 \
         ruff==0.8.4 \
-        PyYAML==6.0.2
+        PyYAML==6.0.2 \
+    && python -m pytest --version
 
 WORKDIR /app
 

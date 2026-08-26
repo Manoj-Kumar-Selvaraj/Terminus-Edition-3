@@ -1,0 +1,21 @@
+#!/usr/bin/env python3
+"""Generate deterministic estate fixtures for EKS Add-on Trust Upgrade Lab."""
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+sys.path.insert(0, "/app")
+from upgrade_lab.fixture_generator import generate_estate_fixtures  # noqa: E402
+
+
+def main() -> int:
+    data_dir = Path("/app/data")
+    data_dir.mkdir(parents=True, exist_ok=True)
+    count = generate_estate_fixtures(data_dir)
+    print(f"Estate fixture generation complete. Total records: {count}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

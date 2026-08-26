@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-authorizer
+  namespace: regulated
+  labels:
+    workload-class: regulated
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: payment-authorizer
+  template:
+    metadata:
+      labels:
+        app: payment-authorizer
+        workload-class: regulated
+    spec:
+      nodeSelector:
+        nodepool: regulated-on-demand
+        karpenter.sh/capacity-type: on-demand
+      containers:
+        - name: authorizer
+          image: registry.internal/payment/authorizer:v2.1.0
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: settlement-reconciler
+  namespace: regulated
+  labels:
+    workload-class: regulated
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: settlement-reconciler
+  template:
+    metadata:
+      labels:
+        app: settlement-reconciler
+        workload-class: regulated
+    spec:
+      nodeSelector:
+        nodepool: regulated-on-demand
+        karpenter.sh/capacity-type: on-demand
+      containers:
+        - name: reconciler
+          image: registry.internal/payment/reconciler:v1.9.4

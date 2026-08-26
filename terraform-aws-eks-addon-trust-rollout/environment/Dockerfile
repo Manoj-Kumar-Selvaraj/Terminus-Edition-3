@@ -31,7 +31,10 @@ RUN curl -fsSL -o /tmp/terraform.zip \
     && rm -f /tmp/terraform.zip \
     && chmod 0755 /usr/local/bin/terraform
 
-RUN pip install --no-cache-dir PyYAML==6.0.2
+RUN pip install --no-cache-dir --break-system-packages \
+        PyYAML==6.0.2 \
+        pytest==8.3.5 \
+        pytest-json-ctrf==0.5.3
 
 COPY mirror/providers.tf /opt/terraform-mirror-src/providers.tf
 RUN mkdir -p /opt/terraform-provider-mirror \
@@ -51,7 +54,9 @@ COPY k8s/ /app/k8s/
 COPY bin/ /app/bin/
 
 RUN mkdir -p /app/var/upgrade /app/output \
-    && chmod +x /app/bin/addon-trust-rollout \
+    && sed -i 's/\r$//' /app/bin/* \
+    && chmod +x /app/bin/* \
+    && /app/bin/generate-fixtures \
     && chmod -R go-w /app/docs /app/data /app/evidence /app/upgrade_lab
 
 CMD ["/bin/bash", "-l"]
