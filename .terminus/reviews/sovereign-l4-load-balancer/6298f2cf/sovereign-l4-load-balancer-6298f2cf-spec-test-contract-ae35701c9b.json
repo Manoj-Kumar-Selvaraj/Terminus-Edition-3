@@ -1,0 +1,490 @@
+{
+  "schema_version": "3.0",
+  "role": "Spec-Test Contract Reviewer",
+  "review_id": "sovereign-l4-load-balancer-6298f2cf-spec-test-contract-ae35701c9b",
+  "task": "sovereign-l4-load-balancer",
+  "task_commit": "6298f2cf2247c35c04a855b5e1217af85e6d03dc",
+  "control_plane_commit": "6298f2cf2247c35c04a855b5e1217af85e6d03dc",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "d2994789dc83b2c8a6b92201782ea9f3e5528a3a9d725c863c22efb6356e570e",
+  "context_packet": ".terminus/reviews/sovereign-l4-load-balancer/6298f2cf/sovereign-l4-load-balancer-6298f2cf-spec-test-contract-ae35701c9b.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Bidirectional coverage is strong for authority/409, LKG, PROXY-once, drain deadline, recovery, and most stream/eligibility paths after the 6298f2cf remediation, but same_zone_preferred × empty-local × fail_open eligibility remains grading-ambiguous relative to verifier assertions, and the instruction-required control-channel status envelope is untested.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/instruction.md",
+      "observation": "Exactly 20 functional bullets; R13 requires combining zone and fail-open exactly as documented; R6 requires hello/prepare/prepared/rejected/activate/active/status envelopes; R20 incorporates /app/sovereign-lb/docs."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/docs/dataplane.md",
+      "observation": "States same-zone-preferred uses local first and remote 'only when local policy permits fallback', and fail-open may include unhealthy/ejected but never disabled/removed/expired-drain. Does not define empty-local behavior or whether fail_open expands zone eligibility."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/docs/configuration.md",
+      "observation": "Names zone_policy values and explicit fail_open but gives no eligibility matrix for same_zone_preferred with zero local targets or fail_open interaction."
+    },
+    {
+      "type": "test",
+      "ref": "sovereign-l4-load-balancer/tests/test_outputs.py::test_f2p_same_zone_skips_remote_without_failopen",
+      "observation": "same_zone_preferred + fail_open=false with only a remote-zone target expects no forwarding, encoding hard non-fallback when local set is empty."
+    },
+    {
+      "type": "test",
+      "ref": "sovereign-l4-load-balancer/tests/test_outputs.py::test_f2p_round_robin_hits_multiple_backends",
+      "observation": "Uses scenario desired with same_zone_preferred + fail_open=true and targets in zone-a and zone-b; asserts both echo and slow backends are hit, which only reconciles with the prior test under an undocumented fail_open↔zone-expansion rule or an undocumented soft-preference rule."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/config/scenarios/single-node-lab.json",
+      "observation": "echo-pool is same_zone_preferred with fail_open true and mixed-zone targets; this is the shared baseline for several stream tests including round-robin."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/docs/control-protocol.md",
+      "observation": "Defines bidirectional control-channel status envelopes with bounded readiness/generation/listener/connection/health fields; instruction R6 lists status among required envelopes."
+    },
+    {
+      "type": "test",
+      "ref": "sovereign-l4-load-balancer/tests/test_outputs.py",
+      "observation": "Verifier exercises hello/prepare/prepared/rejected and HTTP/dataplane status readiness, but never asserts control-channel type=status exchange semantics."
+    },
+    {
+      "type": "test",
+      "ref": "sovereign-l4-load-balancer/tests/test_outputs.py::test_f2p_failed_candidate_preserves_lkg_generation",
+      "observation": "LKG active generation preservation, continued listener service, and non-reuse of failed generation ids are covered and match rollout-state.md/operations.md."
+    },
+    {
+      "type": "test",
+      "ref": "sovereign-l4-load-balancer/tests/test_outputs.py::test_f2p_proxy_inspect_listener_echo",
+      "observation": "Exactly-one PROXY v2 header and no repeat are graded via lab events; discoverable from dataplane.md plus tools/lab backends event interface."
+    },
+    {
+      "type": "test",
+      "ref": "sovereign-l4-load-balancer/tests/test_outputs.py::test_f2p_drain_deadline_terminates_owned_stream",
+      "observation": "Drain deadline force-close is graded and aligned with dataplane.md draining contract."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/docs/operations.md",
+      "observation": "HTTP 200/202/409/422/400 mutation outcomes and generation-number strict increase after failed candidates are explicit; matches authority/conflict verifier behaviors."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q4-B01",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "grading-relevant-ambiguity",
+      "evidence_refs": [
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/dataplane.md",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/configuration.md",
+        "sovereign-l4-load-balancer/tests/test_outputs.py::test_f2p_same_zone_skips_remote_without_failopen",
+        "sovereign-l4-load-balancer/tests/test_outputs.py::test_f2p_round_robin_hits_multiple_backends",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/config/scenarios/single-node-lab.json",
+        "sovereign-l4-load-balancer/instruction.md"
+      ],
+      "why_it_matters": "Competing readings of same_zone_preferred (hard same-zone vs soft fallback when local empty) and whether fail_open expands zone eligibility change which targets are selectable. Verifier asserts no remote forwarding for remote-only + fail_open=false, while round-robin on the stock scenario expects both local and remote backends under same_zone_preferred + fail_open=true. Solvers cannot uniquely derive the graded eligibility matrix from the documented contracts.",
+      "minimal_remediation": "In dataplane.md (and a one-line configuration.md cross-reference if needed), publish an explicit eligibility matrix for same_zone_preferred covering: local nonempty; local empty with remote normally-eligible; and the exact effect of fail_open on zone membership versus unhealthy/ejected inclusion. Keep instruction R13 as the work request; do not encode hidden-test fixtures.",
+      "regression_risk": "Clarifying the matrix may reveal that either the remote-skip test or the mixed-zone round-robin baseline needs a Q2 adjustment if the intended product semantics cannot satisfy both."
+    },
+    {
+      "id": "Q4-B02",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "untested-material-requirement",
+      "evidence_refs": [
+        "sovereign-l4-load-balancer/instruction.md",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/control-protocol.md",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/examples/control.ndjson",
+        "sovereign-l4-load-balancer/tests/test_outputs.py"
+      ],
+      "why_it_matters": "Instruction R6 and control-protocol.md require a bidirectional control-channel status envelope with bounded fields. The verifier never asserts status-frame accept/reject or body bounds, so a solver can omit that envelope and still pass while appearing to miss a stated protocol obligation.",
+      "minimal_remediation": "Add a behavioral assertion that a well-formed control status exchange is accepted and/or that an invalid status envelope does not advance authority; or, if status is not graded, remove it from the instruction envelope list while retaining HTTP/dataplane status obligations under R17.",
+      "regression_risk": "Low if a narrow status-frame check is added beside existing torn-frame/session fence tests; higher if the instruction list is trimmed without updating docs consistency."
+    },
+    {
+      "id": "Q4-A01",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "advisory-wording-tension",
+      "evidence_refs": [
+        "sovereign-l4-load-balancer/instruction.md",
+        "sovereign-l4-load-balancer/environment/sovereign-lb/docs/dataplane.md",
+        "sovereign-l4-load-balancer/tests/test_outputs.py::test_f2p_proxy_inspect_listener_echo"
+      ],
+      "why_it_matters": "Instruction says 'at most one' PROXY header when enabled; docs/tests require exactly one on first backend establish. Docs resolve grading, but instruction wording is slightly weaker.",
+      "minimal_remediation": "Optional Q3 nibble: change instruction phrasing to 'exactly one' when proxy_protocol_v2 is enabled.",
+      "regression_risk": "Negligible."
+    },
+    {
+      "id": "Q4-A02",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "partial-coverage-advisory",
+      "evidence_refs": [
+        "sovereign-l4-load-balancer/instruction.md",
+        "sovereign-l4-load-balancer/tests/test_outputs.py"
+      ],
+      "why_it_matters": "R1 language/structure preservation and R19 exclusion surface are stated but not behaviorally graded; acceptable as non-graded safety/scope guardrails unless later tests assert them.",
+      "minimal_remediation": "No change required unless exclusions become graded.",
+      "regression_risk": "None."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "sovereign-l4-load-balancer/environment/sovereign-lb/docs/dataplane.md",
+    "sovereign-l4-load-balancer/environment/sovereign-lb/docs/configuration.md",
+    "sovereign-l4-load-balancer/instruction.md",
+    "sovereign-l4-load-balancer/tests/test_outputs.py"
+  ],
+  "do_not_change": [
+    "Already-aligned LKG/generation-reuse, PROXY-once, drain-deadline, 409 authority, torn-frame, and recovery assertions unless a zone-matrix clarification forces a scenario baseline edit",
+    "Oracle/solution implementation details outside contract clarification",
+    "Unrelated tasks and .terminus control-plane artifacts outside this review output"
+  ],
+  "next_gate": "Q3 Spec Ambiguity Repairer (Q4-B01), then Q2 Verifier Coverage Repairer or instruction trim (Q4-B02), then re-freeze Q4",
+  "role_output": {
+    "REQUIREMENT_TEST_MATRIX": [
+      {
+        "requirement_id": "R1",
+        "statement": "Work only under /app/sovereign-lb; preserve mixed Go/C++/Bash/Python structure",
+        "coverage": "absent",
+        "tests": []
+      },
+      {
+        "requirement_id": "R2",
+        "statement": "Build lb-control-plane, lbctl, lb-dataplane via bin/build; keep bin/lab available",
+        "coverage": "complete",
+        "tests": [
+          "test_p2p_binaries_and_catalog_present",
+          "test_p2p_lbctl_status_command",
+          "build_tree fixture"
+        ]
+      },
+      {
+        "requirement_id": "R3",
+        "statement": "Canonical validation of listener/target-group/target/health/balancing/zone/fail-open before generation allocation",
+        "coverage": "partial",
+        "tests": [
+          "test_p2p_validate_rejects_invalid_policy",
+          "test_f2p_duplicate_listener_bind_rejected",
+          "test_f2p_invalid_listener_port_rejected",
+          "test_f2p_unknown_apply_field_rejected"
+        ]
+      },
+      {
+        "requirement_id": "R4",
+        "statement": "Revision/idempotency fencing with conflicts on stale/equal-body/key reuse",
+        "coverage": "complete",
+        "tests": [
+          "test_p2p_idempotency_replay",
+          "test_f2p_same_revision_different_body_conflict",
+          "test_f2p_stale_revision_rejected",
+          "test_f2p_idempotency_key_body_conflict",
+          "test_f2p_revision_advances_accepted_authority",
+          "test_f2p_control_plane_restart_restores_authority_fences"
+        ]
+      },
+      {
+        "requirement_id": "R5",
+        "statement": "Immutable complete snapshot with deterministic digest and persisted generation record",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_generation_snapshot_matches_digest",
+          "test_f2p_accepted_digest_persisted",
+          "test_f2p_checkpoint_generation_directory_padding"
+        ]
+      },
+      {
+        "requirement_id": "R6",
+        "statement": "Length-prefixed canonical JSON control protocol envelopes including status",
+        "coverage": "partial",
+        "tests": [
+          "test_f2p_torn_control_frame_does_not_advance_authority",
+          "test_f2p_control_session_sequence_mismatch_rejected",
+          "test_f2p_failed_candidate_preserves_lkg_generation"
+        ],
+        "gap": "control-channel status envelope untested (Q4-B02); activate/active covered behaviorally via rollout, not wire-asserted"
+      },
+      {
+        "requirement_id": "R7",
+        "statement": "Fence acks/activation by node/session/generation/digest/sequence",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_control_session_sequence_mismatch_rejected",
+          "test_f2p_torn_control_frame_does_not_advance_authority"
+        ]
+      },
+      {
+        "requirement_id": "R8",
+        "statement": "Prepare/activate quorum without damaging LKG on candidate failure; no generation reuse",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_rollout_reaches_active_phase",
+          "test_f2p_conflict_preserves_active_generation",
+          "test_f2p_quorum_requires_connected_nodes",
+          "test_f2p_failed_candidate_preserves_lkg_generation"
+        ]
+      },
+      {
+        "requirement_id": "R9",
+        "statement": "Atomic persist/recover of authority, generations, idempotency, fences, checkpoints",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_dataplane_restart_recovers_active_generation",
+          "test_f2p_corrupt_current_pointer_falls_back",
+          "test_f2p_control_plane_restart_restores_authority_fences",
+          "test_f2p_accepted_digest_persisted"
+        ]
+      },
+      {
+        "requirement_id": "R10",
+        "statement": "TCP proxy with buffers, partial I/O, backpressure, half-close, connect/idle timeout, teardown",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_multibuffer_tcp_echo",
+          "test_f2p_half_close_backend_survives",
+          "test_f2p_connect_timeout_closes_stalled_backend",
+          "test_f2p_idle_timeout_tears_down_quiet_stream",
+          "test_f2p_slow_backend_survives_full_buffer_backpressure"
+        ]
+      },
+      {
+        "requirement_id": "R11",
+        "statement": "Connections bound to acquired generation and target incarnation until completion",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_deregistered_target_drains_existing_connection",
+          "test_f2p_target_incarnation_increments_on_reregister",
+          "test_f2p_drain_deadline_terminates_owned_stream"
+        ]
+      },
+      {
+        "requirement_id": "R12",
+        "statement": "Eligible-target selection via round_robin, least_connections, source_hash",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_round_robin_hits_multiple_backends",
+          "test_f2p_least_connections_prefers_lower_load",
+          "test_f2p_source_hash_stable_after_target_reorder"
+        ],
+        "note": "Round-robin baseline depends on unresolved zone/fail_open matrix (Q4-B01)"
+      },
+      {
+        "requirement_id": "R13",
+        "statement": "Combine admin/active/passive/zone/fail-open/drain eligibility as documented",
+        "coverage": "partial",
+        "tests": [
+          "test_f2p_same_zone_skips_remote_without_failopen",
+          "test_f2p_fail_open_skips_disabled_targets",
+          "test_f2p_fail_open_includes_unhealthy_targets",
+          "test_f2p_passive_ejection_skips_reset_target",
+          "test_f2p_active_health_failure_skips_then_recovers"
+        ],
+        "gap": "Documented zone×fail_open matrix insufficient for graded expectations (Q4-B01)"
+      },
+      {
+        "requirement_id": "R14",
+        "statement": "Deregistered targets stop new assignment; owned streams drain to deadline",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_deregistered_target_drains_existing_connection",
+          "test_f2p_drain_deadline_terminates_owned_stream"
+        ]
+      },
+      {
+        "requirement_id": "R15",
+        "statement": "At most/exactly one PROXY v2 header per backend connection when enabled",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_proxy_inspect_listener_echo"
+        ]
+      },
+      {
+        "requirement_id": "R16",
+        "statement": "Recover from verified checkpoints; torn/invalid control frames must not advance authority",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_dataplane_restart_recovers_active_generation",
+          "test_f2p_corrupt_current_pointer_falls_back",
+          "test_f2p_torn_control_frame_does_not_advance_authority"
+        ]
+      },
+      {
+        "requirement_id": "R17",
+        "statement": "Bounded readiness/status/rollout/metrics/audit including connection-count summaries",
+        "coverage": "complete",
+        "tests": [
+          "test_f2p_readiness_false_before_activate",
+          "test_f2p_readiness_false_during_prepare",
+          "test_f2p_readiness_true_after_activate",
+          "test_f2p_status_reports_rollout_present",
+          "test_f2p_audit_exports_bounded_apply_event",
+          "test_f2p_metrics_labels_bounded",
+          "test_p2p_lbctl_status_command"
+        ]
+      },
+      {
+        "requirement_id": "R18",
+        "statement": "24-node three-zone inventory and self-contained loopback lab backends",
+        "coverage": "complete",
+        "tests": [
+          "test_p2p_binaries_and_catalog_present"
+        ]
+      },
+      {
+        "requirement_id": "R19",
+        "statement": "No HTTP routing/WAF/CDN/DNS/host-route/firewall/cloud provisioning",
+        "coverage": "absent",
+        "tests": []
+      },
+      {
+        "requirement_id": "R20",
+        "statement": "Follow /app/sovereign-lb/docs; idempotent apply/reconnect/prepare/activate/drain/recovery",
+        "coverage": "partial",
+        "tests": [
+          "test_p2p_idempotency_replay",
+          "test_f2p_control_plane_restart_restores_authority_fences",
+          "test_f2p_failed_candidate_preserves_lkg_generation"
+        ],
+        "gap": "Delegated dataplane eligibility detail underdocs relative to tests (Q4-B01)"
+      }
+    ],
+    "PHANTOM_TEST_CONTRACTS": [
+      {
+        "test": "test_f2p_same_zone_skips_remote_without_failopen + test_f2p_round_robin_hits_multiple_backends (joint)",
+        "issue": "Graded eligibility outcomes are not uniquely discoverable from dataplane/configuration contracts; joint expectations imply an undocumented same_zone_preferred×fail_open matrix (see Q4-B01). Not a private label/return-code phantom; a discoverability failure.",
+        "finding_id": "Q4-B01"
+      }
+    ],
+    "UNTESTED_REQUIREMENTS": [
+      {
+        "requirement_id": "R6-status-envelope",
+        "statement": "Control-channel status envelope semantics",
+        "finding_id": "Q4-B02"
+      },
+      {
+        "requirement_id": "R1",
+        "statement": "Preserve mixed-language tree layout",
+        "finding_id": "Q4-A02"
+      },
+      {
+        "requirement_id": "R19",
+        "statement": "Explicit product exclusions",
+        "finding_id": "Q4-A02"
+      }
+    ],
+    "AMBIGUITIES": [
+      {
+        "id": "Q4-B01",
+        "topic": "same_zone_preferred empty-local and fail_open zone expansion",
+        "competing_interpretations": [
+          "Hard same-zone: remotes never eligible unless zone_policy=cross_zone",
+          "Soft preference: remotes eligible when local normally-eligible set is empty",
+          "fail_open expands zone membership in addition to unhealthy/ejected inclusion"
+        ],
+        "grading_consequence": "Changes pass/fail for remote-only skip and mixed-zone round-robin on the stock scenario"
+      },
+      {
+        "id": "Q4-A01",
+        "topic": "PROXY header cardinality wording",
+        "competing_interpretations": [
+          "Instruction 'at most one' allows zero when enabled",
+          "Docs/tests require exactly one when enabled"
+        ],
+        "grading_consequence": "Docs currently resolve grading; advisory only"
+      }
+    ],
+    "INSTRUCTION_SHAPE": "PASS",
+    "INSTRUCTION_REQUIREMENT_COMPLETENESS": "INSUFFICIENT",
+    "DELEGATED_CONTRACT_CHECK": [
+      {
+        "path": "environment/sovereign-lb/docs/architecture.md",
+        "classification": "legitimate-architecture",
+        "prompt_extension": false
+      },
+      {
+        "path": "environment/sovereign-lb/docs/configuration.md",
+        "classification": "legitimate-schema-contract",
+        "prompt_extension": false,
+        "note": "Missing eligibility matrix detail for Q4-B01"
+      },
+      {
+        "path": "environment/sovereign-lb/docs/control-protocol.md",
+        "classification": "legitimate-protocol",
+        "prompt_extension": false
+      },
+      {
+        "path": "environment/sovereign-lb/docs/dataplane.md",
+        "classification": "legitimate-runtime-contract",
+        "prompt_extension": false,
+        "note": "Ambiguous zone fallback clause is the Q4-B01 locus"
+      },
+      {
+        "path": "environment/sovereign-lb/docs/lab.md",
+        "classification": "legitimate-runbook",
+        "prompt_extension": false
+      },
+      {
+        "path": "environment/sovereign-lb/docs/observability.md",
+        "classification": "legitimate-api-contract",
+        "prompt_extension": false
+      },
+      {
+        "path": "environment/sovereign-lb/docs/operations.md",
+        "classification": "legitimate-operations",
+        "prompt_extension": false
+      },
+      {
+        "path": "environment/sovereign-lb/docs/recovery.md",
+        "classification": "legitimate-state-contract",
+        "prompt_extension": false
+      },
+      {
+        "path": "environment/sovereign-lb/docs/rollout-state.md",
+        "classification": "legitimate-state-contract",
+        "prompt_extension": false
+      },
+      {
+        "path": "environment/sovereign-lb/tools/lab/backends.py",
+        "classification": "environment-observable-interface",
+        "prompt_extension": false,
+        "note": "events.json schema (accepted/proxy_header/proxy_header_repeat) discoverable here"
+      }
+    ],
+    "INSTRUCTION_DOC_BOUNDARY": "CLEAN",
+    "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "NONE",
+    "CURRENT_STATE_EVIDENCE": "NOT_APPLICABLE",
+    "SPEC_DUMP_RISK": "LOW",
+    "BIDIRECTIONAL_ALIGNMENT": "FAIL",
+    "BLOCKING_FINDING_IDS": [
+      "Q4-B01",
+      "Q4-B02"
+    ],
+    "ADVISORY_FINDING_IDS": [
+      "Q4-A01",
+      "Q4-A02"
+    ],
+    "EXHAUSTIVENESS": {
+      "REQUIREMENTS_ENUMERATED": "COMPLETE",
+      "VERIFIER_BEHAVIORS_ENUMERATED": "COMPLETE",
+      "FORWARD_MATRIX_COMPLETE": "YES",
+      "REVERSE_MATRIX_COMPLETE": "YES",
+      "INSTRUCTION_COMPLETENESS_COMPLETE": "YES",
+      "DELEGATED_CONTRACTS_COMPLETE": "YES",
+      "PROMPT_EXTENSION_WALK_COMPLETE": "YES",
+      "P2P_BOUNDARIES_COMPLETE": "YES",
+      "F2P_BOUNDARIES_COMPLETE": "YES",
+      "OUTPUT_INTERFACES_COMPLETE": "YES",
+      "SECOND_PASS_OMISSION_SWEEP": "PASS",
+      "UNINSPECTED_SCOPE": []
+    }
+  }
+}

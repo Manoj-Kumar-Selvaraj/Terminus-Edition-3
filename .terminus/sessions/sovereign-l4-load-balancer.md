@@ -8,7 +8,7 @@ Session schema version: `2.4`
 - Controller state: `FROZEN_CANDIDATE`
 - Working branch: `main`
 - Pull request: `none`
-- Current task commit: `99726dbae35f6406ede6788947ce527c49ea3339`
+- Current task commit: `6298f2cf2247c35c04a855b5e1217af85e6d03dc`
 - Agent-system policy: `2.5`
 - Specialist prompt policy: `2.2`
 - Specialist protocol policy: `2.2`

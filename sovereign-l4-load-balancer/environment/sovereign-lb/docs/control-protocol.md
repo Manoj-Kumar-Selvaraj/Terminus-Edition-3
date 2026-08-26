@@ -14,7 +14,7 @@ Every message has `type`, `node_id`, `session_id`, `sequence`, and `sent_at`. Ge
 
 `activate` names an already prepared generation and digest. A matching current session atomically publishes it and replies `active`. Activation without matching prepared state is rejected.
 
-`status` is bidirectional and carries bounded readiness, active/prepared generation, listener count, connection count, and health summary. It never carries traffic payload or unbounded per-connection data.
+`status` is bidirectional and carries bounded readiness, active/prepared generation, listener count, connection count, and health summary. A node that receives `status` replies with `status` using the same session fences and a strictly increased sequence; a node may also emit unsolicited `status` with those bounded fields. Status exchange never advances desired-state authority, never promotes a generation, and never carries traffic payload or unbounded per-connection data.
 
 Sequences begin at one for each new session and increase strictly. Duplicate messages with identical content produce the same response. Reuse of a sequence with different content, sequence regression, node mismatch, or stale session is rejected without advancing authority.
 

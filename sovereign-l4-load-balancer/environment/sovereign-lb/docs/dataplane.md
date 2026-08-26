@@ -2,7 +2,17 @@
 
 The dataplane is an epoll-based TCP proxy. A listener accept captures a shared immutable runtime, listener definition, selected target incarnation, and connection identity. Publication of a later runtime does not alter those references.
 
-Selection first computes eligibility from administrative state, draining, active health, passive ejection, and zone policy. Same-zone-preferred considers local eligible targets first and remote targets only when local policy permits fallback. Cross-zone considers all zones. Fail-open may include unhealthy or ejected targets but never administratively disabled, removed, or expired-drain targets.
+Selection first builds the normally-eligible set: administratively enabled, actively healthy, and not passively ejected. Zone policy then filters that set:
+
+- `cross_zone` — every normally-eligible target in any zone is selectable.
+- `same_zone_preferred` — if any normally-eligible targets share the node's local zone, only those local targets are selectable. Remote normally-eligible targets are never chosen while the local normally-eligible set is nonempty.
+
+When the zone filter leaves no normally-eligible targets (including remote-only pools under `same_zone_preferred`), `fail_open` decides empty-set fallback:
+
+- `fail_open=false` — the eligible set stays empty. Remotes are not soft-fallback; a remote-only `same_zone_preferred` pool does not forward.
+- `fail_open=true` — expand to non-disabled targets that are not past their drain deadline, including unhealthy or ejected ones; prefer local zone among that expanded set, otherwise use remotes. Never include administratively disabled, removed, or expired-drain targets.
+
+`fail_open` does not expand zone membership while local normally-eligible targets exist; it only widens health/ejection filters after the local normally-eligible set is empty.
 
 Round robin advances independently per target group and runtime. Least connections compares counters scoped to target incarnation with canonical identity as tie-breaker. Source hash hashes the binary source address and group seed, then maps over canonical eligible identities.
 

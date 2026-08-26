@@ -4,7 +4,7 @@ The desired document is complete replacement state, not a patch. Its top-level f
 
 Each listener has a unique `name` and unique `(address, port)` tuple, references one target group, and sets `proxy_protocol_v2`, `connect_timeout_ms`, `idle_timeout_ms`, and `buffer_bytes`. TCP is the only protocol.
 
-Each target group has a unique name, balancing policy (`round_robin`, `least_connections`, or `source_hash`), zone policy (`cross_zone` or `same_zone_preferred`), explicit `fail_open`, health policy, drain timeout, and one or more targets.
+Each target group has a unique name, balancing policy (`round_robin`, `least_connections`, or `source_hash`), zone policy (`cross_zone` or `same_zone_preferred`), explicit `fail_open`, health policy, drain timeout, and one or more targets. How `same_zone_preferred` interacts with an empty local set and with `fail_open` is defined in dataplane.md; `fail_open` is not a soft cross-zone override while local normally-eligible targets remain.
 
 Each target has a stable logical ID, address, port, zone, administrative state, weight, and incarnation. Removing then re-adding a logical target requires a larger incarnation. Runtime counters and connection ownership are keyed by group, target ID, and incarnation.
 

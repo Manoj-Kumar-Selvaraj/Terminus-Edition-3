@@ -836,8 +836,11 @@ def test_f2p_half_close_backend_survives(lab_state: Path, control_state: Path, d
 
 
 def test_f2p_round_robin_hits_multiple_backends(lab_state: Path, control_state: Path, dataplane_state: Path) -> None:
+    """Round-robin must rotate across eligible targets; use cross_zone so both stock backends are selectable."""
+    desired = scenario_desired()
+    desired["target_groups"][0]["zone_policy"] = "cross_zone"
     with running_stack(lab_state, control_state, dataplane_state) as stack:
-        assert apply(stack["management"], desired_path(lab_state), "rr-1")[0] in {200, 202}
+        assert apply(stack["management"], write_desired(lab_state, desired, "rr.json"), "rr-1")[0] in {200, 202}
         wait_active(stack["management"])
         for _ in range(6):
             with socket.create_connection(("127.0.0.1", 18001), timeout=5) as client:
@@ -1222,10 +1225,66 @@ def test_f2p_control_session_sequence_mismatch_rejected(lab_state: Path, control
             wait_rollout_not_active(endpoint, timeout=4.0)
 
 
+def test_f2p_control_status_envelope_exchange(lab_state: Path, control_state: Path, dataplane_state: Path) -> None:
+    """Bidirectional control status must return a bounded status body and must not advance authority alone."""
+    del lab_state, control_state
+    control_port = free_port()
+    status_port = free_port()
+    node_config = write_node_config(dataplane_state, NODE_CONFIG, control_port, status_port)
+    env = os.environ.copy()
+    env["SOVEREIGN_LB_HOME"] = str(ROOT)
+    listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    listener.bind(("127.0.0.1", control_port))
+    listener.listen(1)
+    listener.settimeout(15.0)
+    try:
+        with managed_process([str(DATAPLANE), "--config", str(node_config)], cwd=ROOT, env=env):
+            wait_port("127.0.0.1", status_port, timeout=15)
+            connection, _peer = listener.accept()
+            with connection:
+                hello = read_control_frame(connection, timeout=10.0)
+                assert hello.get("type") == "hello"
+                node_id = str(hello["node_id"])
+                session_id = str(hello["session_id"])
+                status_request = {
+                    "type": "status",
+                    "node_id": node_id,
+                    "session_id": session_id,
+                    "sequence": 2,
+                    "sent_at": "2026-01-01T00:00:01Z",
+                    "body": {},
+                }
+                connection.sendall(encode_control_frame(status_request))
+                status_reply = read_control_frame(connection, timeout=10.0)
+                assert status_reply.get("type") == "status"
+                assert status_reply.get("node_id") == node_id
+                assert status_reply.get("session_id") == session_id
+                assert int(status_reply.get("sequence") or 0) > int(hello.get("sequence") or 0)
+                body = status_reply.get("body")
+                assert isinstance(body, dict)
+                assert "ready" in body
+                assert "active_generation" in body
+                assert "connections" in body
+                assert isinstance(body.get("ready"), bool)
+                assert isinstance(body.get("active_generation"), int)
+                assert isinstance(body.get("connections"), int)
+                assert int(body["connections"]) >= 0
+                # Status alone must not publish listeners or invent an active generation.
+                assert int(body["active_generation"]) == 0
+                assert body.get("ready") is False
+                http_status, http_body = http_json(f"http://127.0.0.1:{status_port}/status")
+                assert http_status == 200 and isinstance(http_body, dict)
+                assert int(http_body.get("active_generation") or 0) == 0
+    finally:
+        listener.close()
+
+
 # --- REQ_ELIGIBILITY ---
 
 
 def test_f2p_same_zone_skips_remote_without_failopen(lab_state: Path, control_state: Path, dataplane_state: Path) -> None:
+    """same_zone_preferred + fail_open=false with only remote-zone targets must not soft-fallback."""
     desired = scenario_desired()
     desired["target_groups"][0]["zone_policy"] = "same_zone_preferred"
     desired["target_groups"][0]["fail_open"] = False

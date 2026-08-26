@@ -52,6 +52,7 @@
     ["test_f2p_active_health_failure_skips_then_recovers", "F2P", "REQ_ELIGIBILITY", "ACTIVE_HEALTH"],
     ["test_f2p_torn_control_frame_does_not_advance_authority", "F2P", "REQ_PROTOCOL", "CONTROL_FENCE"],
     ["test_f2p_control_session_sequence_mismatch_rejected", "F2P", "REQ_PROTOCOL", "CONTROL_FENCE"],
+    ["test_f2p_control_status_envelope_exchange", "F2P", "REQ_PROTOCOL", "CONTROL_FENCE"],
     ["test_f2p_connect_timeout_closes_stalled_backend", "F2P", "REQ_STREAM", "STREAM_LIMITS"],
     ["test_f2p_idle_timeout_tears_down_quiet_stream", "F2P", "REQ_STREAM", "STREAM_LIMITS"],
     ["test_f2p_slow_backend_survives_full_buffer_backpressure", "F2P", "REQ_STREAM", "STREAM_LIMITS"],
@@ -74,6 +75,14 @@
         "test_f2p_drain_deadline_terminates_owned_stream"
       ],
       "rationale": "Deregister stops new assignment while owned streams continue until drain deadline, then are terminated."
+    },
+    "CONTROL_FENCE": {
+      "tests": [
+        "test_f2p_torn_control_frame_does_not_advance_authority",
+        "test_f2p_control_session_sequence_mismatch_rejected",
+        "test_f2p_control_status_envelope_exchange"
+      ],
+      "rationale": "Control framing rejects torn bodies and session/sequence mismatches without advancing authority, and accepts a bidirectional bounded status exchange that likewise does not promote a generation by itself."
     }
   }
 }
