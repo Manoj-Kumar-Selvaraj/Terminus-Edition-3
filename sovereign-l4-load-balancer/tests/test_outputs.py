@@ -197,13 +197,15 @@ def apply(endpoint: str, desired_file: Path, key: str) -> tuple[int, dict[str, A
     return status, payload
 
 
-def wait_active(endpoint: str, timeout: float = 25.0) -> None:
+def wait_active(endpoint: str, timeout: float = 25.0, *, generation: int | None = None) -> None:
     deadline = time.time() + timeout
     while time.time() < deadline:
         status, payload = http_json(f"{endpoint}/v1/status")
         assert status == 200 and isinstance(payload, dict)
         rollout = payload.get("rollout", {})
-        if payload.get("active_generation") and rollout.get("phase") == "active":
+        active = int(payload.get("active_generation") or 0)
+        phase = rollout.get("phase") if isinstance(rollout, dict) else None
+        if active and phase == "active" and (generation is None or active == generation):
             return
         time.sleep(0.25)
     raise TimeoutError("rollout did not reach active")
@@ -719,7 +721,7 @@ def test_f2p_failed_candidate_preserves_lkg_generation(lab_state: Path, control_
         next_generation = int(next_payload["generation"])
         assert next_generation > failed_generation
         assert next_generation != failed_generation
-        wait_active(stack["management"])
+        wait_active(stack["management"], generation=next_generation)
         _, after = http_json(f"{stack['management']}/v1/status")
         assert isinstance(after, dict)
         assert int(after.get("active_generation") or 0) == next_generation
@@ -874,41 +876,89 @@ def test_f2p_source_hash_stable_after_target_reorder(lab_state: Path, control_st
             "incarnation": 1,
         },
     ]
-    order_a = scenario_desired()
-    order_a["target_groups"][0]["policy"] = "source_hash"
-    order_a["target_groups"][0]["zone_policy"] = "cross_zone"
-    order_a["target_groups"][0]["targets"] = list(targets_forward)
-    order_b = scenario_desired()
-    order_b["revision"] = 2
-    order_b["target_groups"][0]["policy"] = "source_hash"
-    order_b["target_groups"][0]["zone_policy"] = "cross_zone"
-    order_b["target_groups"][0]["targets"] = list(reversed(targets_forward))
+    health = {
+        "interval_ms": 3600000,
+        "timeout_ms": 500,
+        "healthy_threshold": 2,
+        "unhealthy_threshold": 3,
+        "passive_failures": 3,
+        "passive_window_ms": 10000,
+        "ejection_ms": 15000,
+    }
+
+    def desired_for(targets: list[dict[str, Any]], revision: int) -> dict[str, Any]:
+        # Single listener/group so lab accepted events cannot mix inspect-pool traffic.
+        return {
+            "revision": revision,
+            "listeners": [
+                {
+                    "name": "echo",
+                    "address": "127.0.0.1",
+                    "port": 18001,
+                    "target_group": "echo-pool",
+                    "proxy_protocol_v2": False,
+                    "connect_timeout_ms": 1000,
+                    "idle_timeout_ms": 30000,
+                    "buffer_bytes": 65536,
+                }
+            ],
+            "target_groups": [
+                {
+                    "name": "echo-pool",
+                    "policy": "source_hash",
+                    "zone_policy": "cross_zone",
+                    "fail_open": False,
+                    "drain_timeout_ms": 30000,
+                    "health": health,
+                    "targets": list(targets),
+                }
+            ],
+            "rollout": scenario_desired()["rollout"],
+            "limits": scenario_desired()["limits"],
+        }
+
+    order_a = desired_for(targets_forward, 1)
+    order_b = desired_for(list(reversed(targets_forward)), 2)
 
     def sample_backends(*, before: int) -> list[str]:
+        hits: list[str] = []
         for _ in range(4):
+            before_i = len(lab_events(lab_state))
             with socket.create_connection(("127.0.0.1", 18001), timeout=5) as client:
                 client.sendall(b"x")
-                recv_all(client, 1)
+                assert recv_all(client, 1) == b"x"
+            deadline = time.time() + 2.0
+            chosen: str | None = None
+            while time.time() < deadline:
+                # Newest accept after this attempt — avoid stale first-event races.
+                accepted = [
+                    str(event["backend"])
+                    for event in lab_events(lab_state)[max(before, before_i) :]
+                    if event.get("event") == "accepted" and event.get("backend") in {"echo", "slow"}
+                ]
+                if accepted:
+                    chosen = accepted[-1]
+                    break
+                time.sleep(0.02)
+            assert chosen is not None, "expected accepted lab event after source-hash forward"
+            hits.append(chosen)
             time.sleep(0.05)
-        accepted = [
-            str(event["backend"])
-            for event in lab_events(lab_state)[before:]
-            if event.get("event") == "accepted"
-        ]
-        assert accepted, "expected accepted lab events after source-hash apply"
-        return accepted
+        return hits
 
     with running_stack(lab_state, control_state, dataplane_state) as stack:
         assert apply(stack["management"], write_desired(lab_state, order_a, "hash-a.json"), "hash-a")[0] in {200, 202}
         wait_active(stack["management"])
-        hits_a = sample_backends(before=0)
+        wait_listener_echo("127.0.0.1", 18001)
+        marker_a = len(lab_events(lab_state))
+        hits_a = sample_backends(before=marker_a)
         assert len(set(hits_a)) == 1
         chosen_a = hits_a[0]
 
-        marker = len(lab_events(lab_state))
+        marker_b = len(lab_events(lab_state))
         assert apply(stack["management"], write_desired(lab_state, order_b, "hash-b.json"), "hash-b")[0] in {200, 202}
         wait_active(stack["management"])
-        hits_b = sample_backends(before=marker)
+        wait_listener_echo("127.0.0.1", 18001)
+        hits_b = sample_backends(before=marker_b)
         assert len(set(hits_b)) == 1
         assert hits_b[0] == chosen_a, "source-hash must select the same identity after target declaration reorder"
 

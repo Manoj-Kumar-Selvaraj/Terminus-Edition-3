@@ -86,7 +86,10 @@ void ActiveProber::refresh(const std::shared_ptr<const Snapshot>& snapshot,
   if (!snapshot) return;
   for (const auto& group : snapshot->target_groups) {
     for (const auto& target : group.targets) {
-      due_.push(Due{now, target.identity, snapshot->generation});
+      // First probe after one full interval so activation-time traffic accounting
+      // is not polluted by a synchronous probe storm against every backend.
+      due_.push(Due{now + std::chrono::milliseconds(group.health.interval_ms), target.identity,
+                    snapshot->generation});
     }
   }
   scheduled_generation_ = snapshot->generation;

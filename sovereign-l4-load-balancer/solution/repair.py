@@ -76,11 +76,33 @@ def patch_rollout(path: Path) -> None:
     text = text.replace('count(rollout.NodeResponses, "prepared")', 'count(rollout.NodeResponses, "prepared", coordinator.registry)')
     if 'count(rollout.NodeResponses, "prepared", coordinator.registry)' not in text:
         raise SystemExit("rollout prepare count patch failed")
+    # Abort orphan preparing/activating rollouts that have no connected acknowledgements left.
+    if "func (coordinator *Coordinator) AbortOrphaned()" not in text:
+        text = replace_once(
+            text,
+            "func (coordinator *Coordinator) Snapshot() (model.Rollout, bool) { coordinator.mutex.RLock(); defer coordinator.mutex.RUnlock(); if coordinator.current == nil { return model.Rollout{}, false }; return clone(*coordinator.current), true }",
+            'func (coordinator *Coordinator) AbortOrphaned() {\n\tcoordinator.mutex.Lock(); defer coordinator.mutex.Unlock()\n\tif coordinator.current == nil { return }\n\tphase := coordinator.current.Phase\n\tif phase != "preparing" && phase != "activating" { return }\n\tif count(coordinator.current.NodeResponses, "prepared", coordinator.registry)+count(coordinator.current.NodeResponses, "active", coordinator.registry) > 0 { return }\n\tcoordinator.current.Phase = "aborted"\n\tcoordinator.current = nil\n}\nfunc (coordinator *Coordinator) Snapshot() (model.Rollout, bool) { coordinator.mutex.RLock(); defer coordinator.mutex.RUnlock(); if coordinator.current == nil { return model.Rollout{}, false }; return clone(*coordinator.current), true }',
+            "rollout abort orphaned prepare",
+        )
+    path.write_text(text, encoding="utf-8", newline="\n")
+
+
+def patch_control_session_abort(path: Path) -> None:
+    """On control disconnect or session fence failure, drop empty preparing rollouts so a later apply can begin."""
+    text = path.read_text(encoding="utf-8")
+    if "AbortOrphaned" in text:
+        return
     text = replace_once(
         text,
-        '\t\trollout.NodeResponses[envelope.NodeID] = response(envelope, "rejected")\n\t\trollout.Phase = "rejected"\n\t\treturn clone(*rollout), nil',
-        '\t\trollout.NodeResponses[envelope.NodeID] = response(envelope, "rejected")\n\t\trollout.Phase = "rejected"\n\t\tcoordinator.current = nil\n\t\treturn clone(*rollout), nil',
-        "rollout reject preserves active",
+        "\tdefer service.removeSession(session)\n\tdefer service.nodes.Disconnect(hello.NodeID, hello.SessionID, time.Now())",
+        "\tdefer service.removeSession(session)\n\tdefer service.nodes.Disconnect(hello.NodeID, hello.SessionID, time.Now())\n\tdefer service.rollout.AbortOrphaned()",
+        "control disconnect aborts orphan rollout",
+    )
+    text = replace_once(
+        text,
+        "\t\tif envelope.NodeID != hello.NodeID || envelope.SessionID != hello.SessionID { return }\n\t\tnodeStatus, acceptErr := service.nodes.Accept(envelope, time.Now())\n\t\tif acceptErr != nil { return }",
+        "\t\tif envelope.NodeID != hello.NodeID || envelope.SessionID != hello.SessionID { service.rollout.AbortOrphaned(); return }\n\t\tnodeStatus, acceptErr := service.nodes.Accept(envelope, time.Now())\n\t\tif acceptErr != nil { service.rollout.AbortOrphaned(); return }",
+        "control fence aborts orphan rollout",
     )
     path.write_text(text, encoding="utf-8", newline="\n")
 
@@ -133,12 +155,21 @@ def patch_control_cpp(path: Path) -> None:
         'static std::string timestamp(){auto value=std::chrono::system_clock::now().time_since_epoch();auto seconds=std::chrono::duration_cast<std::chrono::seconds>(value);auto nanos=std::chrono::duration_cast<std::chrono::nanoseconds>(value-seconds).count();std::time_t now=std::chrono::system_clock::to_time_t(std::chrono::system_clock::time_point(seconds));std::tm tm{};gmtime_r(&now,&tm);char buffer[64];std::snprintf(buffer,sizeof(buffer),"%04d-%02d-%02dT%02d:%02d:%02d",tm.tm_year+1900,tm.tm_mon+1,tm.tm_mday,tm.tm_hour,tm.tm_min,tm.tm_sec);return std::string(buffer)+"."+std::to_string(nanos)+"Z";}',
         "control timestamp format",
     )
-    old_prepare = 'const Json& source=request.body.at("snapshot");std::string canonical=write_json(source);if(sha256_hex(canonical)!=request.digest)throw JsonError("snapshot digest mismatch");'
-    new_prepare = 'const Json& source=request.body.at("snapshot");std::string canonical=request.body.contains("snapshot_canonical")?request.body.at("snapshot_canonical").string():write_json(source);if(sha256_hex(canonical)!=request.digest)throw JsonError("snapshot digest mismatch");'
+    old_prepare = 'const Json& source=request.body.at("snapshot");std::string canonical=write_json(source);if(sha256_hex(canonical)!=request.digest)throw JsonError("snapshot digest mismatch");auto candidate=decode_snapshot(source);'
+    new_prepare = 'const Json& source=request.body.at("snapshot");std::string canonical=request.body.contains("snapshot_canonical")?request.body.at("snapshot_canonical").string():write_json(source);if(sha256_hex(canonical)!=request.digest)throw JsonError("snapshot digest mismatch");auto candidate=decode_snapshot(parse_json(canonical));'
     if old_prepare in text:
         text = replace_once(text, old_prepare, new_prepare, "prepare canonical digest")
-    elif "snapshot_canonical" not in text:
-        raise SystemExit("missing patch anchor for prepare canonical digest")
+    elif "snapshot_canonical" not in text or "decode_snapshot(parse_json(canonical))" not in text:
+        # Digest gate may already be patched; still bind runtime decode to canonical bytes.
+        if "decode_snapshot(parse_json(canonical))" not in text:
+            text = replace_once(
+                text,
+                "auto candidate=decode_snapshot(source);",
+                "auto candidate=decode_snapshot(parse_json(canonical));",
+                "prepare decode canonical snapshot",
+            )
+        if "snapshot_canonical" not in text:
+            raise SystemExit("missing patch anchor for prepare canonical digest")
     # DrainManager.transition is already production-wired on activate; do not rewire or undo it.
     old_activate = 'if(!runtimes_.activate(request.generation,request.digest))throw JsonError("candidate was not prepared");proxy_.publish();'
     new_activate = 'auto previous=runtimes_.active();if(!runtimes_.activate(request.generation,request.digest))throw JsonError("candidate was not prepared");drains_.transition(previous,runtimes_.active(),std::chrono::steady_clock::now());proxy_.publish();'
@@ -165,11 +196,29 @@ def patch_eligibility(path: Path) -> None:
 
 def patch_proxy(path: Path) -> None:
     text = path.read_text(encoding="utf-8")
+    # Stock closes on EPOLLHUP, which aborts half-close/backpressure before draining.
+    # EPOLLERR only → close (+ passive failure on target). Coalesce HUP/RDHUP into
+    # EPOLLIN so transfer_read observes EOF. Do not mark read-closed from EPOLLRDHUP
+    # alone: that disables EPOLLIN while the 4KiB buffer is full and leaves unread
+    # client bytes in the kernel, then premature shutdown(SHUT_WR) to the backend.
+    # Never passive-fail on HUP (ejected sticky source_hash backends after teardown).
     text = replace_once(
         text,
         'if(events&(EPOLLERR|EPOLLHUP)){close_connection(connection);return;}',
-        'if(events&(EPOLLERR|EPOLLHUP)){if(!client)health_.passive_failure(*connection->target,connection->snapshot->group(connection->listener->target_group).health,std::chrono::steady_clock::now());close_connection(connection);return;}',
-        "passive failure on target hangup",
+        'if(events&EPOLLERR){if(!client)health_.passive_failure(*connection->target,connection->snapshot->group(connection->listener->target_group).health,std::chrono::steady_clock::now());close_connection(connection);return;}if(events&(EPOLLHUP|EPOLLRDHUP))events|=EPOLLIN;',
+        "epoll err only; coalesce hangup into readable",
+    )
+    text = replace_once(
+        text,
+        'if(events&EPOLLRDHUP)connection->client_read_closed=true;',
+        '',
+        "drop premature client RDHUP mark",
+    )
+    text = replace_once(
+        text,
+        'if(events&EPOLLRDHUP)connection->target_read_closed=true;',
+        '',
+        "drop premature target RDHUP mark",
     )
     text = replace_once(
         text,
@@ -206,11 +255,12 @@ def patch_proxy_header(path: Path) -> None:
 
 def patch_selector(path: Path) -> None:
     text = path.read_text(encoding="utf-8")
+    # Use std::string(1,'\0') so the separator is a real NUL (const char* "\0" is empty in C++).
     text = replace_once(
         text,
         'if(group.policy==BalancePolicy::source_hash)return candidates[stable_hash(source)%candidates.size()];',
-        'if(group.policy==BalancePolicy::source_hash)return candidates[stable_hash(source+"\\0"+group.name)%candidates.size()];',
-        "source hash group salt",
+        'if(group.policy==BalancePolicy::source_hash){auto ordered=candidates;std::sort(ordered.begin(),ordered.end(),[](const Target* left,const Target* right){return left->identity<right->identity;});return ordered[stable_hash(source+std::string(1,\'\\0\')+group.name)%ordered.size()];}',
+        "source hash canonical identity order",
     )
     path.write_text(text, encoding="utf-8", newline="\n")
 
@@ -301,6 +351,7 @@ def main(argv: list[str]) -> int:
     patch_control_go(root / "internal/api/control.go")
     patch_revision_store(root / "internal/revision/store.go")
     patch_rollout(root / "internal/rollout/coordinator.go")
+    patch_control_session_abort(root / "internal/api/control.go")
     patch_service_ready(root / "internal/api/service.go")
     patch_control_cpp(root / "dataplane/src/control.cpp")
     patch_eligibility(root / "dataplane/src/eligibility.cpp")
