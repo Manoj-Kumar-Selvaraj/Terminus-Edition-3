@@ -1,0 +1,211 @@
+{
+  "schema_version": "3.0",
+  "role": "Production Logic Auditor",
+  "review_id": "terraform-aws-eks-addon-trust-rollout-f649fbfd-production-logic-64677be1c7",
+  "task": "terraform-aws-eks-addon-trust-rollout",
+  "task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+  "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "828f84c63f4e37642ab42740b22aa95646ddaa42972f30902e9fe9a034e5458c",
+  "review_scope_hash": "e91eb8fee4ab4b58c4902c032214451651d20de94db17470467f7929cff2ffd3",
+  "context_packet": ".terminus/reviews/terraform-aws-eks-addon-trust-rollout/f649fbfd/terraform-aws-eks-addon-trust-rollout-f649fbfd-production-logic-64677be1c7.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Solver-visible core has a real coupled Terraform-plan/IRSA/PDB/placement/checkpoint path, but measured scale is dominated by unreachable modules and a 12,500-record estate corpus never consumed by runtime logic; drain/interruption/availability steps are constant-output shells. Padding and toy risk are HIGH, so production-logic PASS is blocked.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/environment/bin/addon-trust-rollout",
+      "observation": "Primary operator entrypoint runs terraform init/validate/plan/show then upgrade_lab.run_rollout(plan); graded workflow is offline plan+lab, not live AWS."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/environment/upgrade_lab/rollout_coordinator.py",
+      "observation": "execute_rollout loads only cluster_snapshot, compatibility_matrix, trust_observations, pdbs, regulated_policy, and defaults; never opens telemetry_history.json or interruption_events.json. Availability for core_services is unconditionally set True; drain is called with pdb_respected=True hardcoded."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/environment/upgrade_lab/fixture_generator.py",
+      "observation": "Build-time generator writes 12,000 telemetry metrics and 500 interruption events explicitly to reach 12,500+ primary records."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/environment/Dockerfile",
+      "observation": "Image build runs /app/bin/generate-fixtures, materializing the unused estate JSON into /app/data."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/environment/upgrade_lab/drain_simulator.py",
+      "observation": "simulate_node_drain returns fixed evicted_count/blocked_count constants when pdb_respected is true; no PDB/pod inventory branching."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/environment/upgrade_lab/interruption_handler.py",
+      "observation": "simulate_node_interruption only checks regulated capacity_types == {on-demand} and placement_ok; does not read interruption_events.json."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/environment/upgrade_lab/aws_lab.py",
+      "observation": "MockAWSLab is defined but never imported by __init__, app, cli, coordinator, or bin entrypoints."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/environment/upgrade_lab/types.py",
+      "observation": "Large dataclass portfolio (~250 LOC) is never imported by any other upgrade_lab module; runtime uses plain dicts."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/environment/upgrade_lab/errors.py",
+      "observation": "Exception hierarchy is never raised or imported by reachable runtime modules."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/environment/upgrade_lab/plan_normalizer.py",
+      "observation": "Substantive reachable logic: parses resource_changes into addons/roles/node_groups/regulated/protected_actions with IAM subject and policy extraction."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/environment/upgrade_lab/plan_validator.py",
+      "observation": "Substantive reachable multi-check policy engine for addon versions, IRSA subjects, system taints, regulated capacity, and UpgradeProtected deletes."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/environment/terraform/modules/upgrade/main.tf",
+      "observation": "Broken starter Terraform encodes coupled domain defects (wrong IRSA subjects, OVERWRITE conflicts, missing CriticalAddonsOnly taint, spot regulated capacity)."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/environment/data/defaults.json",
+      "observation": "allowed_policy_prefixes are present but unused by plan_validator (only forbidden_policy_actions consulted)."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/task.toml",
+      "observation": "Task declares advanced multi-language systems package with artifacts under terraform/k8s/var/upgrade/output; no LOC measurement substitutes for reachable domain logic."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q6",
+      "observation": "Q6 requires reachability, non-clone modules, data volume consumed by branches, removal-test materiality, and (for large_system_strict) >=3000 substantive reachable LOC with no HIGH toy/padding risk."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/AGENT_SYSTEM.md",
+      "observation": "Strict Q6 PASS requires >=3000 substantive reachable production/domain runtime/config LOC, no HIGH toy/padding risk, and credible production characteristics; raw LOC cannot produce PASS."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q6-1",
+      "severity": "BLOCKER",
+      "status": "OBSERVED",
+      "criterion": "Data/state volume must drive domain branches; opaque filler and HIGH padding risk block PASS",
+      "evidence_refs": [
+        "terraform-aws-eks-addon-trust-rollout/environment/upgrade_lab/fixture_generator.py",
+        "terraform-aws-eks-addon-trust-rollout/environment/upgrade_lab/rollout_coordinator.py",
+        "terraform-aws-eks-addon-trust-rollout/environment/Dockerfile",
+        "terraform-aws-eks-addon-trust-rollout/environment/upgrade_lab/interruption_handler.py",
+        "terraform-aws-eks-addon-trust-rollout/environment/upgrade_lab/config.py"
+      ],
+      "why_it_matters": "12,000 telemetry + 500 interruption records are generated at image build and never loaded by execute_rollout or interruption simulation; config.telemetry_file/interruption_file are unused. This is benchmark inflation of primary-record scale without runtime consumption.",
+      "minimal_remediation": "Either wire telemetry/interruption corpora into graded branches with material failure modes, or remove generate-fixtures and the unused JSON inventories and replace with state that the coordinator actually evaluates.",
+      "regression_risk": "Removing unused datasets should not change READY/FAILED outcomes today; wiring them in will require new invariants and verifier alignment."
+    },
+    {
+      "id": "Q6-2",
+      "severity": "BLOCKER",
+      "status": "OBSERVED",
+      "criterion": "Major modules must be reachable from real entrypoints; dead/unreachable code must not inflate the production core",
+      "evidence_refs": [
+        "terraform-aws-eks-addon-trust-rollout/environment/upgrade_lab/aws_lab.py",
+        "terraform-aws-eks-addon-trust-rollout/environment/upgrade_lab/types.py",
+        "terraform-aws-eks-addon-trust-rollout/environment/upgrade_lab/errors.py",
+        "terraform-aws-eks-addon-trust-rollout/environment/bin/addon-trust-rollout",
+        "terraform-aws-eks-addon-trust-rollout/environment/upgrade_lab/__init__.py"
+      ],
+      "why_it_matters": "aws_lab.MockAWSLab, types.py dataclasses, and errors.py hierarchy are never imported on the operator path. Removing them does not change rollout behavior, so they fail the removal/reachability test and pad module/LOC surface.",
+      "minimal_remediation": "Delete unreachable modules or integrate them into the graded entrypoint path with distinct branching that partial fixes must satisfy.",
+      "regression_risk": "Low if deleted unused; integration would expand coupling and need coordinated terraform/k8s/report contracts."
+    },
+    {
+      "id": "Q6-3",
+      "severity": "BLOCKER",
+      "status": "OBSERVED",
+      "criterion": "Business/runtime modules need material branching/state/error behavior, not constant-output shells",
+      "evidence_refs": [
+        "terraform-aws-eks-addon-trust-rollout/environment/upgrade_lab/drain_simulator.py",
+        "terraform-aws-eks-addon-trust-rollout/environment/upgrade_lab/interruption_handler.py",
+        "terraform-aws-eks-addon-trust-rollout/environment/upgrade_lab/rollout_coordinator.py"
+      ],
+      "why_it_matters": "After PDBs pass, coordinator hardcodes availability True and pdb_respected True; drain returns fixed counts; interruption ignores event history and reduces to a capacity-type set check. These named reliability stages are toy wrappers around earlier boolean outcomes.",
+      "minimal_remediation": "Implement drain/interruption/availability evaluation from submitted PDBs, workloads, node inventories, and interruption events with independent failure reasons and partial-fix traps.",
+      "regression_risk": "Medium: richer simulation will interact with PDB/placement checks and digest fields."
+    },
+    {
+      "id": "Q6-4",
+      "severity": "BLOCKER",
+      "status": "INFERRED",
+      "criterion": "Strict Q6 PASS requires >=3000 substantive reachable production/domain runtime/config LOC and credible non-padded scale",
+      "evidence_refs": [
+        "terraform-aws-eks-addon-trust-rollout/environment/upgrade_lab/plan_normalizer.py",
+        "terraform-aws-eks-addon-trust-rollout/environment/upgrade_lab/plan_validator.py",
+        "terraform-aws-eks-addon-trust-rollout/environment/upgrade_lab/rollout_coordinator.py",
+        "terraform-aws-eks-addon-trust-rollout/environment/terraform/modules/upgrade/main.tf",
+        ".terminus/AGENT_SYSTEM.md"
+      ],
+      "why_it_matters": "Reachable substantive surface is dominated by plan_normalizer, plan_validator, coordinator, IRSA/k8s/placement, and the broken Terraform/k8s starters (~low-thousands at best once dead modules and unused generators are excluded). Combined with HIGH padding from Q6-1/Q6-2, the core does not meet the strict reachable-LOC floor or production-credibility bar.",
+      "minimal_remediation": "Expand genuinely reachable domain logic (or select a richer work package) until substantive reachable runtime/config logic exceeds the strict floor without dead modules or unread corpora.",
+      "regression_risk": "High if scale is added as more unused files; keep growth on the execute_rollout call graph."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "terraform-aws-eks-addon-trust-rollout/environment/upgrade_lab/",
+    "terraform-aws-eks-addon-trust-rollout/environment/data/telemetry_history.json",
+    "terraform-aws-eks-addon-trust-rollout/environment/data/interruption_events.json",
+    "terraform-aws-eks-addon-trust-rollout/environment/bin/generate-fixtures",
+    "terraform-aws-eks-addon-trust-rollout/environment/Dockerfile"
+  ],
+  "do_not_change": [
+    "verifier/tests (outside Q6 production scope unless contracts must track new runtime branches)",
+    "solution/oracle-only paths",
+    "instruction.md wording solely to narrate padding removal",
+    "prior specialist verdict artifacts"
+  ],
+  "next_gate": "Q6_REVISE -> producer remediation of solver-visible production core -> QUALITY_INTERLOCK",
+  "role_output": {
+    "CORE_LOGIC_DEPTH": "MEDIUM",
+    "RUNTIME_REACHABILITY": "MEDIUM",
+    "MODULE_DIVERSITY": "MEDIUM",
+    "CROSS_COMPONENT_COUPLING": "MEDIUM",
+    "TOY_LOGIC_RISK": "HIGH",
+    "PADDING_RISK": "HIGH",
+    "SUBSTANTIVE_LOC_ASSESSMENT": "Reachable graded path centers on plan_normalizer (~185), plan_validator (~128), rollout_coordinator (~204), irsa/k8s/placement/pdb/checkpoint/digests/report/config/cli (~450), plus broken Terraform main/workspace and k8s starters (~400). Dead aws_lab/types/errors (~385) and fixture_generator (~89) plus unread 12.5k-record JSON do not count. Net substantive reachable runtime/config LOC is well below the strict 3000 floor and is diluted by HIGH padding.",
+    "MAJOR_MODULES": [
+      "bin/addon-trust-rollout + upgrade_lab.app/cli: terraform plan show then execute_rollout",
+      "plan_normalizer: Terraform resource_changes -> addons/roles/node_groups/regulated/protected_actions",
+      "plan_validator: version/IRSA/taint/regulated/protected policy errors",
+      "irsa_verifier + k8s_parser + pdb_analyzer: manifest binding and PDB coverage",
+      "matrix_evaluator + checkpoint_manager + rollout_coordinator: ordered addon readiness with checkpoints",
+      "placement_engine + interruption_handler + drain_simulator: placement/drain/interruption (latter two thin)",
+      "terraform/modules/upgrade + k8s/*: starter IaC/manifest defects",
+      "fixture_generator/aws_lab/types/errors: build-time or unreachable padding"
+    ],
+    "PARTIAL_FIX_TRAPS": [
+      "Fix Terraform IRSA/versions without correcting k8s SA annotations/PDB names/regulated selectors still fails later stages",
+      "Satisfy IRSA subjects but share role ARNs across trusts fails cross_service_denied",
+      "Fix regulated Terraform capacity without matching workload nodeSelectors fails placement/interruption",
+      "Checkpointed mid-rollout resume depends on prerequisite order and fail_addon readiness gates"
+    ],
+    "REMOVAL_TEST": "Removing ~25% focused on telemetry JSON, fixture_generator, aws_lab, types, errors, and drain/interruption shells leaves READY/FAILED outcomes of the plan+IRSA+PDB+placement path essentially unchanged. Removing ~25% of plan_normalizer/plan_validator/coordinator/IRSA/k8s wiring collapses graded behavior. Therefore a large fraction of solver-visible bulk is non-behavioral padding.",
+    "REQUIRED_CHANGES": [
+      "Eliminate or truly consume estate telemetry/interruption corpora in graded logic",
+      "Remove or integrate unreachable aws_lab/types/errors modules",
+      "Replace constant drain/interruption/availability shells with state-consuming domain logic",
+      "Grow substantive reachable runtime/config logic above the strict floor without unread filler"
+    ]
+  }
+}

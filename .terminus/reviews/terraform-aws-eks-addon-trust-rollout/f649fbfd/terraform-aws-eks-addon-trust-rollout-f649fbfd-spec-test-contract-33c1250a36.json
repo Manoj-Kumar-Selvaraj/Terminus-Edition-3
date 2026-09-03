@@ -1,0 +1,408 @@
+{
+  "schema_version": "3.0",
+  "role": "Spec-Test Contract Reviewer",
+  "review_id": "terraform-aws-eks-addon-trust-rollout-f649fbfd-spec-test-contract-33c1250a36",
+  "task": "terraform-aws-eks-addon-trust-rollout",
+  "task_commit": "f649fbfd0f14603138e6e6293f0067587016f09a",
+  "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "9607c7323be7db66eb7b520db4498f29efc686073e6f3d565c8e2c99ad26a34c",
+  "context_packet": ".terminus/reviews/terraform-aws-eks-addon-trust-rollout/f649fbfd/terraform-aws-eks-addon-trust-rollout-f649fbfd-spec-test-contract-33c1250a36.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Bidirectional alignment fails: grading-relevant regulated-workload identity conflicts across docs/starter vs data/verifier, apps/batch UpgradeProtected+label obligations are phantom relative to the solver-visible work request, and instruction.md is a one-to-one compressed F2P rubric.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/instruction.md",
+      "observation": "20 Edition-3 bullets state plan/IRSA/PDB/placement/rollout/checkpoint/report obligations; system-node taints/labels only; no apps/batch UpgradeProtected obligation; no regulated workload names."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/environment/docs/architecture.md",
+      "observation": "Names regulated workloads payment-authorizer and settlement-reconciler; describes system/application node groups with protection tags."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/environment/data/regulated_policy.json",
+      "observation": "Authoritative graded workload list contains only settlement-ledger on regulated-on-demand."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/environment/k8s/regulated_workloads.yaml",
+      "observation": "Starter manifests ship payment-authorizer and settlement-reconciler, not settlement-ledger."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/environment/evidence/failed-upgrade-trace.txt",
+      "observation": "Incident evidence names settlement-ledger on spot after interruption; UpgradeProtected gap cited only for system node group."
+    },
+    {
+      "type": "test",
+      "ref": "terraform-aws-eks-addon-trust-rollout/tests/test_outputs.py::test_f2p_system_node_group_labels_verified",
+      "observation": "Asserts UpgradeProtected=true and nodepool labels for system, apps, and batch."
+    },
+    {
+      "type": "test",
+      "ref": "terraform-aws-eks-addon-trust-rollout/tests/test_outputs.py::test_f2p_regulated_workloads_require_explicit_nodepools",
+      "observation": "Grades report['regulated_placement'] entries produced from regulated_policy workloads (settlement-ledger)."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/tests/fixtures/upgrade_lab/__init__.py",
+      "observation": "plan_policy_errors requires apps/batch UpgradeProtected; run_rollout placement loop keys regulated_policy workloads; drain_result hardcoded true after PDB presence."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/environment/docs/addon-trust-rollout-contract.md",
+      "observation": "Acceptance-checklist shaped restatement of plan/IRSA/PDB/READY gates overlapping instruction bullets."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/environment/docs/report-schema.md",
+      "observation": "irsa_bindings includes role_arn; addon-trust-rollout-contract.md omits role_arn for the same field."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/INSTRUCTION_POLICY.md",
+      "observation": "Reverse-outline and hidden-test inventory prohibitions; requirements must be discoverable without one-bullet-per-test rubric topology."
+    }
+  ],
+  "findings": [
+    {
+      "id": "STC-01",
+      "severity": "BLOCKER",
+      "status": "OBSERVED",
+      "criterion": "grading-relevant ambiguity on regulated workload identity",
+      "evidence_refs": [
+        "terraform-aws-eks-addon-trust-rollout/environment/docs/architecture.md",
+        "terraform-aws-eks-addon-trust-rollout/environment/data/regulated_policy.json",
+        "terraform-aws-eks-addon-trust-rollout/environment/k8s/regulated_workloads.yaml",
+        "terraform-aws-eks-addon-trust-rollout/environment/evidence/failed-upgrade-trace.txt",
+        "terraform-aws-eks-addon-trust-rollout/tests/test_outputs.py::test_f2p_regulated_workloads_require_explicit_nodepools",
+        "terraform-aws-eks-addon-trust-rollout/tests/fixtures/upgrade_lab/__init__.py"
+      ],
+      "why_it_matters": "Solvers following architecture/starter names (payment-authorizer, settlement-reconciler) fail placement gates that grade settlement-ledger from regulated_policy; conflicting authorities change pass/fail.",
+      "minimal_remediation": "Make one authoritative workload identity set consistent across architecture.md, starter k8s, evidence, regulated_policy.json, and verifier placement checks; reference that set from instruction.md.",
+      "regression_risk": "Low if names/selectors stay aligned with existing regulated_policy and interruption evidence."
+    },
+    {
+      "id": "STC-02",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "phantom verifier obligation for apps/batch UpgradeProtected and labels",
+      "evidence_refs": [
+        "terraform-aws-eks-addon-trust-rollout/instruction.md",
+        "terraform-aws-eks-addon-trust-rollout/environment/evidence/failed-upgrade-trace.txt",
+        "terraform-aws-eks-addon-trust-rollout/tests/test_outputs.py::test_f2p_system_node_group_labels_verified",
+        "terraform-aws-eks-addon-trust-rollout/tests/fixtures/upgrade_lab/__init__.py"
+      ],
+      "why_it_matters": "Instruction only requires CriticalAddonsOnly taint and nodepool labels on the system node group and guarding already-tagged UpgradeProtected resources; READY still requires apps and batch UpgradeProtected plus labels via plan_policy and F2P assertions.",
+      "minimal_remediation": "Either state apps/batch label and UpgradeProtected preservation in the solver-visible work request/contract, or drop those assertions from plan_policy_errors and tests.",
+      "regression_risk": "Medium: loosening policy without documenting preservation could allow unprotected node-group replaces."
+    },
+    {
+      "id": "STC-03",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "hidden-test/compressed-rubric instruction topology",
+      "evidence_refs": [
+        "terraform-aws-eks-addon-trust-rollout/instruction.md",
+        "terraform-aws-eks-addon-trust-rollout/tests/test_outputs.py",
+        ".terminus/agents/INSTRUCTION_POLICY.md"
+      ],
+      "why_it_matters": "Twenty concise bullets track F2P cases nearly one-to-one (plan versions, PRESERVE, SSM tags, IRSA, PDBs, drain, regulated placement, Karpenter, interruption, order, readiness, cross-service, policy merge, UpgradeProtected, checkpoint, report digest), failing the reverse-outline test and leaking rubric structure.",
+      "minimal_remediation": "Regroup into fewer responsibility-oriented requirements while retaining every material obligation; keep detailed schema/order in legitimate docs rather than a bullet-per-test inventory.",
+      "regression_risk": "Medium: regrouping can accidentally omit a material obligation if not matrix-checked."
+    },
+    {
+      "id": "STC-04",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "vacuous/weak F2P ownership for drain simulation",
+      "evidence_refs": [
+        "terraform-aws-eks-addon-trust-rollout/instruction.md",
+        "terraform-aws-eks-addon-trust-rollout/tests/test_outputs.py::test_f2p_drain_simulation_respects_pdb_availability",
+        "terraform-aws-eks-addon-trust-rollout/tests/fixtures/upgrade_lab/__init__.py"
+      ],
+      "why_it_matters": "After PDBs exist, run_rollout hardcodes pdb_respected/core_available success; the F2P drain test does not exercise agent-owned drain behavior or minAvailable enforcement beyond PDB presence already covered elsewhere, so the drain requirement is not meaningfully tested.",
+      "minimal_remediation": "Make drain outcomes depend on submitted PDB thresholds/replicas (or agent-reported drain artifacts) with a failing counterexample when budgets are wrong.",
+      "regression_risk": "Low if PDB fixtures already encode the intended budgets."
+    },
+    {
+      "id": "STC-05",
+      "severity": "MEDIUM",
+      "status": "OBSERVED",
+      "criterion": "material CLI entrypoint requirement not meaningfully tested",
+      "evidence_refs": [
+        "terraform-aws-eks-addon-trust-rollout/instruction.md",
+        "terraform-aws-eks-addon-trust-rollout/tests/test_outputs.py::test_p2p_cli_entrypoint_and_api_signatures_compatible"
+      ],
+      "why_it_matters": "Instruction requires execution via /app/bin/addon-trust-rollout, but P2P only checks upgrade_lab callables and no test invokes or asserts the public CLI path.",
+      "minimal_remediation": "Add a behavioral check that the public CLI exists and produces the graded report/plan artifacts, or narrow the instruction if CLI is non-graded.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "STC-06",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "report irsa_bindings schema field inconsistency",
+      "evidence_refs": [
+        "terraform-aws-eks-addon-trust-rollout/environment/docs/report-schema.md",
+        "terraform-aws-eks-addon-trust-rollout/environment/docs/addon-trust-rollout-contract.md"
+      ],
+      "why_it_matters": "role_arn presence differs between schema docs; digest omits role_arn, so impact is limited but contracts disagree.",
+      "minimal_remediation": "Align both docs with the digest/stable field set actually graded.",
+      "regression_risk": "Low."
+    },
+    {
+      "id": "STC-07",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "instruction/docs boundary leakiness",
+      "evidence_refs": [
+        "terraform-aws-eks-addon-trust-rollout/environment/docs/addon-trust-rollout-contract.md",
+        "terraform-aws-eks-addon-trust-rollout/instruction.md"
+      ],
+      "why_it_matters": "addon-trust-rollout-contract.md reads as a second acceptance checklist overlapping instruction goals rather than pure architecture/schema documentation.",
+      "minimal_remediation": "Keep end-state asks in instruction.md; leave docs to schemas, inventories, and operator procedures without rubric restatement.",
+      "regression_risk": "Low."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "terraform-aws-eks-addon-trust-rollout/instruction.md",
+    "terraform-aws-eks-addon-trust-rollout/environment/docs/architecture.md",
+    "terraform-aws-eks-addon-trust-rollout/environment/docs/addon-trust-rollout-contract.md",
+    "terraform-aws-eks-addon-trust-rollout/environment/docs/report-schema.md",
+    "terraform-aws-eks-addon-trust-rollout/environment/k8s/regulated_workloads.yaml",
+    "terraform-aws-eks-addon-trust-rollout/tests/test_outputs.py",
+    "terraform-aws-eks-addon-trust-rollout/tests/fixtures/upgrade_lab/__init__.py"
+  ],
+  "do_not_change": [
+    "terraform-aws-eks-addon-trust-rollout/environment/data/compatibility_matrix.json",
+    "terraform-aws-eks-addon-trust-rollout/environment/data/trust_observations.json",
+    "terraform-aws-eks-addon-trust-rollout/environment/data/pdbs.json",
+    "terraform-aws-eks-addon-trust-rollout/tests/test.sh"
+  ],
+  "next_gate": "Producer repair (Q1/Q2/Q3 as applicable) then re-freeze and re-run QUALITY_INTERLOCK Q4",
+  "role_output": {
+    "REQUIREMENT_TEST_MATRIX": [
+      {
+        "requirement": "Plan all compatibility_matrix add-ons at target versions into /app/var/upgrade/plan.json",
+        "tests": [
+          "test_f2p_plan_policy_enforces_required_addons",
+          "test_f2p_addon_versions_match_compatibility_matrix"
+        ],
+        "coverage": "complete"
+      },
+      {
+        "requirement": "resolve_conflicts_on_update=PRESERVE for EKS add-ons",
+        "tests": [
+          "test_f2p_resolve_conflicts_must_be_preserve"
+        ],
+        "coverage": "complete"
+      },
+      {
+        "requirement": "SSM parameter tags for controller add-on version/conflict overrides",
+        "tests": [
+          "test_f2p_ssm_parameter_tags_supply_controller_versions"
+        ],
+        "coverage": "complete"
+      },
+      {
+        "requirement": "IRSA exact single subject from trust_observations; reject wildcards/forbidden",
+        "tests": [
+          "test_f2p_irsa_assume_role_policy_condition_parsing",
+          "test_f2p_irsa_role_trusts_exact_single_service_account",
+          "test_f2p_forbidden_subjects_like_system_nodes_rejected"
+        ],
+        "coverage": "complete"
+      },
+      {
+        "requirement": "No wildcard IAM actions; role naming conventions",
+        "tests": [
+          "test_f2p_wildcard_iam_policy_actions_rejected",
+          "test_f2p_irsa_role_names_match_expected_naming"
+        ],
+        "coverage": "complete"
+      },
+      {
+        "requirement": "PDBs match pdbs.json names/namespaces/minAvailable",
+        "tests": [
+          "test_f2p_pdbs_match_required_names_namespaces_selectors",
+          "test_f2p_pdb_min_available_thresholds_enforced"
+        ],
+        "coverage": "complete"
+      },
+      {
+        "requirement": "Preserve system CriticalAddonsOnly taint and system nodepool label",
+        "tests": [
+          "test_f2p_system_node_group_taints_and_labels_validated"
+        ],
+        "coverage": "complete"
+      },
+      {
+        "requirement": "Simulate system drain enforcing PDB minAvailable / core availability",
+        "tests": [
+          "test_f2p_drain_simulation_respects_pdb_availability"
+        ],
+        "coverage": "vacuous"
+      },
+      {
+        "requirement": "Regulated explicit nodepool + on-demand + private placement; Karpenter CRD; interruption safety",
+        "tests": [
+          "test_f2p_regulated_workloads_require_explicit_nodepools",
+          "test_f2p_regulated_capacity_types_enforce_ondemand",
+          "test_f2p_regulated_node_pools_restricted_to_private_subnets",
+          "test_f2p_karpenter_nodepool_crd_capacity_enforced",
+          "test_f2p_interruption_simulation_preserves_ondemand"
+        ],
+        "coverage": "partial"
+      },
+      {
+        "requirement": "Prerequisites + exact matrix order + readiness before READY",
+        "tests": [
+          "test_f2p_rollout_prerequisites_validated_before_step",
+          "test_f2p_addons_rollout_in_matrix_specified_order",
+          "test_f2p_addon_readiness_verified_before_step_completion",
+          "test_f2p_readiness_status_ready_when_all_checks_pass"
+        ],
+        "coverage": "complete"
+      },
+      {
+        "requirement": "Deny shared IRSA role ARNs across add-ons",
+        "tests": [
+          "test_f2p_cross_service_trust_denies_shared_role_arns"
+        ],
+        "coverage": "complete"
+      },
+      {
+        "requirement": "Merge inline and attached policies in plan normalization",
+        "tests": [
+          "test_f2p_plan_normalizer_merges_inline_and_attached_policies"
+        ],
+        "coverage": "complete"
+      },
+      {
+        "requirement": "Guard UpgradeProtected against delete/replace",
+        "tests": [
+          "test_f2p_upgrade_protected_resources_guarded_against_deletion"
+        ],
+        "coverage": "complete"
+      },
+      {
+        "requirement": "Checkpoint/restart recovery",
+        "tests": [
+          "test_f2p_rollout_state_checkpointing_enables_restart"
+        ],
+        "coverage": "complete"
+      },
+      {
+        "requirement": "Deterministic /app/output/upgrade-report.json with stable digest",
+        "tests": [
+          "test_f2p_report_formatting_is_canonical_and_complete",
+          "test_f2p_report_digest_computed_over_stable_fields",
+          "test_f2p_identical_runs_produce_identical_digests"
+        ],
+        "coverage": "complete"
+      },
+      {
+        "requirement": "Execute via /app/bin/addon-trust-rollout",
+        "tests": [
+          "test_p2p_cli_entrypoint_and_api_signatures_compatible"
+        ],
+        "coverage": "absent"
+      }
+    ],
+    "PHANTOM_TEST_CONTRACTS": [
+      "test_f2p_system_node_group_labels_verified requires apps/batch UpgradeProtected=true and nodepool labels beyond instruction system-node scope",
+      "plan_policy_errors apps/batch UpgradeProtected gate (same phantom obligation)"
+    ],
+    "UNTESTED_REQUIREMENTS": [
+      "Public CLI execution at /app/bin/addon-trust-rollout (P2P only imports upgrade_lab)",
+      "Drain simulation that actually enforces minAvailable (lab hardcodes success)",
+      "Published report sorted-key formatting (digest equality only)"
+    ],
+    "AMBIGUITIES": [
+      "Regulated workload names: architecture/starter payment-authorizer+settlement-reconciler vs regulated_policy/evidence/verifier settlement-ledger",
+      "report irsa_bindings role_arn present in report-schema.md but omitted in addon-trust-rollout-contract.md"
+    ],
+    "INSTRUCTION_SHAPE": "PASS",
+    "INSTRUCTION_REQUIREMENT_COMPLETENESS": "INSUFFICIENT",
+    "DELEGATED_CONTRACT_CHECK": [
+      {
+        "doc": "environment/docs/addon-trust-rollout-contract.md",
+        "class": "prompt_extension_risk",
+        "note": "Acceptance-checklist overlap with instruction"
+      },
+      {
+        "doc": "environment/docs/architecture.md",
+        "class": "architecture",
+        "note": "Legitimate layout but wrong regulated workload names vs data"
+      },
+      {
+        "doc": "environment/docs/report-schema.md",
+        "class": "schema",
+        "note": "Legitimate; minor field mismatch vs contract.md"
+      },
+      {
+        "doc": "environment/docs/rollout-lifecycle.md",
+        "class": "runbook",
+        "note": "Legitimate order/prerequisite contract"
+      },
+      {
+        "doc": "environment/docs/irsa-policy-contract.md",
+        "class": "protocol",
+        "note": "Legitimate IRSA rules"
+      },
+      {
+        "doc": "environment/data/*.json",
+        "class": "inventory_schema",
+        "note": "Legitimate graded inventories"
+      },
+      {
+        "doc": "environment/evidence/failed-upgrade-trace.txt",
+        "class": "incident_evidence",
+        "note": "Supports current-state claims; not a repair map dump"
+      }
+    ],
+    "INSTRUCTION_DOC_BOUNDARY": "LEAKY",
+    "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "LOW",
+    "CURRENT_STATE_EVIDENCE": "PASS",
+    "SPEC_DUMP_RISK": "HIGH",
+    "BIDIRECTIONAL_ALIGNMENT": "FAIL",
+    "BLOCKING_FINDING_IDS": [
+      "STC-01",
+      "STC-02",
+      "STC-03",
+      "STC-04",
+      "STC-05"
+    ],
+    "ADVISORY_FINDING_IDS": [
+      "STC-06",
+      "STC-07"
+    ],
+    "EXHAUSTIVENESS": {
+      "REQUIREMENTS_ENUMERATED": "COMPLETE",
+      "VERIFIER_BEHAVIORS_ENUMERATED": "COMPLETE",
+      "FORWARD_MATRIX_COMPLETE": "YES",
+      "REVERSE_MATRIX_COMPLETE": "YES",
+      "INSTRUCTION_COMPLETENESS_COMPLETE": "YES",
+      "DELEGATED_CONTRACTS_COMPLETE": "YES",
+      "PROMPT_EXTENSION_WALK_COMPLETE": "YES",
+      "P2P_BOUNDARIES_COMPLETE": "YES",
+      "F2P_BOUNDARIES_COMPLETE": "YES",
+      "OUTPUT_INTERFACES_COMPLETE": "YES",
+      "SECOND_PASS_OMISSION_SWEEP": "PASS",
+      "UNINSPECTED_SCOPE": [
+        "environment/upgrade_lab/ (referenced by Dockerfile/architecture; absent from workspace; graded semantics inspected via tests/fixtures/upgrade_lab)",
+        "environment/terraform/ (absent from workspace)",
+        "environment/bin/ (absent from workspace)"
+      ]
+    }
+  }
+}

@@ -43,9 +43,9 @@ Session schema version: `2.4`
 | --- | --- | --- |
 | Creation chain through RUNTIME_AUTHENTICITY | PASS | ledger on main |
 | DETERMINISTIC_VALIDATION | PASS | hosted run 32994383329 + record 921df988 |
-| Q4 Spec-Test Contract Reviewer | REVISE | artifact review `...-spec-test-contract-33c1250a36` @ run 32997757518 (not yet on main) |
-| Q6 Production Logic Auditor | REVISE | artifact review `...-production-logic-64677be1c7` @ run 32997757518 (not yet on main) |
-| Quality Interlock | BLOCKED | collect failed; no canonical QUALITY_INTERLOCK ledger event |
+| Q4 Spec-Test Contract Reviewer | REVISE | `.terminus/reviews/terraform-aws-eks-addon-trust-rollout/f649fbfd/terraform-aws-eks-addon-trust-rollout-f649fbfd-spec-test-contract-33c1250a36.json` @ run 32997757518 |
+| Q6 Production Logic Auditor | REVISE | `.terminus/reviews/terraform-aws-eks-addon-trust-rollout/f649fbfd/terraform-aws-eks-addon-trust-rollout-f649fbfd-production-logic-64677be1c7.json` @ run 32997757518 |
+| Quality Interlock | REVISE | recovered StageResult pending push |
 | Later gates | NOT_REACHED | blocked on quality interlock record + remediation |
 
 ## Next action
