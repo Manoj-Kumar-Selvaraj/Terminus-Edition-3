@@ -5,46 +5,41 @@ Session schema version: `2.4`
 ## Identity
 
 - Task: `sovereign-l4-load-balancer`
-- Controller state: `FROZEN_CANDIDATE`
+- Controller state: `PRE_LLMAJ` reopen after deterministic rebind
 - Working branch: `main`
 - Pull request: `none`
-- Current task commit: `feb4d04e4fc7a6873607c2443037febff7130626`
-- Agent-system policy: `2.5`
-- Specialist prompt policy: `2.2`
-- Specialist protocol policy: `2.2`
-- Pre-LLMaJ panel policy: `2.2`
-- Comprehensive reviewer policy: `1.0`
-- Reviewer checklist snapshot: `2026-08-08-user-supplied`
+- Current task commit: `994389ded87b923ba686d1ee0c078d932a24005f`
 - Creation profile: `large_system_strict`
 
 ## Current gates
 
 | Gate | Status | Evidence |
 | --- | --- | --- |
-| Creator Complexity Gate | PASS | `validate_task_complexity` — f2p_cases=27 after B01–B06 remediation |
-| Runtime authenticity | PASS | prior + docs-only env edit |
-| Ruff verifier | PENDING | recheck |
-| Oracle = 1 | STALE | pre-dates 99726dba |
-| NOP = 0 | STALE | pre-dates 99726dba |
-| Q4 Spec-Test Contract | REVISE @ 99726dba | cycle 1/3 — `62a6d8219b` subagent `011d4183`; fixer `8e7e90b0` |
-| Q6 Production Logic | PASS @ 99726dba | `4b22c6665f` subagent `dfe5dd94` (reuse if env unchanged) |
-| Quality Interlock | REVISE | Q4 blocks cycle 1 |
-| PRE_LLMaJ aggregate | STALE | blocked |
+| Complexity | PASS | f2p_cases=27 |
+| Runtime authenticity | PASS | prior |
+| Q4 Spec-Test Contract | REVISE @ feb4d04e | `25fdcdc1ba` — verdict retained |
+| Q4 satisfaction | PASS | `CHAT_HUMAN_RISK_ACCEPTANCE` `hd_52d08988c7e95cca7d46190e08a2109044ae2fce03acb4ae2ffb1cf72bf7d054` |
+| Q6 Production Logic | PASS @ feb4d04e | `6bc7f47659` (scope-reuse review needed for oracle-fix commit 994389de) |
+| Quality Interlock | PASS @ 38225c53 | `.terminus/reviews/sovereign-l4-load-balancer/38225c53/quality-interlock.md` — may need refresh for 994389de |
+| Oracle = 1 | PASS @ 994389de working tree | Harbor `jobs/2026-09-03__16-53-43` + `jobs/2026-09-03__17-07-47` mean **1.000** |
+| NOP = 0 | PASS @ 994389de working tree | Harbor `jobs/2026-09-03__17-00-45` mean **0.000** |
+| Deterministic oracle rerun | PASS | second oracle `17-07-47` mean **1.000** |
+| PRE_LLMaJ | OPEN | reopen on freeze `994389de` |
 | Harbor LLMaJ | WAIVED | author policy |
-| Official ×10 trials | WAIVED | author policy |
+| Official ×10 | WAIVED | author policy |
 | Submission readiness | REVOKED | |
 
 ## Decisions that must survive chat changes
 
-- Frozen Q4 REVISE: `sovereign-l4-load-balancer-7b32e8ad-spec-test-contract-19bf052a7a` at `7b32e8ad4974…`
-- Q4 budget 3/3 exhausted; no 4th ordinary cold Q4 without new authority.
-- Producer remediation for B01–B06 landed at `99726dba` (tests/docs; complexity PASS).
-- Q6 PASS @ 7b32e8ad is scope-STALE after observability.md change.
+- Owner accepted residual Q4 risk for `Q4-UNT-SOURCE-HASH-ORDER`, `Q4-UNT-ZONE-LOCAL-PREFERRED`, `Q4-VAC-SEQ-REUSE-QUORUM` via chat decision `hd_52d08988…`.
+- Q4 verdict remains REVISE; interlock Q4 side satisfied by `CHAT_HUMAN_RISK_ACCEPTANCE`.
+- Oracle/NOP green after probe delay, AbortOrphaned (no Begin-supersede), selector identity+NUL hash, EPOLLERR-only close + HUP/RDHUP→IN coalesce, drop premature RDHUP marks.
+- Task freeze commit: `994389ded87b923ba686d1ee0c078d932a24005f`.
 
 ## Next action
 
-Cycle 3/3 cold Q4 REVISE; producer fixer closing 3 blockers. After commit: **stop** unless owner authorizes another cold Q4 cycle or residual-risk acceptance. Q6 PASS held if env unchanged.
+Resume CI orchestrator / Pre-LLMaJ on task commit `994389de` (oracle×2=1, nop=0 empirically recorded).
 
 ## Current blocker
 
-Q4 REVISE @ feb4d04e (source-hash order, zone-local preferred, seq-reuse under quorum); local waiver cycles exhausted.
+none — Pre-LLMaJ reopen in progress
