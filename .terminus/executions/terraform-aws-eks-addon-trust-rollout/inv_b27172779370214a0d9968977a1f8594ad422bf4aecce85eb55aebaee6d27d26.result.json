@@ -1,0 +1,256 @@
+{
+  "authority": {
+    "control_plane_commit": "474f2b09fcda1848ef64d894a1b702be4f923b2b",
+    "policy_versions": {},
+    "task_commit": "639d3005feec1990eb05bb0ca721fd8a09c98815",
+    "task_id": "terraform-aws-eks-addon-trust-rollout"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:69b033c92b0b9291bd48e1e98d8387baac776ae3119b38c1c77702419e02c07c",
+      "kind": "COMMIT",
+      "ref": "commit:639d3005feec1990eb05bb0ca721fd8a09c98815"
+    }
+  ],
+  "invocation_id": "inv_b27172779370214a0d9968977a1f8594ad422bf4aecce85eb55aebaee6d27d26",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "474f2b09fcda1848ef64d894a1b702be4f923b2b",
+      "policy_versions": {},
+      "task_commit": "639d3005feec1990eb05bb0ca721fd8a09c98815",
+      "task_id": "terraform-aws-eks-addon-trust-rollout"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CONTROL_PLANE_POLICY",
+        "PRIVATE_CREATION_DESIGN",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "deterministic general repair/completion",
+        "preservation rationale",
+        "no hidden-test special casing"
+      ],
+      "excluded_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PUBLIC_REFERENCE",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/CREATOR_PROMPTS.md"
+      ],
+      "retrieval_mode": "EXACT_ONLY"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "APPROVED_OPERATIONAL_REQUIREMENTS": [
+          "Complete the inherited Terraform and Kubernetes EKS add-on trust rollout system at `/app` using contracts in `/app/docs` and incident evidence in `/app/evidence` so add-on controllers, IRSA subjects, PodDisruptionBudgets, and regulated placement achieve policy-compliant upgrade readiness.",
+          "Execute and validate through the public operator CLI command at `/app/bin/addon-trust-rollout`.",
+          "Plan Terraform under `/app/terraform` so the generated plan at `/app/var/upgrade/plan.json` includes all required add-ons matching target versions in `/app/data/compatibility_matrix.json`.",
+          "Configure `resolve_conflicts_on_update = 'PRESERVE'` for all EKS add-ons in the Terraform plan.",
+          "Support SSM parameter tags for controller add-ons to extract version overrides and conflict resolution modes.",
+          "Configure each IRSA role in Terraform to trust exactly one service account subject matching `/app/data/trust_observations.json` and reject wildcards or forbidden subjects.",
+          "Ensure IAM role policies contain no wildcard actions (`*` or `ebs:*`) and role names follow required naming conventions.",
+          "Supply required PodDisruptionBudgets in `/app/k8s` matching required names, namespaces, and minAvailable thresholds in `/app/data/pdbs.json`.",
+          "Preserve `CriticalAddonsOnly=true:NoSchedule` taints and nodepool labels on the system node group.",
+          "Simulate system node draining while enforcing PodDisruptionBudget minAvailable limits and maintaining core service availability.",
+          "Enforce explicit nodepool selectors and capacity-type constraints for regulated workloads, restricting placement to private on-demand node pools.",
+          "Enforce Karpenter NodePool CRD requirements to ensure regulated capacity excludes spot instances.",
+          "Simulate spot/on-demand node interruptions and verify regulated workloads remain on on-demand capacity after rebalancing.",
+          "Validate add-on rollout prerequisites before advancing each add-on, executing rollouts in exact compatibility matrix order.",
+          "Poll and verify add-on readiness before marking steps complete, reporting status `READY` only when all readiness conditions pass.",
+          "Audit cross-service trust to prevent IAM role ARN sharing across distinct add-ons.",
+          "Merge inline policies and standalone role policy attachments in plan normalization.",
+          "Guard resources tagged `UpgradeProtected=true` against delete or replace actions in the Terraform plan.",
+          "Record step-by-step rollout state checkpoints to enable atomic restart recovery upon interruption.",
+          "Publish deterministic reports to `/app/output/upgrade-report.json` with canonical formatting, sorted keys, stable semantic fields, and repeatable SHA-256 report digests."
+        ],
+        "STARTER_ENVIRONMENT": {
+          "docs": [
+            "environment/docs/addon-trust-rollout-contract.md",
+            "environment/docs/architecture.md",
+            "environment/docs/irsa-policy-contract.md",
+            "environment/docs/report-schema.md",
+            "environment/docs/rollout-lifecycle.md"
+          ],
+          "status": "BUILT",
+          "task_root": "terraform-aws-eks-addon-trust-rollout"
+        },
+        "SYSTEM_ARCHITECTURE": {
+          "COMPONENT_GRAPH": [
+            "Terraform workspace and upgrade module generator",
+            "Terraform plan parser and policy validator",
+            "IRSA trust policy parser and subject fence verifier",
+            "Compatibility matrix and prerequisite dependency evaluator",
+            "Kubernetes manifest parser and PodDisruptionBudget analyzer",
+            "Regulated workload placement and Karpenter node pool evaluator",
+            "System node drain simulator and pod eviction engine",
+            "Interruption simulator and capacity fence analyzer",
+            "Rollout state machine coordinator with step-by-step checkpointing",
+            "Deterministic report publisher and SHA-256 digest calculator"
+          ],
+          "ENTRYPOINTS": [
+            "/app/bin/addon-trust-rollout",
+            "/app/bin/generate-fixtures"
+          ],
+          "PRODUCTION_CHARACTERISTICS": [
+            "Terraform plan policy and IRSA fencing",
+            "PDB drain simulation",
+            "regulated placement and Karpenter capacity fences",
+            "ordered rollout with readiness polling",
+            "checkpoint recovery",
+            "deterministic SHA-256 reports"
+          ],
+          "SCALE_FIT": "Target 4,500-7,000 reachable canonical environment LOC; generated data, tests, solution, docs, comments, blanks, and duplicate filler do not count.",
+          "SOLVER_VISIBLE_DOC_PLAN": [
+            "environment/docs/addon-trust-rollout-contract.md",
+            "environment/docs/architecture.md",
+            "environment/docs/irsa-policy-contract.md",
+            "environment/docs/report-schema.md",
+            "environment/docs/rollout-lifecycle.md"
+          ],
+          "STATE_MODEL": "File-backed JSON/YAML state store with checkpointing, plan normalization, and deterministic report publication."
+        }
+      }
+    },
+    "invocation_id": "inv_b27172779370214a0d9968977a1f8594ad422bf4aecce85eb55aebaee6d27d26",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "IMPLEMENTED",
+        "CONTRACT_GAP",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [],
+      "optional_fields": [],
+      "persisted_artifacts": [
+        "<task>/solution/solve.sh",
+        "<task>/solution/"
+      ],
+      "required_fields": [
+        "RESTORED_INVARIANTS",
+        "FILES_CHANGED",
+        "RESTART_IDEMPOTENCY_BEHAVIOR",
+        "DETERMINISM_NOTES",
+        "PRESERVED_BEHAVIOR",
+        "RISKS_FOR_INDEPENDENT_VERIFIER"
+      ],
+      "semantic_reviewers": [
+        "Verifier Engineer"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "CONTRACT_GAP": "Creation Controller -> appropriate contract owner",
+        "RUNTIME_FAILURE": "Q5 Oracle & Runtime Repair Specialist"
+      },
+      "stale_on": [
+        "operational requirement change",
+        "environment implementation change",
+        "solver-visible contract change"
+      ],
+      "success_transition": "VERIFIER_BUILD"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A4 Reference Solution Author",
+      "role_class": "PRODUCER",
+      "role_id": "A4_REFERENCE_SOLUTION_AUTHOR",
+      "stage_id": "REFERENCE_SOLUTION"
+    }
+  },
+  "outputs": {
+    "DETERMINISM_NOTES": "report_publisher uses sorted keys and stable semantic fields for SHA-256 digests",
+    "FILES_CHANGED": [
+      "README.md",
+      "k8s/controllers.yaml",
+      "solve.sh",
+      "terraform/modules/upgrade/main.tf",
+      "terraform/workspaces/upgrade/main.tf",
+      "terraform/workspaces/upgrade/providers.tf",
+      "terraform/workspaces/upgrade/versions.tf"
+    ],
+    "PRESERVED_BEHAVIOR": [
+      "existing nodepool labels",
+      "UpgradeProtected resources",
+      "compatibility matrix ordering"
+    ],
+    "RESTART_IDEMPOTENCY_BEHAVIOR": "checkpoint_manager resumes from last durable step without redoing completed add-ons",
+    "RESTORED_INVARIANTS": [
+      "addon plan policy and PRESERVE conflicts",
+      "exclusive IRSA subjects and no wildcard actions",
+      "PDB minAvailable and CriticalAddonsOnly taints",
+      "regulated on-demand private placement",
+      "matrix-ordered rollout with readiness",
+      "checkpoint restart recovery",
+      "deterministic sorted report digests"
+    ],
+    "RISKS_FOR_INDEPENDENT_VERIFIER": [
+      "hidden F2P probes must fail on starter",
+      "P2P must remain green on oracle and starter where classified"
+    ]
+  },
+  "record_id": "rec_6d874b99bb5483314d4beab8f52f46e768a714c0800022062c63ebf27ae384cb",
+  "role_id": "A4_REFERENCE_SOLUTION_AUTHOR",
+  "schema_version": "1.0",
+  "stage_id": "REFERENCE_SOLUTION",
+  "status": "IMPLEMENTED",
+  "task_lineage": {
+    "input_task_commit": "639d3005feec1990eb05bb0ca721fd8a09c98815",
+    "output_task_commit": "639d3005feec1990eb05bb0ca721fd8a09c98815",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "VERIFIER_BUILD",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 1,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}
