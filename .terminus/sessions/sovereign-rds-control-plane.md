@@ -3,31 +3,32 @@
 ## Identity
 - task: `sovereign-rds-control-plane`
 - branch: `main`
-- TASK_COMMIT: `8fb4d92f932d8c0c34a126b3040b4fb5f1cfad42`
-- control_plane_commit (ledger lineage): `857d474d50bdd78b168bd3e013fa6927a2af81b6`
+- TASK_COMMIT (publishable): `9b9ec8da3f8f46ad0f51858d805f003f133df1ab`
+- task tree: `dbcede9208c29079733c44065f8a1a7434b1bbc0` (matches HEAD)
+- control_plane_commit (live): `474f2b09fcda1848ef64d894a1b702be4f923b2b`
+- legacy stash-only commit: `8fb4d92f…` (same tree; do not use for hosted runners)
 
 ## Modes
 - TERMINUS_Q4_Q6_MODE: AUTOMATED
 - TERMINUS_Q8_MODE: OFF
 
 ## Controller state
-- Ledger: `.terminus/executions/sovereign-rds-control-plane/ledger.jsonl` — **25 events**
-- Tip: `RUNTIME_AUTHENTICITY` @ task `8fb4d92f` / CP `857d474d`
+- Ledger: `.terminus/executions/sovereign-rds-control-plane/ledger.jsonl` — **40 events**
+- Tip: `RUNTIME_AUTHENTICITY` @ task `9b9ec8da` / CP `474f2b09`
 - Next: `DETERMINISTIC_VALIDATION` (`HOSTED_DETERMINISTIC_VALIDATION`)
-- Remediation attribution: replayed creation stages at `8fb4d92f` after CP bump for producer path allowlist
+- Prior tip at CP `857d474d` / `8fb4d92f` is historical; creation chain was replayed onto live CP
 
-## Local gates @ 8fb4d92f
+## Local gates (preflight @ equivalent tree)
 - NOP: 30 failed / 4 passed
 - Oracle: 34 passed
 - Complexity: PASS (`large_system_strict`, substantive_loc≈3575)
-- Runtime authenticity: **PASS** (`.terminus/designs/sovereign-rds-control-plane-production.json`)
+- Runtime authenticity: **PASS**
 
 ## Quality interlock
-- Q4 Spec-Test Contract: **PASS** — `.terminus/reviews/sovereign-rds-control-plane/8fb4d92f/sovereign-rds-control-plane-8fb4d92f-spec-test-contract-907fb71891.json`
-- Q6 Production Logic: **PASS** — `.terminus/reviews/sovereign-rds-control-plane/8fb4d92f/sovereign-rds-control-plane-8fb4d92f-production-logic-714a3c097a.json`
-- Interlock: **UNBLOCKED** on task commit `8fb4d92f`
+- Q4/Q6 PASS artifacts under `.terminus/reviews/sovereign-rds-control-plane/8fb4d92f/` (same task tree as `9b9ec8da`)
+- Re-bind on publishable commit when hosted quality lifecycle runs
 
 ## Next legal actions
-1. Hosted/Harbor `DETERMINISTIC_VALIDATION` (oracle + NOP) after publishing `main` when authorized
-2. `FROZEN_CANDIDATE` → quality interlock lifecycle binding
+1. Hosted `DETERMINISTIC_VALIDATION`: create/push deterministic request for task `9b9ec8da` + CP `474f2b09` from current `origin/main` (`gh auth login` if Actions logs/dispatch fail)
+2. After DET PASS → `FROZEN_CANDIDATE` → quality interlock lifecycle binding
 3. Difficulty calibration (5 GPT + 5 Claude) and `task.toml` tier

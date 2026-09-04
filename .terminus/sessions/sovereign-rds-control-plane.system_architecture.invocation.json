@@ -1,9 +1,9 @@
 {
   "acceptance_predicates": {},
   "authority": {
-    "control_plane_commit": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+    "control_plane_commit": "474f2b09fcda1848ef64d894a1b702be4f923b2b",
     "policy_versions": {},
-    "task_commit": "80f30305a5d92128e780ee16a2227e2c195a68c8",
+    "task_commit": "9b9ec8da3f8f46ad0f51858d805f003f133df1ab",
     "task_id": "sovereign-rds-control-plane"
   },
   "evidence": {
@@ -38,22 +38,18 @@
     ],
     "retrieval_mode": "FILTERED_HYBRID"
   },
-  "ignored_input_count": 37,
+  "ignored_input_count": 43,
   "inputs": {
     "optional": {},
     "required": {
       "APPROVED_OPERATIONAL_REQUIREMENTS": [
-        "Accept `ModifyDBInstance` only when status is `AVAILABLE`. Allocated storage must strictly increase; equal or smaller targets are rejected.",
-        "Reject `DeleteDBInstance` when `DeletionProtection` is true, even if `FinalDBSnapshotIdentifier` is set.",
-        "On reboot, reload config and apply pending static parameters; clear `PendingRebootParameters` only after boot-time validation succeeds.",
-        "Ingest WAL archives with timeline/sequence continuity (flag gaps). For PITR, bind base backup LSN/timeline, partially replay WAL to the target time, and accept targets only when `EarliestRestorableTime <= target <= LatestRestorableTime`.",
-        "Apply dynamic parameters immediately; mark static ones `pending-reboot`. Merge overrides into family defaults. `ResetDBParameterGroup` sets attached instances to `parameter_group_status=pending-reboot` and `PendingRebootParameters=true`.",
-        "Before `PromoteReadReplica`, require `replication_lag_bytes <= MaximumAllowedLagBytes` (10485760) and LSN catch-up, revoke the old primary write lease, and atomically swap writer/reader endpoints (promotion does not perform floating-VIP ARP).",
-        "Before Multi-AZ failover, acquire a leader lease with TTL fencing. Drive health from direct DB TCP reachability (ignore control-plane pool lag alone). On floating VIP migration, flush routes and send gratuitous ARP; record migration evidence per the failover contract.",
-        "Enqueue EventBridge outbox rows in the same DB transaction as instance state changes. Match subscriptions by `SourceType` and event category. Use deterministic `EventIdentifier` hashes; write `event_delivery_audit` after max retries.",
-        "Write durable transaction checkpoints for instance state transitions and, on restart, skip already-completed checkpointed operations.",
-        "Enforce account, region, and `tenant_id` isolation on describe/list projections.",
-        "Publish `/app/rds/out/rds-snapshot.json` (canonical sorted keys + `report_digest`), `/app/rds/out/instances.jsonl`, `/app/rds/out/events.jsonl`, and `/app/rds/out/health.json` with stable UTF-8 encoding and deterministic ordering."
+        "Lifecycle: allow `ModifyDBInstance` only while status is `AVAILABLE`; allocated storage must strictly increase; reject `DeleteDBInstance` when `DeletionProtection` is true even if a final snapshot id is supplied; on reboot, reload config, apply pending static parameters, and clear `pending_reboot_parameters` only after boot validation succeeds.",
+        "WAL / PITR: ingest archives with timeline and sequence continuity (flag gaps); bind base-backup LSN/timeline; partially replay WAL to the restore target; accept targets only when `EarliestRestorableTime <= target <= LatestRestorableTime`.",
+        "Parameter groups: apply dynamic parameters immediately, mark static ones pending reboot, merge overrides into family defaults; `ResetDBParameterGroup` sets attached instances to `parameter_group_status=pending-reboot` and `pending_reboot_parameters=true`.",
+        "Promotion: require `replication_lag_bytes <= MaximumAllowedLagBytes` (10485760) and LSN catch-up; revoke the old primary write lease and mark that former primary `READ_ONLY`; then atomically swap writer/reader endpoints. Promotion must not flush VIP routes or send gratuitous ARP (those steps are failover-only).",
+        "Failover: acquire a TTL-fenced leader lease first; decide health from direct DB TCP reachability (ignore control-plane pool lag alone); on floating VIP migration flush routes, send gratuitous ARP, and record evidence per the failover contract.",
+        "Outbox / isolation: enqueue EventBridge rows in the same DB transaction as instance state changes; match subscriptions by `SourceType` and event category; use deterministic `EventIdentifier` hashes; write `event_delivery_audit` after max retries; enforce account, region, and `tenant_id` isolation on describe/list projections.",
+        "Outputs: publish `/app/rds/out/rds-snapshot.json` with canonical sorted keys and `report_digest` over the stable field subset defined in the operator contract; also emit UTF-8 `/app/rds/out/instances.jsonl`, `/app/rds/out/events.jsonl`, and `/app/rds/out/health.json` (companions are required artifacts; they do not carry digests and are not separately graded for line/key ordering beyond existing as well-formed UTF-8 JSON/JSONL)."
       ],
       "APPROVED_WORK_PACKAGE": {
         "id": "WP1_SOVEREIGN_RDS_CONTROL_PLANE",
@@ -82,7 +78,7 @@
           ".github/workflows/terminus-creator-complexity.yml",
           ".github/workflows/terminus-production-authenticity.yml"
         ],
-        "CONTROL_PLANE_COMMIT": "df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe",
+        "CONTROL_PLANE_COMMIT": "474f2b09fcda1848ef64d894a1b702be4f923b2b",
         "CREATION_PROFILE": "large_system_strict",
         "KNOWN_POLICY_CONFLICTS": [],
         "NETWORK_ENVIRONMENT_CONSTRAINTS": "Public network during image build for package installation; runtime grading is deterministic with no live AWS RDS API calls, no cloud credentials, and no privileged containers. PostgreSQL 16 runs in the task compose topology.",
@@ -100,7 +96,7 @@
       }
     }
   },
-  "invocation_id": "inv_3fbc95e559061677251f439f248c9f7f871f121c2a34856f7124682e1c6b60e1",
+  "invocation_id": "inv_43ea7a71aee8b1170e8155ae5a952ea0aa56a03cf3b26a2751e9d570b659d385",
   "learning": {
     "context_hash": "sha256:307e06b6be8eee79e941256cc80e7b4b8e6d8edb9a73269dbba59257a864107b",
     "lessons": [],

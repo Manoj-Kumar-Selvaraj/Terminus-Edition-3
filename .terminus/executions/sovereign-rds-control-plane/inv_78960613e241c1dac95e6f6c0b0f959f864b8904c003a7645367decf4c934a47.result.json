@@ -1,0 +1,264 @@
+{
+  "authority": {
+    "control_plane_commit": "474f2b09fcda1848ef64d894a1b702be4f923b2b",
+    "policy_versions": {},
+    "task_commit": "9b9ec8da3f8f46ad0f51858d805f003f133df1ab",
+    "task_id": "sovereign-rds-control-plane"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:18ff09012cc7e4e1f8b55790a54a52fc41f8fca4aa67ed3b9ac16fae20c58df3",
+      "kind": "COMMIT",
+      "ref": "commit:474f2b09fcda1848ef64d894a1b702be4f923b2b"
+    },
+    {
+      "content_hash": "sha256:3264647d886a8b2ee81b4a6d083ea9d5a43be4f368af8300fd4f81c458467a7b",
+      "kind": "COMMIT",
+      "ref": "commit:9b9ec8da3f8f46ad0f51858d805f003f133df1ab"
+    }
+  ],
+  "invocation_id": "inv_78960613e241c1dac95e6f6c0b0f959f864b8904c003a7645367decf4c934a47",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "474f2b09fcda1848ef64d894a1b702be4f923b2b",
+      "policy_versions": {},
+      "task_commit": "9b9ec8da3f8f46ad0f51858d805f003f133df1ab",
+      "task_id": "sovereign-rds-control-plane"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CONTROL_PLANE_POLICY",
+        "PUBLIC_REFERENCE",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "schema-valid current solver-visible requirement contract",
+        "complete material requirement set",
+        "instruction/docs boundary",
+        "absolute required output paths",
+        "current-state evidence only when claimed"
+      ],
+      "excluded_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PRIVATE_CREATION_DESIGN",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        "TERMINUS_3_AI_INSTRUCTIONS.md",
+        ".terminus/agents/INSTRUCTION_POLICY.md",
+        ".terminus/agents/CREATOR_PROMPTS.md"
+      ],
+      "retrieval_mode": "FILTERED_HYBRID"
+    },
+    "ignored_input_count": 42,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "APPROVED_SOLVER_VISIBLE_REQUIREMENT_CONTRACT": ".terminus/contracts/sovereign-rds-control-plane/solver-visible-requirements.json",
+        "CREATION_RULE_CONTEXT": {
+          "ACTIVE_VALIDATORS": [
+            ".terminus/validate_agent_system.py",
+            ".terminus/validate_stage_contracts.py",
+            ".terminus/validate_task_complexity.py",
+            ".terminus/validate_environment_complexity.py",
+            ".terminus/validate_runtime_authenticity.py",
+            ".terminus/validate_business_module_diversity.py",
+            ".terminus/validate_review_freshness.py",
+            ".terminus/validate_quality_interlock.py",
+            ".github/workflows/terminus-edition-3-ci.yml",
+            ".github/workflows/terminus-creator-complexity.yml",
+            ".github/workflows/terminus-production-authenticity.yml"
+          ],
+          "CONTROL_PLANE_COMMIT": "474f2b09fcda1848ef64d894a1b702be4f923b2b",
+          "CREATION_PROFILE": "large_system_strict",
+          "KNOWN_POLICY_CONFLICTS": [],
+          "NETWORK_ENVIRONMENT_CONSTRAINTS": "Public network during image build for package installation; runtime grading is deterministic with no live AWS RDS API calls, no cloud credentials, and no privileged containers. PostgreSQL 16 runs in the task compose topology.",
+          "RULE_SOURCES": [
+            "TERMINUS_3_AI_INSTRUCTIONS.md",
+            ".terminus/AGENT_SYSTEM.md",
+            ".terminus/agents/CREATION_CONTROLLER.md",
+            ".terminus/agents/CREATION_PIPELINE.md",
+            ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+            ".terminus/reviewers/REVIEWER_CHECKLIST.md",
+            ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+            ".terminus/agents/STAGE_CONTRACTS.md",
+            ".terminus/agents/stage_contracts.json"
+          ]
+        },
+        "TASK_WRITING_PROFILE": {
+          "avoid": [
+            "one sentence per verifier scenario",
+            "implementation diagnosis or repair locations",
+            "invented outage or customer story",
+            "copied public issue wording",
+            "generic benchmark preamble",
+            "canary strings or oracle hints"
+          ],
+          "must_preserve": [
+            "public entrypoints /app/rds/bin/rdsd, /app/rds/bin/rds-worker, /app/rds/bin/rdsctl",
+            "AVAILABLE-only modifications and monotonic storage growth",
+            "DeletionProtection always enforced",
+            "WAL continuity and PITR window/LSN/timeline binding",
+            "dynamic vs pending-reboot parameter semantics",
+            "lag/LSN-fenced PromoteReadReplica with old-primary write-lease revocation",
+            "lease-TTL Multi-AZ failover with direct-port health probes",
+            "transactional outbox with deterministic EventIdentifier hashes",
+            "deterministic published outputs under /app/rds/out"
+          ],
+          "structure": [
+            "open with completing the inherited Python/PostgreSQL RDS-compatible control plane",
+            "group lifecycle, WAL/PITR, parameter apply modes, replica promotion, Multi-AZ failover, and outbox outcomes rather than mirroring tests",
+            "point to /app/rds/docs operator contracts for schemas and state semantics",
+            "state offline lab boundaries: no live AWS RDS API or cloud credentials"
+          ],
+          "voice": "direct cloud platform engineer sovereign-RDS control-plane handoff"
+        },
+        "VALIDATED_HUMAN_WRITING_CALIBRATION": {
+          "coverage": "DEGRADED",
+          "pair": ".terminus/research/sovereign-rds-control-plane-dataset-calibration.json",
+          "pair_id": "hwpair-541bdfa4854b4c2b26fa",
+          "profile": ".terminus/research/sovereign-rds-control-plane-task-writing-profile.json",
+          "status": "VALID"
+        }
+      }
+    },
+    "invocation_id": "inv_78960613e241c1dac95e6f6c0b0f959f864b8904c003a7645367decf4c934a47",
+    "learning": {
+      "context_hash": "sha256:307e06b6be8eee79e941256cc80e7b4b8e6d8edb9a73269dbba59257a864107b",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "sha256:8dd19b0617b094661caf5fe0a5b30e437703843b5f05ce63a7a75586710575c6",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "READY",
+        "REWRITE_REQUIRED",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [
+        "solver-visible requirement contract schema/hash/provenance checks",
+        "Q7 structural/path checks where mechanically enforceable",
+        ".terminus/human_writing/validate_calibration.py"
+      ],
+      "optional_fields": [
+        "CURRENT_STATE_EVIDENCE",
+        "UNRESOLVED_GAPS"
+      ],
+      "persisted_artifacts": [
+        "<task>/instruction.md"
+      ],
+      "required_fields": [
+        "INSTRUCTION_PATH",
+        "REQUIREMENT_COVERAGE",
+        "DOC_REFERENCES",
+        "INSTRUCTION_SHAPE",
+        "HANDOFF_TEST",
+        "REVERSE_OUTLINE_RISK",
+        "SPEC_FILE_LOOPHOLE"
+      ],
+      "semantic_reviewers": [
+        "Instruction Reviewer",
+        "Q1 Spec Gap Repairer",
+        "Q3 Spec Ambiguity Repairer"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "AMBIGUITY": "Q3 Spec Ambiguity Repairer",
+        "FORMAT_OR_PATH_ERROR": "Q7 Task Format Enforcer",
+        "HIDDEN_TEST_OR_REPAIR_LEAKAGE": "A7 Instruction Writer",
+        "MISSING_REQUIREMENT": "Q1 Spec Gap Repairer",
+        "SPEC_FILE_LOOPHOLE": "A7 Instruction Writer / Q1 Spec Gap Repairer",
+        "STALE_OR_INVALID_REQUIREMENT_CONTRACT": "Creation Controller -> requirement owner/Q1 -> regenerate projection"
+      },
+      "stale_on": [
+        "solver-visible requirement contract change",
+        "material requirement change",
+        "referenced solver-visible contract change",
+        "required output/schema change",
+        "instruction-policy change",
+        "human-writing calibration change",
+        "dataset registry change",
+        "domain profile change"
+      ],
+      "success_transition": "SPEC_ALIGNMENT"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A7 Instruction Writer",
+      "role_class": "PRODUCER",
+      "role_id": "A7_INSTRUCTION_WRITER",
+      "stage_id": "INSTRUCTION_DRAFT"
+    }
+  },
+  "outputs": {
+    "DOC_REFERENCES": [
+      "environment/rds/docs/architecture.md",
+      "environment/rds/docs/failover-replica-contract.md",
+      "environment/rds/docs/operator-contract.md",
+      "environment/rds/docs/parameter-group-contract.md",
+      "environment/rds/docs/pitr-wal-contract.md"
+    ],
+    "HANDOFF_TEST": "PASS: reads as engineer work request with absolute paths",
+    "INSTRUCTION_PATH": "sovereign-rds-control-plane/instruction.md",
+    "INSTRUCTION_SHAPE": "bullet_list_le_20",
+    "REQUIREMENT_COVERAGE": "7 bullets cover lifecycle, WAL/PITR, parameters, replica promotion, Multi-AZ failover, outbox, and published outputs",
+    "REVERSE_OUTLINE_RISK": "LOW",
+    "SPEC_FILE_LOOPHOLE": "CLOSED: material requirements remain in instruction.md"
+  },
+  "record_id": "rec_05b3802f31e2391e6256edfabb606711135689ba4e5879f700ae13c17e247acc",
+  "role_id": "A7_INSTRUCTION_WRITER",
+  "schema_version": "1.0",
+  "stage_id": "INSTRUCTION_DRAFT",
+  "status": "READY",
+  "task_lineage": {
+    "input_task_commit": "9b9ec8da3f8f46ad0f51858d805f003f133df1ab",
+    "output_task_commit": "9b9ec8da3f8f46ad0f51858d805f003f133df1ab",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "SPEC_ALIGNMENT",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 2,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}

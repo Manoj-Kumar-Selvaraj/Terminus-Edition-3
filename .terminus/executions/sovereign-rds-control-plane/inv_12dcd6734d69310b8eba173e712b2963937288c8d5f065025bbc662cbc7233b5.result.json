@@ -1,0 +1,278 @@
+{
+  "authority": {
+    "control_plane_commit": "474f2b09fcda1848ef64d894a1b702be4f923b2b",
+    "policy_versions": {},
+    "task_commit": "9b9ec8da3f8f46ad0f51858d805f003f133df1ab",
+    "task_id": "sovereign-rds-control-plane"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:18ff09012cc7e4e1f8b55790a54a52fc41f8fca4aa67ed3b9ac16fae20c58df3",
+      "kind": "COMMIT",
+      "ref": "commit:474f2b09fcda1848ef64d894a1b702be4f923b2b"
+    },
+    {
+      "content_hash": "sha256:3264647d886a8b2ee81b4a6d083ea9d5a43be4f368af8300fd4f81c458467a7b",
+      "kind": "COMMIT",
+      "ref": "commit:9b9ec8da3f8f46ad0f51858d805f003f133df1ab"
+    }
+  ],
+  "invocation_id": "inv_12dcd6734d69310b8eba173e712b2963937288c8d5f065025bbc662cbc7233b5",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "474f2b09fcda1848ef64d894a1b702be4f923b2b",
+      "policy_versions": {},
+      "task_commit": "9b9ec8da3f8f46ad0f51858d805f003f133df1ab",
+      "task_id": "sovereign-rds-control-plane"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CONTROL_PLANE_POLICY",
+        "PRIVATE_CREATION_DESIGN",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "deterministic general repair/completion",
+        "preservation rationale",
+        "no hidden-test special casing"
+      ],
+      "excluded_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PUBLIC_REFERENCE",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/CREATOR_PROMPTS.md"
+      ],
+      "retrieval_mode": "EXACT_ONLY"
+    },
+    "ignored_input_count": 42,
+    "inputs": {
+      "optional": {
+        "SOLVER_VISIBLE_CONTRACTS": [
+          ".terminus/contracts/sovereign-rds-control-plane/solver-visible-requirements.json",
+          "environment/rds/docs/architecture.md",
+          "environment/rds/docs/failover-replica-contract.md",
+          "environment/rds/docs/operator-contract.md",
+          "environment/rds/docs/parameter-group-contract.md",
+          "environment/rds/docs/pitr-wal-contract.md"
+        ]
+      },
+      "required": {
+        "APPROVED_OPERATIONAL_REQUIREMENTS": [
+          "Lifecycle: allow `ModifyDBInstance` only while status is `AVAILABLE`; allocated storage must strictly increase; reject `DeleteDBInstance` when `DeletionProtection` is true even if a final snapshot id is supplied; on reboot, reload config, apply pending static parameters, and clear `pending_reboot_parameters` only after boot validation succeeds.",
+          "WAL / PITR: ingest archives with timeline and sequence continuity (flag gaps); bind base-backup LSN/timeline; partially replay WAL to the restore target; accept targets only when `EarliestRestorableTime <= target <= LatestRestorableTime`.",
+          "Parameter groups: apply dynamic parameters immediately, mark static ones pending reboot, merge overrides into family defaults; `ResetDBParameterGroup` sets attached instances to `parameter_group_status=pending-reboot` and `pending_reboot_parameters=true`.",
+          "Promotion: require `replication_lag_bytes <= MaximumAllowedLagBytes` (10485760) and LSN catch-up; revoke the old primary write lease and mark that former primary `READ_ONLY`; then atomically swap writer/reader endpoints. Promotion must not flush VIP routes or send gratuitous ARP (those steps are failover-only).",
+          "Failover: acquire a TTL-fenced leader lease first; decide health from direct DB TCP reachability (ignore control-plane pool lag alone); on floating VIP migration flush routes, send gratuitous ARP, and record evidence per the failover contract.",
+          "Outbox / isolation: enqueue EventBridge rows in the same DB transaction as instance state changes; match subscriptions by `SourceType` and event category; use deterministic `EventIdentifier` hashes; write `event_delivery_audit` after max retries; enforce account, region, and `tenant_id` isolation on describe/list projections.",
+          "Outputs: publish `/app/rds/out/rds-snapshot.json` with canonical sorted keys and `report_digest` over the stable field subset defined in the operator contract; also emit UTF-8 `/app/rds/out/instances.jsonl`, `/app/rds/out/events.jsonl`, and `/app/rds/out/health.json` (companions are required artifacts; they do not carry digests and are not separately graded for line/key ordering beyond existing as well-formed UTF-8 JSON/JSONL)."
+        ],
+        "STARTER_ENVIRONMENT": {
+          "docs": [
+            "environment/rds/docs/architecture.md",
+            "environment/rds/docs/failover-replica-contract.md",
+            "environment/rds/docs/operator-contract.md",
+            "environment/rds/docs/parameter-group-contract.md",
+            "environment/rds/docs/pitr-wal-contract.md"
+          ],
+          "status": "BUILT",
+          "task_root": "sovereign-rds-control-plane"
+        },
+        "SYSTEM_ARCHITECTURE": {
+          "COMPONENT_GRAPH": [
+            "RDS control plane API daemon (rdsd) with HTTP endpoints for DBInstances, DBParameterGroups, DBSnapshots, and EventSubscriptions",
+            "Control plane CLI (rdsctl) for operator commands and automated management",
+            "Instance lifecycle orchestrator (provisioning, modifying, stopping, starting, rebooting, deleting)",
+            "WAL archive collector and PITR recovery target synthesizer",
+            "Parameter group manager with dynamic/static parameter application classification",
+            "Replica topology manager and streaming replication lag monitor",
+            "Failover coordinator with leader election, lease fencing, and VIP migration",
+            "Event outbox processor with subscription filter engine",
+            "Deterministic RDS state and telemetry fixture generator",
+            "Local offline RDS protocol simulator for end-to-end testing"
+          ],
+          "DATA_VOLUME_PLAN": "Generate 14,800 deterministic primary records across DB instances, parameter groups, WAL manifests, snapshots, events, failover logs, and metrics.",
+          "ENTRYPOINTS": [
+            "/app/rds/bin/rdsd",
+            "/app/rds/bin/rds-worker",
+            "/app/rds/bin/rdsctl",
+            "/app/rds/bin/generate-estate"
+          ],
+          "PRODUCTION_CHARACTERISTICS": [
+            "RDS-compatible instance lifecycle API",
+            "WAL archive and PITR synthesis",
+            "parameter dynamic vs pending-reboot fencing",
+            "replica promotion lag/LSN fencing",
+            "Multi-AZ lease/VIP failover",
+            "transactional event outbox",
+            "deterministic published digests",
+            "crash/restart checkpoint recovery"
+          ],
+          "SCALE_FIT": "Target 4,500-7,000 reachable canonical environment LOC; generated estate data, tests, solution, docs, comments, blanks, and duplicate filler do not count.",
+          "SOLVER_VISIBLE_DOC_PLAN": [
+            "environment/rds/docs/architecture.md",
+            "environment/rds/docs/failover-replica-contract.md",
+            "environment/rds/docs/operator-contract.md",
+            "environment/rds/docs/parameter-group-contract.md",
+            "environment/rds/docs/pitr-wal-contract.md"
+          ],
+          "STATE_MODEL": "PostgreSQL 16 for control plane metadata, instance state, parameter groups, snapshot manifests, WAL segments, event outbox, leases, and audit trail."
+        }
+      }
+    },
+    "invocation_id": "inv_12dcd6734d69310b8eba173e712b2963937288c8d5f065025bbc662cbc7233b5",
+    "learning": {
+      "context_hash": "sha256:307e06b6be8eee79e941256cc80e7b4b8e6d8edb9a73269dbba59257a864107b",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "sha256:8dd19b0617b094661caf5fe0a5b30e437703843b5f05ce63a7a75586710575c6",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "IMPLEMENTED",
+        "CONTRACT_GAP",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [],
+      "optional_fields": [],
+      "persisted_artifacts": [
+        "<task>/solution/solve.sh",
+        "<task>/solution/"
+      ],
+      "required_fields": [
+        "RESTORED_INVARIANTS",
+        "FILES_CHANGED",
+        "RESTART_IDEMPOTENCY_BEHAVIOR",
+        "DETERMINISM_NOTES",
+        "PRESERVED_BEHAVIOR",
+        "RISKS_FOR_INDEPENDENT_VERIFIER"
+      ],
+      "semantic_reviewers": [
+        "Verifier Engineer"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "CONTRACT_GAP": "Creation Controller -> appropriate contract owner",
+        "RUNTIME_FAILURE": "Q5 Oracle & Runtime Repair Specialist"
+      },
+      "stale_on": [
+        "operational requirement change",
+        "environment implementation change",
+        "solver-visible contract change"
+      ],
+      "success_transition": "VERIFIER_BUILD"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A4 Reference Solution Author",
+      "role_class": "PRODUCER",
+      "role_id": "A4_REFERENCE_SOLUTION_AUTHOR",
+      "stage_id": "REFERENCE_SOLUTION"
+    }
+  },
+  "outputs": {
+    "DETERMINISM_NOTES": "publish_outputs uses stable schemas, ordering, encoding, and SHA-256 digests",
+    "FILES_CHANGED": [
+      "README.md",
+      "overlays/rds/app.py",
+      "overlays/rds/cli.py",
+      "overlays/rds/deletion_guard.py",
+      "overlays/rds/event_outbox.py",
+      "overlays/rds/event_subscription_engine.py",
+      "overlays/rds/evidence.py",
+      "overlays/rds/failover_coordinator.py",
+      "overlays/rds/instance_manager.py",
+      "overlays/rds/parameter_group.py",
+      "overlays/rds/parameter_group_orchestrator.py",
+      "overlays/rds/pitr_engine.py",
+      "overlays/rds/readiness.py",
+      "overlays/rds/replica_manager.py",
+      "overlays/rds/repository.py",
+      "overlays/rds/storage_evaluator.py",
+      "overlays/rds/wal_collector.py",
+      "overlays/rds/worker.py",
+      "publish_outputs.py",
+      "solve.sh"
+    ],
+    "PRESERVED_BEHAVIOR": [
+      "Keep public CLI entrypoints (rdsd, rds-worker, rdsctl) and HTTP API contracts stable",
+      "Keep output schemas at /app/output/rds-snapshot.json and database migrations intact",
+      "Use offline local RDS protocol lab and never require live AWS RDS API connectivity",
+      "Invalid API calls, forbidden parameter values, or unauthenticated requests must fail closed without corrupting state"
+    ],
+    "RESTART_IDEMPOTENCY_BEHAVIOR": "checkpoint recovery skips completed operations and avoids duplicate PITR restores",
+    "RESTORED_INVARIANTS": [
+      "AVAILABLE-only modifications and monotonic storage",
+      "DeletionProtection always enforced",
+      "WAL continuity and PITR window/LSN/timeline checks",
+      "static pending-reboot vs dynamic apply",
+      "replica lag/LSN promotion with old-primary fencing",
+      "lease-TTL Multi-AZ failover with direct-port probes",
+      "transactional outbox with deterministic EventIdentifier",
+      "sorted deterministic report digests"
+    ],
+    "RISKS_FOR_INDEPENDENT_VERIFIER": [
+      "hidden F2P probes must fail on starter",
+      "P2P must remain green where classified",
+      "runtime authenticity profile still missing"
+    ]
+  },
+  "record_id": "rec_dab98060ed52b3cdc1811dfc9bc83048f616d9aef010f7ba2bd253386ab147c8",
+  "role_id": "A4_REFERENCE_SOLUTION_AUTHOR",
+  "schema_version": "1.0",
+  "stage_id": "REFERENCE_SOLUTION",
+  "status": "IMPLEMENTED",
+  "task_lineage": {
+    "input_task_commit": "9b9ec8da3f8f46ad0f51858d805f003f133df1ab",
+    "output_task_commit": "9b9ec8da3f8f46ad0f51858d805f003f133df1ab",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "VERIFIER_BUILD",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 2,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}
