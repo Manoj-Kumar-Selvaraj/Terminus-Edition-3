@@ -1398,6 +1398,33 @@ def test_f2p_same_zone_skips_remote_without_failopen(lab_state: Path, control_st
         expect_no_forwarding("127.0.0.1", 18001)
 
 
+def test_f2p_same_zone_failopen_forwards_remote_only(lab_state: Path, control_state: Path, dataplane_state: Path) -> None:
+    """same_zone_preferred + fail_open=true with only remote-zone targets must expand to remotes."""
+    desired = scenario_desired()
+    desired["target_groups"][0]["zone_policy"] = "same_zone_preferred"
+    desired["target_groups"][0]["fail_open"] = True
+    desired["target_groups"][0]["targets"] = [
+        {
+            "id": "remote-only",
+            "address": "127.0.0.1",
+            "port": 19002,
+            "zone": "zone-b",
+            "administrative_state": "enabled",
+            "weight": 1,
+            "incarnation": 1,
+        }
+    ]
+    with running_stack(lab_state, control_state, dataplane_state) as stack:
+        assert apply(stack["management"], write_desired(lab_state, desired, "zone-failopen.json"), "zone-failopen")[0] in {
+            200,
+            202,
+        }
+        wait_active(stack["management"])
+        wait_listener_echo("127.0.0.1", 18001, payload=b"z")
+        backends = {event["backend"] for event in lab_events(lab_state) if event.get("event") == "accepted"}
+        assert "slow" in backends, "fail_open=true must forward to the remote-only backend under same_zone_preferred"
+
+
 def test_f2p_same_zone_prefers_local_over_remote(lab_state: Path, control_state: Path, dataplane_state: Path) -> None:
     """same_zone_preferred must keep selections in the local zone while local normally-eligible targets remain."""
     desired = scenario_desired()
@@ -1854,6 +1881,16 @@ def test_f2p_control_plane_restart_restores_authority_fences(lab_state: Path, co
                 assert len(accepted_digest) == 64
                 generation = first[1]["generation"]
 
+                status_before, payload_before = http_json(f"{endpoint}/v1/status")
+                assert status_before == 200 and isinstance(payload_before, dict)
+                assert int(payload_before.get("active_generation") or 0) == int(generation)
+                assert payload_before.get("rollout", {}).get("phase") == "active"
+                nodes_before_status, nodes_before = http_json(f"{endpoint}/v1/nodes")
+                assert nodes_before_status == 200 and isinstance(nodes_before, list) and nodes_before
+                pre_restart_session = str(nodes_before[0].get("session_id") or "")
+                pre_restart_node = str(nodes_before[0].get("node_id") or "")
+                assert pre_restart_session and pre_restart_node
+
                 control.terminate()
                 try:
                     control.wait(timeout=5)
@@ -1873,9 +1910,40 @@ def test_f2p_control_plane_restart_restores_authority_fences(lab_state: Path, co
                 wait_port("127.0.0.1", management_port, timeout=15)
                 endpoint = f"http://127.0.0.1:{management_port}"
 
-                status, payload = http_json(f"{endpoint}/v1/status")
-                assert status == 200 and isinstance(payload, dict)
+                # Dataplane remains up and must re-hello; wait until durable active_generation is visible
+                # and the configured node reconnects with the same session fence.
+                deadline = time.time() + 25.0
+                payload: dict[str, Any] = {}
+                recovered_node: dict[str, Any] | None = None
+                while time.time() < deadline:
+                    status, candidate = http_json(f"{endpoint}/v1/status")
+                    if status == 200 and isinstance(candidate, dict) and int(candidate.get("active_generation") or 0) == int(generation):
+                        payload = candidate
+                        nodes_status, nodes_after = http_json(f"{endpoint}/v1/nodes")
+                        if nodes_status == 200 and isinstance(nodes_after, list):
+                            for node in nodes_after:
+                                if str(node.get("node_id") or "") == pre_restart_node and node.get("connected") is True:
+                                    recovered_node = node
+                                    break
+                        if recovered_node is not None:
+                            break
+                    time.sleep(0.2)
+                assert payload, "control-plane restart must restore active_generation from durable state"
                 assert payload["accepted_revision"] == accepted_revision
+                assert recovered_node is not None, "dataplane must re-register a connected session after control-plane restart"
+                assert str(recovered_node.get("session_id") or "") == pre_restart_session
+                status_coherent, payload = http_json(f"{endpoint}/v1/status")
+                assert status_coherent == 200 and isinstance(payload, dict)
+                assert int(payload.get("active_generation") or 0) == int(generation)
+                # Rollout coherence: either explicit active phase or a connected fleet view on the restored generation.
+                phase = (payload.get("rollout") or {}).get("phase")
+                fleet = payload.get("fleet_membership") or {}
+                assert (
+                    phase == "active"
+                    or payload.get("rollout_present") is True
+                    or int(fleet.get("connected_nodes") or 0) >= 1
+                    or int((payload.get("generation_view") or {}).get("nodes_on_active") or 0) >= 1
+                )
                 authority_after = json.loads((control_state / "authority.json").read_text(encoding="utf-8"))
                 assert authority_after.get("accepted_digest") == accepted_digest
 
@@ -1887,6 +1955,21 @@ def test_f2p_control_plane_restart_restores_authority_fences(lab_state: Path, co
                 stale["revision"] = 1
                 stale_status, _payload = apply(endpoint, write_desired(lab_state, stale, "cp-stale.json"), "cp-stale")
                 assert stale_status == 409
+
+                # Session fence survives restart: the same node_id stays connected under the
+                # pre-restart session_id (lab-pinned), and active_generation remains coherent.
+                nodes_status, nodes_final = http_json(f"{endpoint}/v1/nodes")
+                assert nodes_status == 200 and isinstance(nodes_final, list)
+                real_current = [
+                    node
+                    for node in nodes_final
+                    if str(node.get("node_id") or "") == pre_restart_node and node.get("connected") is True
+                ]
+                assert real_current, "recovered node session fence must remain connected"
+                assert str(real_current[0].get("session_id") or "") == pre_restart_session
+                status_after_fence, payload_after_fence = http_json(f"{endpoint}/v1/status")
+                assert status_after_fence == 200 and isinstance(payload_after_fence, dict)
+                assert int(payload_after_fence.get("active_generation") or 0) == int(generation)
         finally:
             if control.poll() is None:
                 control.terminate()
