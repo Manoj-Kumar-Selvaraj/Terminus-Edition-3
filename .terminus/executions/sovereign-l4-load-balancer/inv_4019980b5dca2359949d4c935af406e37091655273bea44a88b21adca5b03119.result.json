@@ -1,0 +1,890 @@
+{
+  "authority": {
+    "control_plane_commit": "37a2137a90a7e527f3a2028a7a691fce5d7ade96",
+    "policy_versions": {},
+    "task_commit": "a29ea18dfdfb4c1177cdfdede7065f811d889429",
+    "task_id": "sovereign-l4-load-balancer"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:72489f4a98293165f98fe0140389d85365a93af1200993de214000278378dd67",
+      "kind": "COMMIT",
+      "ref": "commit:a29ea18dfdfb4c1177cdfdede7065f811d889429"
+    },
+    {
+      "content_hash": "sha256:ddfff00da3eb7ccbd8e0f7e7cbc117bda41f86bcbb637f0dd6f757bfb9127643",
+      "kind": "RESULT",
+      "ref": "git:4a587bf549ef2e8ad4ec872ec289bdd2a793b3a0:.terminus/reviews/sovereign-l4-load-balancer/a29ea18d/sovereign-l4-load-balancer-a29ea18d-spec-test-contract-63d6d69277.json#sovereign-l4-load-balancer-a29ea18d-spec-test-contract-63d6d69277"
+    },
+    {
+      "content_hash": "sha256:3f72bd882fcb7abf342dfa70c52ec61f6192230660b05e5ffd4b7d043d3c9a56",
+      "kind": "RESULT",
+      "ref": "git:4a587bf549ef2e8ad4ec872ec289bdd2a793b3a0:.terminus/reviews/sovereign-l4-load-balancer/a29ea18d/sovereign-l4-load-balancer-a29ea18d-production-logic-c94dfa2651.json#sovereign-l4-load-balancer-a29ea18d-production-logic-c94dfa2651"
+    },
+    {
+      "content_hash": "sha256:ddfff00da3eb7ccbd8e0f7e7cbc117bda41f86bcbb637f0dd6f757bfb9127643",
+      "kind": "RUN",
+      "ref": "run:github:33847572952-q4#sha256:ddfff00da3eb7ccbd8e0f7e7cbc117bda41f86bcbb637f0dd6f757bfb9127643"
+    },
+    {
+      "content_hash": "sha256:3f72bd882fcb7abf342dfa70c52ec61f6192230660b05e5ffd4b7d043d3c9a56",
+      "kind": "RUN",
+      "ref": "run:github:33847572952-q6#sha256:3f72bd882fcb7abf342dfa70c52ec61f6192230660b05e5ffd4b7d043d3c9a56"
+    }
+  ],
+  "invocation_id": "inv_4019980b5dca2359949d4c935af406e37091655273bea44a88b21adca5b03119",
+  "invocation_snapshot": {
+    "acceptance_predicates": {
+      "QUALITY_INTERLOCK_PASS": [
+        {
+          "op": "q4_satisfied",
+          "path": "Q4_RESULT"
+        },
+        {
+          "op": "eq",
+          "path": "Q6_RESULT.verdict",
+          "value": "PASS"
+        },
+        {
+          "op": "in",
+          "path": "Q6_RESULT.confidence",
+          "value": [
+            "HIGH",
+            "MEDIUM"
+          ]
+        },
+        {
+          "op": "eq",
+          "path": "Q6_RESULT.evidence_status",
+          "value": "SUFFICIENT"
+        },
+        {
+          "op": "empty",
+          "path": "Q6_RESULT.missing_evidence"
+        },
+        {
+          "op": "in",
+          "path": "EVIDENCE_SUFFICIENCY",
+          "value": [
+            "SUFFICIENT",
+            true
+          ]
+        }
+      ]
+    },
+    "authority": {
+      "control_plane_commit": "37a2137a90a7e527f3a2028a7a691fce5d7ade96",
+      "policy_versions": {},
+      "task_commit": "a29ea18dfdfb4c1177cdfdede7065f811d889429",
+      "task_id": "sovereign-l4-load-balancer"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CONTROL_PLANE_POLICY",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "Q4 exact-current PASS with sufficient evidence",
+        "Q6 current or Protocol-valid scope-preserved PASS with sufficient evidence",
+        "Q4 direct PASS or validated adjudicated closure PASS"
+      ],
+      "excluded_evidence_classes": [
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PRIVATE_CREATION_DESIGN",
+        "PUBLIC_REFERENCE",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/AGENT_SYSTEM.md",
+        ".terminus/agents/PROTOCOL.md",
+        ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+        ".terminus/agents/INSTRUCTION_POLICY.md",
+        ".terminus/agents/QUALITY_AGENT_PROMPTS.md",
+        ".terminus/agents/INVOKE.md"
+      ],
+      "retrieval_mode": "EXACT_ONLY"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {
+        "Q6_REVIEW_SCOPE_HASH": "cacc1062d08b3e934fbd1d6e46cf916764ad4df6168ab4d48da481251efe35cf"
+      },
+      "required": {
+        "FROZEN_TASK_COMMIT": "a29ea18dfdfb4c1177cdfdede7065f811d889429",
+        "Q4_CONTEXT_PACKET": {
+          "authoritative_rules": [
+            "TERMINUS_3_AI_INSTRUCTIONS.md",
+            ".terminus/AGENT_SYSTEM.md",
+            ".terminus/agents/PROTOCOL.md",
+            ".terminus/agents/PROMPTS.md",
+            ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+            ".terminus/agents/QUALITY_AGENT_PROMPTS.md"
+          ],
+          "change_since_last_review": "salvaged from quality run 33847572952 after collect_interlock directory-path allowlist false positive; no new model execution",
+          "control_plane_commit": "37a2137a90a7e527f3a2028a7a691fce5d7ade96",
+          "evidence_allowed": [
+            "instruction.md",
+            "all solver-visible contracts referenced by instruction.md",
+            "tests/",
+            "test map when needed to identify classification only",
+            "environment interfaces required to interpret observable behavior"
+          ],
+          "evidence_excluded": [
+            "Q1/Q2/Q3 conclusions before the independent matrix is frozen",
+            "Verifier Author coverage rationale",
+            "previous Spec-Test Contract Reviewer verdict",
+            "other specialist verdicts",
+            "desired aggregate outcome"
+          ],
+          "isolation_mode": "PROCEDURAL",
+          "output_schema": ".terminus/agents/schemas/review_result.schema.json",
+          "prior_verdicts_visible": false,
+          "prompt_policy_version": "2.2",
+          "protocol_policy_version": "2.2",
+          "question": "Is every substantive verifier behavior discoverable from the solver-visible contract, every material requirement tested, and every grading-relevant statement unambiguous?",
+          "review_id": "sovereign-l4-load-balancer-a29ea18d-spec-test-contract-63d6d69277",
+          "review_output_path": ".terminus/reviews/sovereign-l4-load-balancer/a29ea18d/sovereign-l4-load-balancer-a29ea18d-spec-test-contract-63d6d69277.json",
+          "role": "Spec-Test Contract Reviewer",
+          "role_contract_hash": "9607c7323be7db66eb7b520db4498f29efc686073e6f3d565c8e2c99ad26a34c",
+          "role_policy_version": "1.1",
+          "schema_version": "3.0",
+          "state": "FROZEN_CANDIDATE",
+          "task": "sovereign-l4-load-balancer",
+          "task_commit": "a29ea18dfdfb4c1177cdfdede7065f811d889429"
+        },
+        "Q6_CONTEXT_PACKET": {
+          "authoritative_rules": [
+            "TERMINUS_3_AI_INSTRUCTIONS.md",
+            ".terminus/AGENT_SYSTEM.md",
+            ".terminus/agents/PROTOCOL.md",
+            ".terminus/agents/PROMPTS.md",
+            ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+            ".terminus/agents/QUALITY_AGENT_PROMPTS.md"
+          ],
+          "change_since_last_review": "salvaged from quality run 33847572952 after collect_interlock directory-path allowlist false positive; no new model execution",
+          "control_plane_commit": "37a2137a90a7e527f3a2028a7a691fce5d7ade96",
+          "evidence_allowed": [
+            "task.toml",
+            "solver-visible environment/runtime/configuration code",
+            "entrypoints and operator workflows",
+            "runtime-authenticity and complexity reports",
+            "representative data/state and incident evidence"
+          ],
+          "evidence_excluded": [
+            "Complexity Governor verdict as a conclusion to copy",
+            "creator claims that code is production-grade",
+            "previous Production Logic Auditor verdict",
+            "other specialist verdicts",
+            "desired difficulty tier"
+          ],
+          "isolation_mode": "PROCEDURAL",
+          "output_schema": ".terminus/agents/schemas/review_result.schema.json",
+          "prior_verdicts_visible": false,
+          "prompt_policy_version": "2.2",
+          "protocol_policy_version": "2.2",
+          "question": "Is the solver-visible core genuinely complex, reachable, coupled, non-toy and credible as production logic rather than LOC or module padding?",
+          "review_id": "sovereign-l4-load-balancer-a29ea18d-production-logic-c94dfa2651",
+          "review_output_path": ".terminus/reviews/sovereign-l4-load-balancer/a29ea18d/sovereign-l4-load-balancer-a29ea18d-production-logic-c94dfa2651.json",
+          "review_scope_hash": "cacc1062d08b3e934fbd1d6e46cf916764ad4df6168ab4d48da481251efe35cf",
+          "role": "Production Logic Auditor",
+          "role_contract_hash": "828f84c63f4e37642ab42740b22aa95646ddaa42972f30902e9fe9a034e5458c",
+          "role_policy_version": "1.1",
+          "schema_version": "3.0",
+          "state": "FROZEN_CANDIDATE",
+          "task": "sovereign-l4-load-balancer",
+          "task_commit": "a29ea18dfdfb4c1177cdfdede7065f811d889429"
+        }
+      }
+    },
+    "invocation_id": "inv_4019980b5dca2359949d4c935af406e37091655273bea44a88b21adca5b03119",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "QUALITY_INTERLOCK_PASS",
+        "REVISE",
+        "INSUFFICIENT_EVIDENCE",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [
+        ".terminus/validate_review_freshness.py",
+        ".terminus/validate_quality_interlock.py"
+      ],
+      "optional_fields": [
+        "ADJUDICATION_REQUIRED",
+        "Q4_CLOSURE_RESULT"
+      ],
+      "persisted_artifacts": [
+        "Q4/Q6 packets and results",
+        ".terminus/sessions/<task>.md"
+      ],
+      "required_fields": [
+        "Q4_RESULT",
+        "Q4_SATISFACTION",
+        "Q6_RESULT",
+        "EVIDENCE_SUFFICIENCY"
+      ],
+      "semantic_reviewers": [
+        "Q4 Spec-Test Contract Reviewer",
+        "Q6 Production Logic Auditor",
+        "Q4 Closure Adjudicator"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "INSUFFICIENT_EVIDENCE": "CI Orchestrator / Submission Controller",
+        "LATENT_REVIEWER_OMISSION": "Adjudicator",
+        "Q4_CIRCUIT_BREAKER": "CI Orchestrator -> Q4_CLOSURE_POLICY -> Q4 Closure Adjudicator",
+        "Q4_REVISE": "smallest responsible spec/verifier producer",
+        "Q6_REVISE": "A2/A4 or responsible production producer"
+      },
+      "stale_on": [
+        "Q4 evidence-surface change",
+        "Q6 production-scope change",
+        "role-contract hash change",
+        "protocol/prompt policy change"
+      ],
+      "success_transition": "PRE_LLMAJ"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "review",
+      "owner": "CI Orchestrator / Submission Controller",
+      "role_class": "CONTROLLER",
+      "role_id": "CI_ORCHESTRATOR",
+      "stage_id": "QUALITY_INTERLOCK"
+    }
+  },
+  "outputs": {
+    "EVIDENCE_SUFFICIENCY": "SUFFICIENT",
+    "Q4_RESULT": {
+      "change_scope": [],
+      "confidence": "HIGH",
+      "context_packet": ".terminus/reviews/sovereign-l4-load-balancer/a29ea18d/sovereign-l4-load-balancer-a29ea18d-spec-test-contract-63d6d69277.packet.json",
+      "control_plane_commit": "37a2137a90a7e527f3a2028a7a691fce5d7ade96",
+      "do_not_change": [
+        "Do not strip GET /v1/nodes field contract from instruction.md or operations.md",
+        "Do not weaken F2P assertions that encode documented authority, quorum/LKG, eligibility, stream, protocol-fence, or recovery behaviors",
+        "Do not relocate material work-request bullets into docs solely to shorten instruction.md"
+      ],
+      "evidence": [
+        {
+          "observation": "20 concise bullets state workspace, build artifacts, validation, revision fencing, snapshot digest, control protocol envelopes, quorum/LKG, persistence/recovery, TCP proxy behaviors, selection/eligibility/drain/PROXY, observability including GET /v1/nodes field minima, lab inventory, exclusions, and docs+idempotency.",
+          "ref": "sovereign-l4-load-balancer/instruction.md",
+          "type": "file"
+        },
+        {
+          "observation": "Documents apply status codes, revision/idempotency conflicts, GET /ready, metrics/audit bounds, and GET /v1/nodes as a JSON array with at least node_id, session_id, and connected.",
+          "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/docs/operations.md",
+          "type": "file"
+        },
+        {
+          "observation": "Defines 4-byte BE length-prefixed canonical JSON frames and hello/prepare/prepared/rejected/activate/active/status envelope semantics, fencing, and torn-frame non-effect.",
+          "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/docs/control-protocol.md",
+          "type": "file"
+        },
+        {
+          "observation": "Defines eligibility (admin/active/passive), zone_policy and fail_open rules, RR/LC/source_hash, buffers/backpressure/half-close/timeouts, PROXY v2 once, and drain deadline behavior.",
+          "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/docs/dataplane.md",
+          "type": "file"
+        },
+        {
+          "observation": "Defines /ready, /v1/status (including rollout_present), /v1/audit event bounds, /metrics low-cardinality labels forbidding generation= labels, and dataplane /status connection summaries.",
+          "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/docs/observability.md",
+          "type": "file"
+        },
+        {
+          "observation": "Defines authority.json fields, generation-%020d layout, CURRENT fallback to highest verified active generation, and checkpoint verification before publication.",
+          "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/docs/recovery.md",
+          "type": "file"
+        },
+        {
+          "observation": "Defines desired-document shape, allowed policies/zone modes, port bounds, incarnation rules, and canonical ordering for source_hash.",
+          "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/docs/configuration.md",
+          "type": "file"
+        },
+        {
+          "observation": "Defines rollout phases, fenced prepare/activate counting, LKG preservation on reject/timeout, and non-reuse of failed generation numbers.",
+          "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/docs/rollout-state.md",
+          "type": "file"
+        },
+        {
+          "observation": "Defines five loopback backends and 24-node three-zone fleet inventory used as observation harness.",
+          "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/docs/lab.md",
+          "type": "file"
+        },
+        {
+          "observation": "49 tests: 4 P2P and 45 F2P covering authority, canonical digest/validation, rollout/quorum/LKG, streams/selection/limits, readiness, protocol fences/status, eligibility/health/drain, recovery, and /v1/nodes field use in control-plane restart.",
+          "ref": "sovereign-l4-load-balancer/tests/test_outputs.py",
+          "type": "test"
+        },
+        {
+          "observation": "Applied exhaustive forward/reverse matrix, instruction-shape/completeness, delegated-contract, F2P/P2P, output-interface, and second omission-sweep method with Q4 materiality rules.",
+          "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q4",
+          "type": "rule"
+        },
+        {
+          "observation": "Instruction is <=20 bullets; docs remain architecture/API/protocol/runbook contracts rather than a second prompt; no implementation-diagnosis leakage; no unsupported current-state incident claims.",
+          "ref": ".terminus/agents/INSTRUCTION_POLICY.md",
+          "type": "rule"
+        }
+      ],
+      "evidence_status": "SUFFICIENT",
+      "findings": [],
+      "missing_evidence": [],
+      "next_gate": "QUALITY_INTERLOCK",
+      "prompt_policy_version": "2.2",
+      "protocol_policy_version": "2.2",
+      "review_id": "sovereign-l4-load-balancer-a29ea18d-spec-test-contract-63d6d69277",
+      "role": "Spec-Test Contract Reviewer",
+      "role_contract_hash": "9607c7323be7db66eb7b520db4498f29efc686073e6f3d565c8e2c99ad26a34c",
+      "role_output": {
+        "ADVISORY_FINDING_IDS": [],
+        "AMBIGUITIES": [],
+        "BIDIRECTIONAL_ALIGNMENT": "PASS",
+        "BLOCKING_FINDING_IDS": [],
+        "CURRENT_STATE_EVIDENCE": "NOT_APPLICABLE",
+        "DELEGATED_CONTRACT_CHECK": [
+          {
+            "classification": "legitimate_technical_documentation",
+            "doc": "architecture.md",
+            "notes": "Authority boundaries, lifecycle, exclusions"
+          },
+          {
+            "classification": "legitimate_technical_documentation",
+            "doc": "configuration.md",
+            "notes": "Desired-state schema and policy enums"
+          },
+          {
+            "classification": "legitimate_technical_documentation",
+            "doc": "control-protocol.md",
+            "notes": "Framing and envelope contract"
+          },
+          {
+            "classification": "legitimate_technical_documentation",
+            "doc": "dataplane.md",
+            "notes": "Selection, streaming, health, drain"
+          },
+          {
+            "classification": "legitimate_technical_documentation",
+            "doc": "operations.md",
+            "notes": "Operator API including GET /v1/nodes"
+          },
+          {
+            "classification": "legitimate_technical_documentation",
+            "doc": "observability.md",
+            "notes": "ready/status/audit/metrics contracts"
+          },
+          {
+            "classification": "legitimate_technical_documentation",
+            "doc": "recovery.md",
+            "notes": "Durable layout and CURRENT fallback"
+          },
+          {
+            "classification": "legitimate_technical_documentation",
+            "doc": "rollout-state.md",
+            "notes": "Rollout phases and quorum fencing"
+          },
+          {
+            "classification": "legitimate_technical_documentation",
+            "doc": "lab.md",
+            "notes": "Lab backends and fleet inventory"
+          },
+          {
+            "classification": "legitimate_technical_documentation",
+            "doc": "examples/control.ndjson",
+            "notes": "Illustrative protocol traces, not a repair map"
+          }
+        ],
+        "EXHAUSTIVENESS": {
+          "DELEGATED_CONTRACTS_COMPLETE": "YES",
+          "F2P_BOUNDARIES_COMPLETE": "YES",
+          "FORWARD_MATRIX_COMPLETE": "YES",
+          "INSTRUCTION_COMPLETENESS_COMPLETE": "YES",
+          "OUTPUT_INTERFACES_COMPLETE": "YES",
+          "P2P_BOUNDARIES_COMPLETE": "YES",
+          "PROMPT_EXTENSION_WALK_COMPLETE": "YES",
+          "REQUIREMENTS_ENUMERATED": "COMPLETE",
+          "REVERSE_MATRIX_COMPLETE": "YES",
+          "SECOND_PASS_OMISSION_SWEEP": "PASS",
+          "UNINSPECTED_SCOPE": [],
+          "VERIFIER_BEHAVIORS_ENUMERATED": "COMPLETE"
+        },
+        "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "NONE",
+        "INSTRUCTION_DOC_BOUNDARY": "CLEAN",
+        "INSTRUCTION_REQUIREMENT_COMPLETENESS": "SUFFICIENT",
+        "INSTRUCTION_SHAPE": "PASS",
+        "PHANTOM_TEST_CONTRACTS": [],
+        "REQUIREMENT_TEST_MATRIX": [
+          {
+            "coverage": "complete",
+            "requirement": "Work only under /app/sovereign-lb; preserve mixed Go/C++/Bash/Python layout",
+            "requirement_id": "R1_workspace_structure",
+            "tests": [
+              "test_p2p_binaries_and_catalog_present",
+              "build_tree fixture"
+            ]
+          },
+          {
+            "coverage": "complete",
+            "requirement": "Build lb-control-plane, lbctl, lb-dataplane via bin/build; keep bin/lab",
+            "requirement_id": "R2_build_artifacts_lab",
+            "tests": [
+              "test_p2p_binaries_and_catalog_present",
+              "test_p2p_lbctl_status_command",
+              "running_stack/lab usage"
+            ]
+          },
+          {
+            "coverage": "complete",
+            "requirement": "Validate complete listener/TG/target/health/balancing/zone/fail-open config before generation allocation",
+            "requirement_id": "R3_canonical_validation",
+            "tests": [
+              "test_p2p_validate_rejects_invalid_policy",
+              "test_f2p_duplicate_listener_bind_rejected",
+              "test_f2p_invalid_listener_port_rejected"
+            ]
+          },
+          {
+            "coverage": "complete",
+            "requirement": "Strictly increasing accepted revision; reject stale, equal-revision different body, and idempotency-key reuse with different content",
+            "requirement_id": "R4_revision_idempotency_fence",
+            "tests": [
+              "test_f2p_same_revision_different_body_conflict",
+              "test_f2p_stale_revision_rejected",
+              "test_f2p_idempotency_key_body_conflict",
+              "test_f2p_revision_advances_accepted_authority",
+              "test_p2p_idempotency_replay"
+            ]
+          },
+          {
+            "coverage": "complete",
+            "requirement": "Compile accepted revision to immutable snapshot with deterministic digest and persisted generation record",
+            "requirement_id": "R5_immutable_snapshot_digest",
+            "tests": [
+              "test_f2p_generation_snapshot_matches_digest",
+              "test_f2p_accepted_digest_persisted"
+            ]
+          },
+          {
+            "coverage": "complete",
+            "requirement": "4-byte BE length-prefixed canonical JSON with hello/prepare/prepared/rejected/activate/active/status",
+            "requirement_id": "R6_control_protocol",
+            "tests": [
+              "test_f2p_torn_control_frame_does_not_advance_authority",
+              "test_f2p_control_session_sequence_mismatch_rejected",
+              "test_f2p_control_status_envelope_exchange",
+              "test_f2p_failed_candidate_preserves_lkg_generation"
+            ]
+          },
+          {
+            "coverage": "complete",
+            "requirement": "Fence acks by node_id, session_id, generation, digest, monotonic sequence",
+            "requirement_id": "R7_ack_fencing",
+            "tests": [
+              "test_f2p_control_session_sequence_mismatch_rejected",
+              "test_f2p_control_plane_restart_restores_authority_fences"
+            ]
+          },
+          {
+            "coverage": "complete",
+            "requirement": "Prepare then activate across live-session quorum; preserve last active generation when candidate fails; do not reuse failed generation id",
+            "requirement_id": "R8_quorum_lkg",
+            "tests": [
+              "test_f2p_rollout_reaches_active_phase",
+              "test_f2p_quorum_requires_connected_nodes",
+              "test_f2p_failed_candidate_preserves_lkg_generation",
+              "test_f2p_conflict_preserves_active_generation"
+            ]
+          },
+          {
+            "coverage": "complete",
+            "requirement": "Atomically persist/recover desired state, generations, rollout, idempotency, node fences, checkpoints, continuity",
+            "requirement_id": "R9_persist_recover",
+            "tests": [
+              "test_f2p_dataplane_restart_recovers_active_generation",
+              "test_f2p_corrupt_current_pointer_falls_back",
+              "test_f2p_control_plane_restart_restores_authority_fences",
+              "test_f2p_checkpoint_generation_directory_padding"
+            ]
+          },
+          {
+            "coverage": "complete",
+            "requirement": "Real TCP proxy with bounded buffers, partial I/O, backpressure, half-close, connect/idle timeout, deterministic teardown",
+            "requirement_id": "R10_tcp_proxy",
+            "tests": [
+              "test_f2p_multibuffer_tcp_echo",
+              "test_f2p_half_close_backend_survives",
+              "test_f2p_slow_backend_survives_full_buffer_backpressure",
+              "test_f2p_connect_timeout_closes_stalled_backend",
+              "test_f2p_idle_timeout_tears_down_quiet_stream"
+            ]
+          },
+          {
+            "coverage": "complete",
+            "requirement": "Accepted connections remain bound to acquired generation and target incarnation until completion",
+            "requirement_id": "R11_connection_binding",
+            "tests": [
+              "test_f2p_deregistered_target_drains_existing_connection",
+              "test_f2p_drain_deadline_terminates_owned_stream",
+              "test_f2p_target_incarnation_increments_on_reregister"
+            ]
+          },
+          {
+            "coverage": "complete",
+            "requirement": "Select eligible targets via round_robin, least_connections, or stable source_hash",
+            "requirement_id": "R12_selection_policies",
+            "tests": [
+              "test_f2p_round_robin_hits_multiple_backends",
+              "test_f2p_least_connections_prefers_lower_load",
+              "test_f2p_source_hash_stable_after_target_reorder"
+            ]
+          },
+          {
+            "coverage": "complete",
+            "requirement": "Combine admin state, active health, passive ejection, zone policy, fail-open, draining as documented",
+            "requirement_id": "R13_eligibility_combination",
+            "tests": [
+              "test_f2p_same_zone_skips_remote_without_failopen",
+              "test_f2p_same_zone_failopen_forwards_remote_only",
+              "test_f2p_same_zone_prefers_local_over_remote",
+              "test_f2p_fail_open_skips_disabled_targets",
+              "test_f2p_fail_open_includes_unhealthy_targets",
+              "test_f2p_passive_ejection_skips_reset_target",
+              "test_f2p_active_health_failure_skips_then_recovers"
+            ]
+          },
+          {
+            "coverage": "complete",
+            "requirement": "Stop new assignment to deregistered targets; drain owned connections until deadline",
+            "requirement_id": "R14_drain",
+            "tests": [
+              "test_f2p_deregistered_target_drains_existing_connection",
+              "test_f2p_drain_deadline_terminates_owned_stream"
+            ]
+          },
+          {
+            "coverage": "complete",
+            "requirement": "At most one valid PROXY protocol v2 header per backend connection when enabled",
+            "requirement_id": "R15_proxy_v2",
+            "tests": [
+              "test_f2p_proxy_inspect_listener_echo"
+            ]
+          },
+          {
+            "coverage": "complete",
+            "requirement": "Recover dataplane from verified checkpoints; do not advance authority from torn/invalid control frames",
+            "requirement_id": "R16_checkpoint_torn_frames",
+            "tests": [
+              "test_f2p_dataplane_restart_recovers_active_generation",
+              "test_f2p_corrupt_current_pointer_falls_back",
+              "test_f2p_torn_control_frame_does_not_advance_authority",
+              "test_f2p_control_session_sequence_mismatch_rejected"
+            ]
+          },
+          {
+            "coverage": "complete",
+            "requirement": "Expose bounded ready/status/rollout/metrics/audit and GET /v1/nodes (node_id, session_id, connected) without payload data or unbounded labels",
+            "requirement_id": "R17_observability_nodes",
+            "tests": [
+              "test_f2p_readiness_false_before_activate",
+              "test_f2p_readiness_false_during_prepare",
+              "test_f2p_readiness_true_after_activate",
+              "test_f2p_status_reports_rollout_present",
+              "test_f2p_audit_exports_bounded_apply_event",
+              "test_f2p_metrics_labels_bounded",
+              "test_f2p_control_plane_restart_restores_authority_fences"
+            ]
+          },
+          {
+            "coverage": "complete",
+            "requirement": "Keep deterministic 24-node three-zone inventory and loopback echo/slow/half-close/reset/PROXY lab",
+            "requirement_id": "R18_lab_fleet",
+            "tests": [
+              "test_p2p_binaries_and_catalog_present",
+              "lab-backed stream/eligibility/proxy tests"
+            ]
+          },
+          {
+            "coverage": "complete",
+            "note": "Negative scope; verifier does not require excluded surfaces",
+            "requirement": "No HTTP routing, WAF/CDN, DNS cutover, host route/firewall mutation, or cloud provisioning",
+            "requirement_id": "R19_exclusions",
+            "tests": []
+          },
+          {
+            "coverage": "complete",
+            "requirement": "Follow /app/sovereign-lb/docs contracts; keep apply/reconnect/prepare/activate/drain/recovery idempotent",
+            "requirement_id": "R20_docs_idempotency",
+            "tests": [
+              "test_p2p_idempotency_replay",
+              "test_f2p_control_plane_restart_restores_authority_fences",
+              "idempotent drain/rollout paths"
+            ]
+          }
+        ],
+        "SPEC_DUMP_RISK": "LOW",
+        "UNTESTED_REQUIREMENTS": []
+      },
+      "role_policy_version": "1.1",
+      "schema_version": "3.0",
+      "summary": "Cold Q4 walk over instruction.md, docs under environment/sovereign-lb/docs, and tests/test_outputs.py shows bidirectional alignment: every substantive verifier behavior is discoverable from the solver-visible contract, every material instruction requirement has meaningful behavioral coverage, and grading-relevant public interfaces (including GET /v1/nodes) are unambiguous.",
+      "task": "sovereign-l4-load-balancer",
+      "task_commit": "a29ea18dfdfb4c1177cdfdede7065f811d889429",
+      "verdict": "PASS"
+    },
+    "Q4_SATISFACTION": "DIRECT_PASS",
+    "Q6_RESULT": {
+      "change_scope": [],
+      "confidence": "HIGH",
+      "context_packet": ".terminus/reviews/sovereign-l4-load-balancer/a29ea18d/sovereign-l4-load-balancer-a29ea18d-production-logic-c94dfa2651.packet.json",
+      "control_plane_commit": "37a2137a90a7e527f3a2028a7a691fce5d7ade96",
+      "do_not_change": [
+        "Do not treat Complexity Governor or production-authenticity validator PASS as substitute evidence for this role",
+        "Do not expand Q6 scope into verifier/tests/instruction-only surfaces",
+        "Preserve review_scope_hash binding to task.toml + environment/ tree"
+      ],
+      "evidence": [
+        {
+          "observation": "Advanced systems task with Go/C++ languages, separate verifier mode, and /app/sovereign-lb artifact; environment is the production evidence surface.",
+          "ref": "sovereign-l4-load-balancer/task.toml",
+          "type": "file"
+        },
+        {
+          "observation": "Builds toolchain, copies sovereign-lb, runs bin/build, ENTRYPOINT lb-control-plane — real runtime packaging rather than a stub image.",
+          "ref": "sovereign-l4-load-balancer/environment/Dockerfile",
+          "type": "file"
+        },
+        {
+          "observation": "Operator build entrypoint compiles Go control-plane/lbctl and CMake/Ninja dataplane into build/bin.",
+          "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/bin/build",
+          "type": "file"
+        },
+        {
+          "observation": "Entrypoint wires management HTTP and dataplane control TCP listener to api.Service with durable state root.",
+          "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/cmd/lb-control-plane/main.go",
+          "type": "file"
+        },
+        {
+          "observation": "Operator CLI covers apply/status/nodes/audit/ready/fleet/scenarios/health/retention/recovery plus local fleet/scenario validation.",
+          "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/cmd/lbctl/main.go",
+          "type": "file"
+        },
+        {
+          "observation": "386-line service Open recovers authority, loads fleet/scenarios, Apply validates/compiles/stores/begins rollout with idempotency, Router exposes /v1/* and /ready; promoteActive couples retention leases to generation flips.",
+          "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/internal/api/service.go",
+          "type": "file"
+        },
+        {
+          "observation": "Per-node framed control sessions register hello, accept prepared/active/rejected/status, drive rollout phase transitions and dispatch activate.",
+          "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/internal/api/control.go",
+          "type": "file"
+        },
+        {
+          "observation": "Material branching on listeners/groups/targets/health/limits/policies; not constant-output shells.",
+          "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/internal/model/validate.go",
+          "type": "file"
+        },
+        {
+          "observation": "Two-phase prepare/activate quorum state machine with session mismatch, deadline abort, and rejection handling.",
+          "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/internal/rollout/coordinator.go",
+          "type": "file"
+        },
+        {
+          "observation": "Durable revision authority with idempotency records, stale/conflict errors, and atomic JSON persistence.",
+          "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/internal/revision/store.go",
+          "type": "file"
+        },
+        {
+          "observation": "Canonical sorted snapshot compile with SHA-256 digest used as generation identity across planes.",
+          "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/internal/snapshot/compiler.go",
+          "type": "file"
+        },
+        {
+          "observation": "Atomic generation directories with digest verification, CURRENT pointer, and verified generation enumeration.",
+          "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/internal/snapshot/repository.go",
+          "type": "file"
+        },
+        {
+          "observation": "Startup recovery loads generations, falls back CURRENT, validates authority alignment — persistence/restart behavior.",
+          "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/internal/recovery/bootstrap.go",
+          "type": "file"
+        },
+        {
+          "observation": "Fleet membership and generation alignment reconcile expected inventory vs live registry with zone coverage/quorum signals.",
+          "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/internal/ops/reconcile.go",
+          "type": "file"
+        },
+        {
+          "observation": "Readiness couples active generation loadability, connected node generation match, and rollout-phase gates.",
+          "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/internal/readiness/evaluator.go",
+          "type": "file"
+        },
+        {
+          "observation": "Lease-based generation retention/collect interacts with promoteActive and repository deletion.",
+          "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/internal/retention/manager.go",
+          "type": "file"
+        },
+        {
+          "observation": "Multi-node health sample aggregation with stale eviction and effective target summary for operator health API.",
+          "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/internal/health/aggregate.go",
+          "type": "file"
+        },
+        {
+          "observation": "Dataplane entrypoint loads node config/checkpoint, starts control/status/probe/drain threads and proxy.run.",
+          "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/dataplane/src/main.cpp",
+          "type": "file"
+        },
+        {
+          "observation": "Dense but real epoll L4 proxy: listener reconcile, accept, backend connect, bidirectional transfer, PROXY v2, idle/connect expiry.",
+          "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/dataplane/src/proxy.cpp",
+          "type": "file"
+        },
+        {
+          "observation": "Control client hello/prepare/activate/status with digest-checked snapshot prepare, drain transition on activate, reject path.",
+          "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/dataplane/src/control.cpp",
+          "type": "file"
+        },
+        {
+          "observation": "Active TCP prober with send/expect payloads, thresholds wired through HealthTracker.",
+          "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/dataplane/src/prober.cpp",
+          "type": "file"
+        },
+        {
+          "observation": "Zone-aware eligibility with fail-open and drain deadline interactions for target selection.",
+          "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/dataplane/src/eligibility.cpp",
+          "type": "file"
+        },
+        {
+          "observation": "Generation drain retains retired snapshots while connections hold shared_ptr references.",
+          "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/dataplane/src/drain.cpp",
+          "type": "file"
+        },
+        {
+          "observation": "217-line snapshot decode/validate mirrors control-plane model constraints on the dataplane.",
+          "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/dataplane/src/snapshot.cpp",
+          "type": "file"
+        },
+        {
+          "observation": "24-node inventory across three zones with distinct control/status endpoints feeds quorum-oriented operator workflows.",
+          "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/config/fleet.json",
+          "type": "file"
+        },
+        {
+          "observation": "Representative desired state with multiple listeners/groups, policies, health, and prepare/activate quorum 13.",
+          "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/config/desired.json",
+          "type": "file"
+        },
+        {
+          "observation": "213-line lab backends implement echo/slow/half-close/reset/PROXY-inspect behaviors used by operator lab workflows.",
+          "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/tools/lab/backends.py",
+          "type": "file"
+        },
+        {
+          "observation": "Line inventory: Go ~2471, C++ src ~652, headers ~370, Python lab ~362 (~3855 total). Go+C++ alone ~3123 substantive reachable runtime LOC before lab/tools; domain modules are mostly non-clone and entrypoint-reachable.",
+          "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/**/*.{go,cpp,hpp,py}",
+          "type": "artifact"
+        }
+      ],
+      "evidence_status": "SUFFICIENT",
+      "findings": [],
+      "missing_evidence": [],
+      "next_gate": "QUALITY_INTERLOCK",
+      "prompt_policy_version": "2.2",
+      "protocol_policy_version": "2.2",
+      "review_id": "sovereign-l4-load-balancer-a29ea18d-production-logic-c94dfa2651",
+      "review_scope_hash": "cacc1062d08b3e934fbd1d6e46cf916764ad4df6168ab4d48da481251efe35cf",
+      "role": "Production Logic Auditor",
+      "role_contract_hash": "828f84c63f4e37642ab42740b22aa95646ddaa42972f30902e9fe9a034e5458c",
+      "role_output": {
+        "CORE_LOGIC_DEPTH": "HIGH",
+        "CROSS_COMPONENT_COUPLING": "HIGH",
+        "MAJOR_MODULES": [
+          "cmd/lb-control-plane + internal/api: management HTTP, apply pipeline, control-plane sessions",
+          "internal/model+snapshot+revision+persistence: desired validation, canonical generations, authority",
+          "internal/rollout+nodes+ops+readiness+retention+recovery+health: distributed rollout and operability",
+          "cmd/lbctl + fleet/catalog: operator workflows over management and local config",
+          "dataplane proxy/connection/selector/eligibility/health/prober/drain/control/checkpoint/status: L4 runtime",
+          "tools/lab backends+fleet_simulator: representative lab traffic/backends"
+        ],
+        "MODULE_DIVERSITY": "HIGH",
+        "PADDING_RISK": "LOW",
+        "PARTIAL_FIX_TRAPS": [
+          "Fixing apply/compile without dataplane prepare/activate digest/protocol handling leaves rollouts incomplete",
+          "Fixing health aggregation without eligibility/drain/proxy selection leaves traffic behavior broken",
+          "Fixing retention without promoteActive/rollout generation coupling leaves generation GC inconsistent",
+          "Fixing fleet reconcile without readiness/quorum paths leaves operator ready/status invariants wrong",
+          "Fixing only single-node paths while fleet quorum expects multi-zone membership creates silent operability failures"
+        ],
+        "REMOVAL_TEST": "Removing ~25% of core (e.g. dataplane proxy/connection or control-plane apply/rollout/revision/repository) would eliminate L4 forwarding or immutable generation rollout entirely; removing health/eligibility/drain or recovery/retention would materially shrink failure and restart behavior. Behavior loss would be domain-critical, not cosmetic.",
+        "REQUIRED_CHANGES": [],
+        "RUNTIME_REACHABILITY": "HIGH",
+        "SUBSTANTIVE_LOC_ASSESSMENT": "Counted solver-visible Go/C++/Python under environment/sovereign-lb at ~3855 physical LOC (~2471 Go + ~652 C++ src + ~370 headers + ~362 lab Python). Excluding declaration-only headers and thin metrics/audit shells, Go+dataplane implementation alone is ~3123 LOC of reachable runtime/config logic, above the large_system_strict >=3000 substantive reachable floor. C++ is line-dense but implements real epoll/proxy/control/health paths rather than filler. Config node profiles are near-templates (~11 lines x 24) but are small relative to core logic and map to fleet inventory/zones/quorum, not opaque LOC padding.",
+        "TOY_LOGIC_RISK": "LOW"
+      },
+      "role_policy_version": "1.1",
+      "schema_version": "3.0",
+      "summary": "Solver-visible Go control plane and C++ dataplane form a reachable, coupled L4 LB with real apply/rollout/recovery, epoll proxy, health/eligibility/drain, and fleet operator workflows; substantive reachable runtime LOC clears the large_system_strict floor without HIGH toy or padding risk.",
+      "task": "sovereign-l4-load-balancer",
+      "task_commit": "a29ea18dfdfb4c1177cdfdede7065f811d889429",
+      "verdict": "PASS"
+    }
+  },
+  "record_id": "rec_013a976200a63e66e6c29762d218048feade564aefd526f9408657bac421a8bb",
+  "role_id": "CI_ORCHESTRATOR",
+  "schema_version": "1.0",
+  "stage_id": "QUALITY_INTERLOCK",
+  "status": "QUALITY_INTERLOCK_PASS",
+  "task_lineage": {
+    "input_task_commit": "a29ea18dfdfb4c1177cdfdede7065f811d889429",
+    "output_task_commit": "a29ea18dfdfb4c1177cdfdede7065f811d889429",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "PRE_LLMAJ",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 5,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}
