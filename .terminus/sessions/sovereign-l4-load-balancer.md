@@ -5,7 +5,7 @@ Session schema version: `2.4`
 ## Identity
 
 - Task: `sovereign-l4-load-balancer`
-- Controller state: `QUALITY_INTERLOCK` collect failed after successful Q4+Q6 execute
+- Controller state: `QUALITY_INTERLOCK` salvage pending record (run 33847572952)
 - Working branch: `main`
 - Pull request: `none`
 - Current task commit: `a29ea18dfdfb4c1177cdfdede7065f811d889429`
@@ -21,9 +21,9 @@ Session schema version: `2.4`
 
 | Gate | Status | Evidence |
 | --- | --- | --- |
-| Q4 Spec-Test Contract | EXECUTED @ a29ea18d (unpublished) | run 33847572952 q4 job success; not on main |
-| Q6 Production Logic | EXECUTED @ a29ea18d (unpublished) | run 33847572952 q6 job success; not on main |
-| Quality Interlock | FAIL (collect) | Persist: Unexpected lifecycle mutations on dir `a29ea18d/`; record skipped |
+| Q4 Spec-Test Contract Reviewer | PASS | `.terminus/reviews/sovereign-l4-load-balancer/a29ea18d/sovereign-l4-load-balancer-a29ea18d-spec-test-contract-63d6d69277.json` |
+| Q6 Production Logic Auditor | PASS | `.terminus/reviews/sovereign-l4-load-balancer/a29ea18d/sovereign-l4-load-balancer-a29ea18d-production-logic-c94dfa2651.json` |
+| Quality Interlock | PENDING_RECORD | Q4+Q6 PASS artifacts written from run 33847572952; canonical record pending |
 | Oracle / NOP | PASS @ cfcf72ba | 1.000 / 0.000 |
 
 ## Decisions that must survive chat changes
@@ -32,13 +32,14 @@ Session schema version: `2.4`
 - Owner ACCEPT_RISK `hd_1e0e3dbff38a1c888931de5d71481322663adcb447df58cfa49a5cd367fed2a2` voided cancelled Q6 receipt 33841667900-1.
 - Do not fabricate QI PASS. Do not redispatch AUTOMATED QI while durable budgets are exhausted after this run.
 - Collect bug: persist treats untracked review directory path as unexpected mutation.
+- Salvage path: publish exact Q4+Q6 packet/result from run 33847572952 artifacts, then canonical QUALITY_INTERLOCK record without new budget claims.
 
 ## Next action
 
-1. `gh auth login` then download artifacts from run 33847572952.
-2. Publish exact Q4+Q6 packet/result for a29ea18d to main (no new budget claims).
-3. Canonical QUALITY_INTERLOCK record on that evidence commit.
+1. Canonical QUALITY_INTERLOCK record from salvaged Q4+Q6 evidence.
+2. Push evidence + record commits to origin/main.
+3. Reconcile `controller_cli continue` toward Pre-LLMaJ.
 
 ## Current blocker
 
-Reviews unpublished; artifact download needs GitHub CLI auth. Budgets re-claimed by successful Q4/Q6 execute.
+QUALITY_INTERLOCK record not yet on main.
