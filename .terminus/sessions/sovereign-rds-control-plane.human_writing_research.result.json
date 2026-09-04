@@ -1,0 +1,95 @@
+{
+  "schema_version": "1.0",
+  "invocation_id": "inv_d2bcf5b953d3fecab4bafe985d5c339438504bda85fc84788e290ef7bce0b662",
+  "output_task_commit": "8fb4d92f932d8c0c34a126b3040b4fb5f1cfad42",
+  "evidence_refs": [
+    {
+      "kind": "COMMIT",
+      "ref": "commit:857d474d50bdd78b168bd3e013fa6927a2af81b6"
+    },
+    {
+      "kind": "COMMIT",
+      "ref": "commit:8fb4d92f932d8c0c34a126b3040b4fb5f1cfad42"
+    }
+  ],
+  "status": "CALIBRATION_READY",
+  "outputs": {
+    "DATASET_POLICY_VERSION": "1.2",
+    "DATASET_REGISTRY_SHA256": "05ece08c27414d265a2a238928e4c664295434620ffe957c8e88b5050c54645a",
+    "SEED_CATALOG_SHA256": "e205f858f8391fd88d3e26665d2f585a69cd691321b9275644e631bb949f0942",
+    "DOMAIN_PROFILES_SHA256": "9612d83a11558d9013a82362c7405c70ddb5158b582cc2f9859c8c672ad6c838",
+    "DOMAIN_PROFILE": "sre_incident",
+    "CALIBRATION_PAIR_ID": "hwpair-541bdfa4854b4c2b26fa",
+    "WRITER_CALIBRATION_ID": "hwcal-writer-fad2a3b0e15bdf4640d9",
+    "REVIEWER_CALIBRATION_ID": "hwcal-reviewer-18b34e039487d38e329f",
+    "WRITER_SAMPLE_IDS": [
+      "HC-005",
+      "HC-013",
+      "HC-024",
+      "HC-026",
+      "HC-007",
+      "HC-017",
+      "CP-003",
+      "CP-002",
+      "AT-005"
+    ],
+    "REVIEWER_SAMPLE_IDS": [
+      "HC-016",
+      "HC-004",
+      "HC-028",
+      "HC-001",
+      "HC-022",
+      "HC-020",
+      "CP-005",
+      "CP-001",
+      "CP-004",
+      "AT-006",
+      "AT-002",
+      "HP-002",
+      "HP-004",
+      "HN-001",
+      "HN-002"
+    ],
+    "WRITER_REVIEWER_SAMPLE_OVERLAP": [],
+    "EXTERNAL_DATASET_COVERAGE": "DEGRADED",
+    "TASK_WRITING_PROFILE": {
+      "voice": "direct cloud platform engineer sovereign-RDS control-plane handoff",
+      "structure": [
+        "open with completing the inherited Python/PostgreSQL RDS-compatible control plane",
+        "group lifecycle, WAL/PITR, parameter apply modes, replica promotion, Multi-AZ failover, and outbox outcomes rather than mirroring tests",
+        "point to /app/rds/docs operator contracts for schemas and state semantics",
+        "state offline lab boundaries: no live AWS RDS API or cloud credentials"
+      ],
+      "must_preserve": [
+        "public entrypoints /app/rds/bin/rdsd, /app/rds/bin/rds-worker, /app/rds/bin/rdsctl",
+        "AVAILABLE-only modifications and monotonic storage growth",
+        "DeletionProtection always enforced",
+        "WAL continuity and PITR window/LSN/timeline binding",
+        "dynamic vs pending-reboot parameter semantics",
+        "lag/LSN-fenced PromoteReadReplica with old-primary write-lease revocation",
+        "lease-TTL Multi-AZ failover with direct-port health probes",
+        "transactional outbox with deterministic EventIdentifier hashes",
+        "deterministic published outputs under /app/rds/out"
+      ],
+      "avoid": [
+        "one sentence per verifier scenario",
+        "implementation diagnosis or repair locations",
+        "invented outage or customer story",
+        "copied public issue wording",
+        "generic benchmark preamble",
+        "canary strings or oracle hints"
+      ]
+    },
+    "CACHE_SOURCE_KEYS_USED": [],
+    "RAW_SOURCE_KEYS_USED_FOR_CONTAMINATION": [],
+    "DEGRADED_COVERAGE_APPROVAL": {
+      "approved": true,
+      "approved_by": "CREATION_CONTROLLER",
+      "reason": "No approved external cache was supplied; deterministic local calibration is used with explicit DEGRADED coverage and no claim of full external evidence."
+    },
+    "CURRENT_STATE_EVIDENCE_NOTES": [
+      "Deterministic local calibration pair hwpair-541bdfa4854b4c2b26fa for sovereign RDS control-plane domain.",
+      "No Oracle, private test, defect-topology, prior-review, or model-trial material used for solver-facing prose calibration."
+    ]
+  }
+}

@@ -1,0 +1,316 @@
+{
+  "authority": {
+    "control_plane_commit": "857d474d50bdd78b168bd3e013fa6927a2af81b6",
+    "policy_versions": {},
+    "task_commit": "8fb4d92f932d8c0c34a126b3040b4fb5f1cfad42",
+    "task_id": "sovereign-rds-control-plane"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:b48936c343ac6829b0d70597c983eb611fb78b9c24fccb6312ec7c404a3c4c5b",
+      "kind": "COMMIT",
+      "ref": "commit:857d474d50bdd78b168bd3e013fa6927a2af81b6"
+    },
+    {
+      "content_hash": "sha256:8fe6da7231133f2f63729ae2ea9cb1f9f36a4412e8d37fb1d843db260871671d",
+      "kind": "COMMIT",
+      "ref": "commit:8fb4d92f932d8c0c34a126b3040b4fb5f1cfad42"
+    }
+  ],
+  "invocation_id": "inv_c4312e68f602fedaef0107d483ae102ed7b91bf92341b87f5971aca26405e0b0",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "857d474d50bdd78b168bd3e013fa6927a2af81b6",
+      "policy_versions": {},
+      "task_commit": "8fb4d92f932d8c0c34a126b3040b4fb5f1cfad42",
+      "task_id": "sovereign-rds-control-plane"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CONTROL_PLANE_POLICY",
+        "PUBLIC_REFERENCE",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "work-package candidates",
+        "scale-fit assessment",
+        "requirement-family breadth",
+        "originality/reference provenance"
+      ],
+      "excluded_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PRIVATE_CREATION_DESIGN",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/CREATOR_AGENT_REGISTRY.md",
+        ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+        ".terminus/agents/CREATOR_PROMPTS.md"
+      ],
+      "retrieval_mode": "FILTERED_HYBRID"
+    },
+    "ignored_input_count": 43,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "CREATION_RULE_CONTEXT": {
+          "ACTIVE_VALIDATORS": [
+            ".terminus/validate_agent_system.py",
+            ".terminus/validate_stage_contracts.py",
+            ".terminus/validate_task_complexity.py",
+            ".terminus/validate_environment_complexity.py",
+            ".terminus/validate_runtime_authenticity.py",
+            ".terminus/validate_business_module_diversity.py",
+            ".terminus/validate_review_freshness.py",
+            ".terminus/validate_quality_interlock.py",
+            ".github/workflows/terminus-edition-3-ci.yml",
+            ".github/workflows/terminus-creator-complexity.yml",
+            ".github/workflows/terminus-production-authenticity.yml"
+          ],
+          "CONTROL_PLANE_COMMIT": "857d474d50bdd78b168bd3e013fa6927a2af81b6",
+          "CREATION_PROFILE": "large_system_strict",
+          "KNOWN_POLICY_CONFLICTS": [],
+          "NETWORK_ENVIRONMENT_CONSTRAINTS": "Public network during image build for package installation; runtime grading is deterministic with no live AWS RDS API calls, no cloud credentials, and no privileged containers. PostgreSQL 16 runs in the task compose topology.",
+          "RULE_SOURCES": [
+            "TERMINUS_3_AI_INSTRUCTIONS.md",
+            ".terminus/AGENT_SYSTEM.md",
+            ".terminus/agents/CREATION_CONTROLLER.md",
+            ".terminus/agents/CREATION_PIPELINE.md",
+            ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+            ".terminus/reviewers/REVIEWER_CHECKLIST.md",
+            ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+            ".terminus/agents/STAGE_CONTRACTS.md",
+            ".terminus/agents/stage_contracts.json"
+          ]
+        },
+        "REQUESTED_DOMAIN": "Sovereign RDS-compatible control plane: PostgreSQL instance lifecycle, WAL/PITR, parameter groups, replicas, Multi-AZ failover, event outbox"
+      }
+    },
+    "invocation_id": "inv_c4312e68f602fedaef0107d483ae102ed7b91bf92341b87f5971aca26405e0b0",
+    "learning": {
+      "context_hash": "sha256:307e06b6be8eee79e941256cc80e7b4b8e6d8edb9a73269dbba59257a864107b",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "sha256:8dd19b0617b094661caf5fe0a5b30e437703843b5f05ce63a7a75586710575c6",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "CANDIDATES_READY",
+        "SCENARIO_TOO_SMALL",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [],
+      "optional_fields": [
+        "DUPLICATE_RISK_NOTES"
+      ],
+      "persisted_artifacts": [],
+      "required_fields": [
+        "CANDIDATES",
+        "RECOMMENDATION",
+        "WHY_THIS_ONE"
+      ],
+      "semantic_reviewers": [
+        "Task Architect",
+        "Originality & Authenticity Reviewer"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "DUPLICATE_RISK": "A1 Scenario Researcher / Originality & Authenticity Reviewer",
+        "POLICY_CONFLICT": "Creation Controller",
+        "SCENARIO_TOO_SMALL": "A1 Scenario Researcher -> select richer coherent work package"
+      },
+      "stale_on": [
+        "creation-rule change",
+        "selected work-package change",
+        "material requirement-family change"
+      ],
+      "success_transition": "SYSTEM_ARCHITECTURE"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A1 Scenario Researcher",
+      "role_class": "PRODUCER",
+      "role_id": "A1_SCENARIO_RESEARCHER",
+      "stage_id": "WORK_PACKAGE_RESEARCH"
+    }
+  },
+  "outputs": {
+    "CANDIDATES": [
+      {
+        "DUPLICATE_RISK": "Adjacent but distinct from sovereign-l4-load-balancer (L4 proxy), stonevault (storage MVCC/WAL engine), tenant-catalog-logical-cdc-plane (logical CDC), aws-backup-restore-assurance-plane (backup vault policy), and stackyard-terraform-control-plane (Terraform provisioning). Distinctive center is RDS-compatible control-plane API semantics with PITR/parameter/replica/failover/outbox coupling.",
+        "EDGE_FAILURE_SURFACE": [
+          "WAL sequence/timeline gaps",
+          "PITR outside earliest/latest window",
+          "static parameter boot rejection leaving pending-reboot",
+          "UNKNOWN or excessive replica lag",
+          "lease TTL race during failover",
+          "outbox retry duplicate EventIdentifier",
+          "crash between state mutation and outbox durability"
+        ],
+        "ENGINEERING_OBJECTIVE": "Complete an inherited Python+PostgreSQL sovereign RDS-compatible control plane so instance lifecycle, WAL-backed PITR, parameter-group apply modes, read-replica promotion, Multi-AZ failover fencing, and EventBridge-style event outbox notifications achieve policy-compliant restart-safe readiness with deterministic published outputs.",
+        "ID": "WP1_SOVEREIGN_RDS_CONTROL_PLANE",
+        "INHERITED_SYSTEM_STATE": "Multi-module Python package under /app/rds with PostgreSQL metadata, operator CLI/daemon/worker entrypoints, estate fixtures, operator contract docs, and incomplete/incorrect behaviors across lifecycle, WAL/PITR, parameters, replicas, failover, and outbox paths.",
+        "INSTRUCTION_FIT": "Strong: existing instruction.md states material requirements in <=20 bullets with absolute paths and output schemas; domain contracts remain in environment docs.",
+        "PARTIAL_FIX_TRAPS": [
+          "allowing modifications outside AVAILABLE",
+          "honoring DeletionProtection only when FinalDBSnapshotIdentifier is omitted",
+          "applying static parameters immediately",
+          "promoting replicas without lag/LSN catch-up or old-primary fencing",
+          "failover on control-plane pool latency instead of instance TCP health",
+          "enqueueing outbox events after commit"
+        ],
+        "PERSONA": "Cloud platform engineer building an on-premise sovereign database control plane that replaces AWS RDS APIs",
+        "PRESERVATION_OBLIGATIONS": [
+          "preserve public rdsd/rds-worker/rdsctl contracts and /app/rds layout",
+          "no live AWS RDS API or cloud credentials",
+          "keep deterministic offline fixtures and published output schemas",
+          "do not weaken deletion, PITR window, or lease fencing invariants"
+        ],
+        "REASONING_CHAIN": "normalize operator request -> validate instance/replica/parameter state machine -> mutate control-plane DB transactionally with outbox -> enforce WAL/PITR and lease fences -> publish deterministic outputs -> recover after restart",
+        "REFERENCES": [
+          "sovereign-rds-control-plane/instruction.md@80f30305",
+          "sovereign-rds-control-plane/README.md@80f30305",
+          "sovereign-rds-control-plane/environment/rds/docs/operator-contract.md@80f30305",
+          ".terminus/designs/sovereign-rds-control-plane.json",
+          ".terminus/contracts/sovereign-rds-control-plane/solver-visible-requirements.json"
+        ],
+        "REQUIRED_END_STATE": "rdsd/rds-worker/rdsctl operate against PostgreSQL 16; modifications only when AVAILABLE with monotonic storage growth; deletion protection always enforced; WAL continuity and PITR window/LSN/timeline correctness; dynamic vs pending-reboot parameter semantics; lag/LSN-fenced replica promotion with old-primary write-lease revocation; lease-TTL Multi-AZ failover with direct-port health probes; transactional outbox enqueue with SourceType filtering and deterministic EventIdentifier hashes; stable artifacts under /app/rds/out.",
+        "REQUIREMENT_FAMILIES": [
+          "DBInstance lifecycle and storage fencing",
+          "DeletionProtection and reboot/pending-static apply",
+          "WAL archive continuity and PITR target synthesis",
+          "Parameter group classify/inherit/reset semantics",
+          "Read replica lag/LSN promotion and split-brain fencing",
+          "Multi-AZ failover lease/VIP health probing",
+          "Transactional event outbox and delivery audit",
+          "Deterministic published snapshot/health digests",
+          "Crash/restart checkpoint recovery"
+        ],
+        "SCALE_FIT": "HIGH: local validators report substantive_loc=3017, 28 manifestations / 7 root-cause clusters, 30 F2P + 4 P2P; coherent multi-subsystem RDS control plane rather than a single localized bug."
+      },
+      {
+        "DUPLICATE_RISK": "Higher overlap with backup/restore assurance tasks if broadened artificially.",
+        "EDGE_FAILURE_SURFACE": [
+          "gap detection",
+          "out-of-window timestamp",
+          "mismatched timeline"
+        ],
+        "ENGINEERING_OBJECTIVE": "Complete only WAL archive continuity and PITR restore target synthesis for a sovereign RDS estate.",
+        "ID": "WP2_RDS_PITR_ONLY_RECOVERY_DESK",
+        "INHERITED_SYSTEM_STATE": "Same RDS control plane, but scoped only to backup/restore modules.",
+        "INSTRUCTION_FIT": "Concise but incomplete versus the inherited multi-subsystem package.",
+        "PARTIAL_FIX_TRAPS": [
+          "name-sorted WAL without timeline checks",
+          "rounding target down to completed segment only"
+        ],
+        "PERSONA": "Database reliability engineer focused on restore windows",
+        "PRESERVATION_OBLIGATIONS": [
+          "preserve existing instance APIs unrelated to restore"
+        ],
+        "REASONING_CHAIN": "ingest WAL -> validate continuity -> bind base backup -> synthesize restore target",
+        "REFERENCES": [
+          "sovereign-rds-control-plane/instruction.md@80f30305"
+        ],
+        "REQUIRED_END_STATE": "RestoreDBInstanceToPointInTime honors earliest/latest windows, base-backup LSN/timeline binding, and partial WAL replay.",
+        "REQUIREMENT_FAMILIES": [
+          "WAL continuity",
+          "base backup binding",
+          "PITR window validation",
+          "partial WAL replay"
+        ],
+        "SCALE_FIT": "LOW for large_system_strict: too narrow to organically support 25–30 distinct F2P and coupled lifecycle/failover/outbox behavior without padding."
+      },
+      {
+        "DUPLICATE_RISK": "Closer to generic HA fencing themes; less distinctive than full RDS control-plane package.",
+        "EDGE_FAILURE_SURFACE": [
+          "lease race",
+          "false-positive probe",
+          "split-brain"
+        ],
+        "ENGINEERING_OBJECTIVE": "Complete only Multi-AZ failover lease fencing and VIP migration.",
+        "ID": "WP3_MULTI_AZ_FAILOVER_ONLY",
+        "INHERITED_SYSTEM_STATE": "Failover coordinator and VIP manager modules only.",
+        "INSTRUCTION_FIT": "Too narrow for the already-built estate.",
+        "PARTIAL_FIX_TRAPS": [
+          "failover on pool latency",
+          "VIP update without ARP/route refresh"
+        ],
+        "PERSONA": "HA platform engineer",
+        "PRESERVATION_OBLIGATIONS": [
+          "preserve non-failover instance APIs"
+        ],
+        "REASONING_CHAIN": "probe health -> acquire lease -> fence old primary -> migrate VIP",
+        "REFERENCES": [
+          "sovereign-rds-control-plane/instruction.md@80f30305"
+        ],
+        "REQUIRED_END_STATE": "Automatic failover requires lease acquisition/TTL fencing and direct-port health probes before VIP move.",
+        "REQUIREMENT_FAMILIES": [
+          "lease fencing",
+          "health probe classification",
+          "VIP migration"
+        ],
+        "SCALE_FIT": "LOW/QUESTIONABLE for strict profile without padding unrelated modules."
+      }
+    ],
+    "DUPLICATE_RISK_NOTES": "Do not reskin sovereign-l4-load-balancer, stonevault-crash-safe-storage, tenant-catalog-logical-cdc-plane, or aws-backup-restore-assurance-plane. Keep AWS API simulation offline and local.",
+    "RECOMMENDATION": "WP1_SOVEREIGN_RDS_CONTROL_PLANE",
+    "WHY_THIS_ONE": "It is the already-materialized coherent engineering work package: multi-subsystem RDS control-plane completion with interacting lifecycle, WAL/PITR, parameter, replica, failover, and outbox invariants. Local complexity validators already confirm strict-scale floors (3017 LOC, 28 defects/7 RC, 30 F2P). Narrower PITR-only or failover-only candidates would force padding or abandon the inherited estate. Duplicate risk versus L4 LB, StoneVault, logical CDC, and backup-assurance tasks is bounded by the RDS-compatible control-plane distinctive center."
+  },
+  "record_id": "rec_847f35fdc4dfc0cbb6e4521480eb77ad88e95e96e606e73a4d3025e76f3f0509",
+  "role_id": "A1_SCENARIO_RESEARCHER",
+  "schema_version": "1.0",
+  "stage_id": "WORK_PACKAGE_RESEARCH",
+  "status": "CANDIDATES_READY",
+  "task_lineage": {
+    "input_task_commit": "8fb4d92f932d8c0c34a126b3040b4fb5f1cfad42",
+    "output_task_commit": "8fb4d92f932d8c0c34a126b3040b4fb5f1cfad42",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "SYSTEM_ARCHITECTURE",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 2,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}

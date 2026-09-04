@@ -1,0 +1,144 @@
+{
+  "acceptance_predicates": {},
+  "authority": {
+    "control_plane_commit": "857d474d50bdd78b168bd3e013fa6927a2af81b6",
+    "policy_versions": {},
+    "task_commit": "8fb4d92f932d8c0c34a126b3040b4fb5f1cfad42",
+    "task_id": "sovereign-rds-control-plane"
+  },
+  "evidence": {
+    "authorized_evidence_classes": [
+      "CI_RUNTIME_EVIDENCE",
+      "CONTROL_PLANE_POLICY",
+      "PRIVATE_CREATION_DESIGN",
+      "SOLVER_VISIBLE_TASK",
+      "VERIFIER_PRIVATE"
+    ],
+    "evidence_required": [
+      "removal/reachability analysis",
+      "scale authenticity",
+      "test organicity",
+      "behavioral breadth"
+    ],
+    "excluded_evidence_classes": [
+      "CURRENT_REVIEW_PACKET",
+      "DURABLE_SESSION_STATE",
+      "FINAL_PACKAGE_EVIDENCE",
+      "MODEL_TRIAL_EVIDENCE",
+      "PRIOR_REVIEW_RESULTS",
+      "PUBLIC_REFERENCE",
+      "SOLUTION_ORACLE"
+    ],
+    "mandatory_exact_reads": [
+      ".terminus/agents/CREATION_PIPELINE.md",
+      ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+      ".terminus/agents/CREATOR_PROMPTS.md"
+    ],
+    "retrieval_mode": "EXACT_ONLY"
+  },
+  "ignored_input_count": 39,
+  "inputs": {
+    "optional": {},
+    "required": {
+      "DEFECT_GRAPH": ".terminus/designs/sovereign-rds-control-plane.json",
+      "ENVIRONMENT_TREE": "sovereign-rds-control-plane/environment",
+      "INSTRUCTION": "sovereign-rds-control-plane/instruction.md",
+      "PRODUCTION_CHARACTERISTIC_EVIDENCE": ".terminus/designs/sovereign-rds-control-plane.json",
+      "RUNTIME_REACHABILITY_EVIDENCE": {
+        "compose": "sovereign-rds-control-plane/environment/docker-compose.yaml",
+        "entrypoints": [
+          "/app/rds/bin/rdsd",
+          "/app/rds/bin/rds-worker",
+          "/app/rds/bin/rdsctl"
+        ]
+      },
+      "SUBSTANTIVE_LOC_REPORT": {
+        "defects": 28,
+        "f2p_cases": 30,
+        "p2p_cases": 4,
+        "root_causes": 7,
+        "status": "PASS",
+        "substantive_loc": 3575,
+        "validator": "validate_task_complexity.py"
+      },
+      "TEST_CLASSIFICATION_MAP": ".terminus/designs/sovereign-rds-control-plane-test-map.json"
+    }
+  },
+  "invocation_id": "inv_8682cf11a16c9088c7cef80c707be87b42887d14c7c931da1eff981e3d13a623",
+  "learning": {
+    "context_hash": "sha256:307e06b6be8eee79e941256cc80e7b4b8e6d8edb9a73269dbba59257a864107b",
+    "lessons": [],
+    "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+    "raw_feedback_exposed": false,
+    "raw_historical_findings_exposed": false,
+    "registry_heads": {
+      "feedback": "sha256:8dd19b0617b094661caf5fe0a5b30e437703843b5f05ce63a7a75586710575c6",
+      "findings": "GENESIS",
+      "lessons": "GENESIS",
+      "patterns": "GENESIS",
+      "remediations": "GENESIS"
+    },
+    "remediations": []
+  },
+  "missing_required_inputs": [],
+  "output_contract": {
+    "allowed_status_values": [
+      "PASS",
+      "REVISE",
+      "SCENARIO_TOO_SMALL"
+    ],
+    "deterministic_validators": [
+      ".terminus/validate_task_complexity.py <task>"
+    ],
+    "optional_fields": [
+      "MEANINGFUL_RESOURCE_COUNT"
+    ],
+    "persisted_artifacts": [],
+    "required_fields": [
+      "SUBSTANTIVE_LOC",
+      "REACHABLE_PRODUCTION_LOC",
+      "PRODUCTION_CHARACTERISTICS",
+      "DEFECT_MANIFESTATIONS",
+      "CONNECTED_MANIFESTATIONS",
+      "ROOT_CAUSE_CLUSTERS",
+      "F2P_COUNT",
+      "P2P_COUNT",
+      "F2P_ORGANICITY",
+      "EDGE_BOUNDARY_COVERAGE",
+      "NEGATIVE_FAILURE_COVERAGE",
+      "PADDING_RISK",
+      "TEST_DUPLICATION_RISK",
+      "INSTRUCTION_CHECKLIST_RISK",
+      "REQUIRED_CHANGES"
+    ],
+    "semantic_reviewers": []
+  },
+  "readiness": "READY",
+  "retrieval": {
+    "query": null,
+    "retrieved_chars": 0,
+    "retrieved_context": [],
+    "status": "NOT_REQUESTED"
+  },
+  "routing": {
+    "failure_routes": {
+      "REVISE": "smallest responsible producer",
+      "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH"
+    },
+    "stale_on": [
+      "solver-visible environment change",
+      "defect-graph change",
+      "verifier/test-map change",
+      "instruction change affecting complexity claims"
+    ],
+    "success_transition": "RUNTIME_AUTHENTICITY"
+  },
+  "schema_version": "1.0",
+  "stage": {
+    "lifecycle": "creation",
+    "owner": "A10 Complexity Governor",
+    "role_class": "REVIEWER",
+    "role_id": "A10_COMPLEXITY_GOVERNOR",
+    "stage_id": "COMPLEXITY_GATE"
+  }
+}

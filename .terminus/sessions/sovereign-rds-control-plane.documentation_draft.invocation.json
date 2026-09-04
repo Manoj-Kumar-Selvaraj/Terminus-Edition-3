@@ -1,0 +1,134 @@
+{
+  "acceptance_predicates": {},
+  "authority": {
+    "control_plane_commit": "857d474d50bdd78b168bd3e013fa6927a2af81b6",
+    "policy_versions": {},
+    "task_commit": "8fb4d92f932d8c0c34a126b3040b4fb5f1cfad42",
+    "task_id": "sovereign-rds-control-plane"
+  },
+  "evidence": {
+    "authorized_evidence_classes": [
+      "CI_RUNTIME_EVIDENCE",
+      "CONTROL_PLANE_POLICY",
+      "PUBLIC_REFERENCE",
+      "SOLUTION_ORACLE",
+      "SOLVER_VISIBLE_TASK"
+    ],
+    "evidence_required": [
+      "implementation evidence",
+      "verification evidence",
+      "no benchmark framing/leakage"
+    ],
+    "excluded_evidence_classes": [
+      "CURRENT_REVIEW_PACKET",
+      "DURABLE_SESSION_STATE",
+      "FINAL_PACKAGE_EVIDENCE",
+      "MODEL_TRIAL_EVIDENCE",
+      "PRIOR_REVIEW_RESULTS",
+      "PRIVATE_CREATION_DESIGN",
+      "VERIFIER_PRIVATE"
+    ],
+    "mandatory_exact_reads": [
+      ".terminus/agents/CREATION_PIPELINE.md",
+      ".terminus/agents/CREATOR_PROMPTS.md",
+      ".terminus/agents/PROMPTS.md"
+    ],
+    "retrieval_mode": "FILTERED_HYBRID"
+  },
+  "ignored_input_count": 42,
+  "inputs": {
+    "optional": {},
+    "required": {
+      "APPROVED_WORK_PACKAGE": {
+        "id": "WP1_SOVEREIGN_RDS_CONTROL_PLANE",
+        "objective": "Complete a Go and Python sovereign RDS-compatible control plane that manages database instance lifecycles, WAL-backed point-in-time recovery (PITR), parameter group dynamic vs pending-reboot fencing, read replica stream promotion, multi-AZ failover fencing, and EventBridge-style event outbox notifications.",
+        "persona": "A cloud platform engineer building an on-premise sovereign database control plane replacing AWS RDS.",
+        "scope_exclusions": [
+          "Terraform resource provisioning (stackyard-terraform-control-plane)",
+          "Low-level storage engine MVCC or WAL format implementation (stonevault)",
+          "L4 network load balancing / proxying (sovereign-l4-load-balancer)",
+          "Backup vault policy enforcement (aws-backup-restore-assurance-plane)",
+          "Logical CDC log capture or applying (tenant-catalog-logical-cdc-plane)",
+          "Live AWS RDS API calls or external cloud access"
+        ]
+      },
+      "IMPLEMENTATION_EVIDENCE": {
+        "environment": "sovereign-rds-control-plane/environment",
+        "solution": "sovereign-rds-control-plane/solution/solve.sh"
+      },
+      "VERIFICATION_EVIDENCE": {
+        "complexity_validator": "PASS",
+        "f2p": 30,
+        "p2p": 4,
+        "runtime_authenticity_validator": "PASS",
+        "tests": "sovereign-rds-control-plane/tests/test_outputs.py"
+      }
+    }
+  },
+  "invocation_id": "inv_e122d396e11ee6d597fbd28f173511eb97e9af3a134ea42a146f15449b754c7d",
+  "learning": {
+    "context_hash": "sha256:307e06b6be8eee79e941256cc80e7b4b8e6d8edb9a73269dbba59257a864107b",
+    "lessons": [],
+    "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+    "raw_feedback_exposed": false,
+    "raw_historical_findings_exposed": false,
+    "registry_heads": {
+      "feedback": "sha256:8dd19b0617b094661caf5fe0a5b30e437703843b5f05ce63a7a75586710575c6",
+      "findings": "GENESIS",
+      "lessons": "GENESIS",
+      "patterns": "GENESIS",
+      "remediations": "GENESIS"
+    },
+    "remediations": []
+  },
+  "missing_required_inputs": [],
+  "output_contract": {
+    "allowed_status_values": [
+      "DOCUMENTATION_READY",
+      "REWRITE_REQUIRED",
+      "BLOCKED"
+    ],
+    "deterministic_validators": [],
+    "optional_fields": [],
+    "persisted_artifacts": [
+      "<task>/README.md"
+    ],
+    "required_fields": [
+      "README_PATH",
+      "DIFFICULTY_EXPLANATION",
+      "SOLUTION_EXPLANATION",
+      "VERIFICATION_EXPLANATION"
+    ],
+    "semantic_reviewers": [
+      "Engineering Documentation Reviewer",
+      "Human Quality Reviewer"
+    ]
+  },
+  "readiness": "READY",
+  "retrieval": {
+    "query": null,
+    "retrieved_chars": 0,
+    "retrieved_context": [],
+    "status": "NOT_REQUESTED"
+  },
+  "routing": {
+    "failure_routes": {
+      "LEAKAGE_OR_SYNTHETIC_PROSE": "A8 Documentation Writer / Human Quality Reviewer",
+      "UNSUPPORTED_CLAIM": "A8 Documentation Writer"
+    },
+    "stale_on": [
+      "implementation evidence change",
+      "verification evidence change",
+      "material task-description change"
+    ],
+    "success_transition": "FORMAT_GATE"
+  },
+  "schema_version": "1.0",
+  "stage": {
+    "lifecycle": "creation",
+    "owner": "A8 Documentation Writer",
+    "role_class": "PRODUCER",
+    "role_id": "A8_DOCUMENTATION_WRITER",
+    "stage_id": "DOCUMENTATION_DRAFT"
+  }
+}

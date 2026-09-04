@@ -1,0 +1,172 @@
+{
+  "acceptance_predicates": {},
+  "authority": {
+    "control_plane_commit": "857d474d50bdd78b168bd3e013fa6927a2af81b6",
+    "policy_versions": {},
+    "task_commit": "8fb4d92f932d8c0c34a126b3040b4fb5f1cfad42",
+    "task_id": "sovereign-rds-control-plane"
+  },
+  "evidence": {
+    "authorized_evidence_classes": [
+      "CONTROL_PLANE_POLICY",
+      "PUBLIC_REFERENCE",
+      "SOLVER_VISIBLE_TASK"
+    ],
+    "evidence_required": [
+      "current dataset/catalog/domain-profile hashes",
+      "disjoint writer/reviewer calibration evidence",
+      "explicit external coverage state",
+      "validated task-writing profile"
+    ],
+    "excluded_evidence_classes": [
+      "CI_RUNTIME_EVIDENCE",
+      "CURRENT_REVIEW_PACKET",
+      "DURABLE_SESSION_STATE",
+      "FINAL_PACKAGE_EVIDENCE",
+      "MODEL_TRIAL_EVIDENCE",
+      "PRIOR_REVIEW_RESULTS",
+      "PRIVATE_CREATION_DESIGN",
+      "SOLUTION_ORACLE",
+      "VERIFIER_PRIVATE"
+    ],
+    "mandatory_exact_reads": [
+      ".terminus/reviewers/HUMAN_WRITING_CALIBRATION.md",
+      ".terminus/reviewers/HUMAN_ENGINEERING_SOURCE_CORPUS.md",
+      ".terminus/reviewers/WRITING_EXAMPLE_BANK.md",
+      ".terminus/agents/HUMAN_WRITING_DATASET_POLICY.md",
+      ".terminus/agents/human_writing_stage_overlay.json",
+      ".terminus/human_writing/dataset_registry.json",
+      ".terminus/human_writing/domain_profiles.json",
+      ".terminus/agents/HUMAN_WRITING_RESEARCHER.md",
+      ".terminus/agents/HUMAN_WRITING_CORPUS_AGENT.md",
+      ".terminus/agents/CREATOR_PROMPTS.md"
+    ],
+    "retrieval_mode": "FILTERED_HYBRID"
+  },
+  "ignored_input_count": 42,
+  "inputs": {
+    "optional": {},
+    "required": {
+      "APPROVED_WORK_PACKAGE": {
+        "id": "WP1_SOVEREIGN_RDS_CONTROL_PLANE",
+        "objective": "Complete a Go and Python sovereign RDS-compatible control plane that manages database instance lifecycles, WAL-backed point-in-time recovery (PITR), parameter group dynamic vs pending-reboot fencing, read replica stream promotion, multi-AZ failover fencing, and EventBridge-style event outbox notifications.",
+        "persona": "A cloud platform engineer building an on-premise sovereign database control plane replacing AWS RDS.",
+        "scope_exclusions": [
+          "Terraform resource provisioning (stackyard-terraform-control-plane)",
+          "Low-level storage engine MVCC or WAL format implementation (stonevault)",
+          "L4 network load balancing / proxying (sovereign-l4-load-balancer)",
+          "Backup vault policy enforcement (aws-backup-restore-assurance-plane)",
+          "Logical CDC log capture or applying (tenant-catalog-logical-cdc-plane)",
+          "Live AWS RDS API calls or external cloud access"
+        ]
+      },
+      "CURRENT_TIME_BUDGET": {
+        "enforcement": "ADVISORY_ONLY",
+        "guidance_seconds": 25200,
+        "hard_limit": null,
+        "policy_version": "1.1",
+        "quality_gates_may_be_skipped_for_time": false,
+        "time_extension_required": false
+      },
+      "SOLVER_VISIBLE_REQUIREMENTS": [
+        "Lifecycle: allow `ModifyDBInstance` only while status is `AVAILABLE`; allocated storage must strictly increase; reject `DeleteDBInstance` when `DeletionProtection` is true even if a final snapshot id is supplied; on reboot, reload config, apply pending static parameters, and clear `pending_reboot_parameters` only after boot validation succeeds.",
+        "WAL / PITR: ingest archives with timeline and sequence continuity (flag gaps); bind base-backup LSN/timeline; partially replay WAL to the restore target; accept targets only when `EarliestRestorableTime <= target <= LatestRestorableTime`.",
+        "Parameter groups: apply dynamic parameters immediately, mark static ones pending reboot, merge overrides into family defaults; `ResetDBParameterGroup` sets attached instances to `parameter_group_status=pending-reboot` and `pending_reboot_parameters=true`.",
+        "Promotion: require `replication_lag_bytes <= MaximumAllowedLagBytes` (10485760) and LSN catch-up; revoke the old primary write lease and mark that former primary `READ_ONLY`; then atomically swap writer/reader endpoints. Promotion must not flush VIP routes or send gratuitous ARP (those steps are failover-only).",
+        "Failover: acquire a TTL-fenced leader lease first; decide health from direct DB TCP reachability (ignore control-plane pool lag alone); on floating VIP migration flush routes, send gratuitous ARP, and record evidence per the failover contract.",
+        "Outbox / isolation: enqueue EventBridge rows in the same DB transaction as instance state changes; match subscriptions by `SourceType` and event category; use deterministic `EventIdentifier` hashes; write `event_delivery_audit` after max retries; enforce account, region, and `tenant_id` isolation on describe/list projections.",
+        "Outputs: publish `/app/rds/out/rds-snapshot.json` with canonical sorted keys and `report_digest` over the stable field subset defined in the operator contract; also emit UTF-8 `/app/rds/out/instances.jsonl`, `/app/rds/out/events.jsonl`, and `/app/rds/out/health.json` (companions are required artifacts; they do not carry digests and are not separately graded for line/key ordering beyond existing as well-formed UTF-8 JSON/JSONL)."
+      ]
+    }
+  },
+  "invocation_id": "inv_d2bcf5b953d3fecab4bafe985d5c339438504bda85fc84788e290ef7bce0b662",
+  "learning": {
+    "context_hash": "sha256:307e06b6be8eee79e941256cc80e7b4b8e6d8edb9a73269dbba59257a864107b",
+    "lessons": [],
+    "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+    "raw_feedback_exposed": false,
+    "raw_historical_findings_exposed": false,
+    "registry_heads": {
+      "feedback": "sha256:8dd19b0617b094661caf5fe0a5b30e437703843b5f05ce63a7a75586710575c6",
+      "findings": "GENESIS",
+      "lessons": "GENESIS",
+      "patterns": "GENESIS",
+      "remediations": "GENESIS"
+    },
+    "remediations": []
+  },
+  "missing_required_inputs": [],
+  "output_contract": {
+    "allowed_status_values": [
+      "CALIBRATION_READY",
+      "INSUFFICIENT_SOURCE_DIVERSITY",
+      "SOURCE_QUALITY_BLOCKED",
+      "BLOCKED"
+    ],
+    "deterministic_validators": [
+      ".terminus/human_writing/validate_calibration.py"
+    ],
+    "optional_fields": [
+      "CACHE_SOURCE_KEYS_USED",
+      "RAW_SOURCE_KEYS_USED_FOR_CONTAMINATION",
+      "DEGRADED_COVERAGE_APPROVAL",
+      "CURRENT_STATE_EVIDENCE_NOTES"
+    ],
+    "persisted_artifacts": [
+      ".terminus/research/<task>-dataset-calibration.json",
+      ".terminus/research/<task>-task-writing-profile.json"
+    ],
+    "required_fields": [
+      "DATASET_POLICY_VERSION",
+      "DATASET_REGISTRY_SHA256",
+      "SEED_CATALOG_SHA256",
+      "DOMAIN_PROFILES_SHA256",
+      "DOMAIN_PROFILE",
+      "CALIBRATION_PAIR_ID",
+      "WRITER_CALIBRATION_ID",
+      "REVIEWER_CALIBRATION_ID",
+      "WRITER_SAMPLE_IDS",
+      "REVIEWER_SAMPLE_IDS",
+      "WRITER_REVIEWER_SAMPLE_OVERLAP",
+      "EXTERNAL_DATASET_COVERAGE",
+      "TASK_WRITING_PROFILE"
+    ],
+    "semantic_reviewers": [
+      "Human Quality Reviewer"
+    ]
+  },
+  "readiness": "READY",
+  "retrieval": {
+    "query": null,
+    "retrieved_chars": 0,
+    "retrieved_context": [],
+    "status": "NOT_REQUESTED"
+  },
+  "routing": {
+    "failure_routes": {
+      "INSUFFICIENT_CALIBRATION": "A6 Human Writing Researcher",
+      "INSUFFICIENT_SOURCE_DIVERSITY": "A6 Human Writing Researcher -> bounded additional retrieval or explicit degraded-coverage decision",
+      "INVALID_CALIBRATION": "Creation Controller -> A6 Human Writing Researcher",
+      "SOURCE_QUALITY_BLOCKED": "Creation Controller -> source/provenance owner",
+      "UNSUPPORTED_CURRENT_STATE_CLAIM": "Instruction Writer / Environment Builder"
+    },
+    "stale_on": [
+      "material work-package change",
+      "instruction-policy change",
+      "human-writing calibration policy change",
+      "dataset registry change",
+      "seed catalog change",
+      "domain profile change",
+      "human-writing stage overlay change"
+    ],
+    "success_transition": "INSTRUCTION_DRAFT"
+  },
+  "schema_version": "1.0",
+  "stage": {
+    "lifecycle": "creation",
+    "owner": "A6 Human Writing Researcher",
+    "role_class": "PRODUCER",
+    "role_id": "A6_HUMAN_WRITING_RESEARCHER",
+    "stage_id": "HUMAN_WRITING_RESEARCH"
+  }
+}

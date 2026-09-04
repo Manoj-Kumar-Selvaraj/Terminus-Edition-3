@@ -1,0 +1,129 @@
+{
+  "acceptance_predicates": {
+    "RULES_RESOLVED": [
+      {
+        "op": "empty",
+        "path": "KNOWN_POLICY_CONFLICTS"
+      }
+    ]
+  },
+  "authority": {
+    "control_plane_commit": "857d474d50bdd78b168bd3e013fa6927a2af81b6",
+    "policy_versions": {},
+    "task_commit": "8fb4d92f932d8c0c34a126b3040b4fb5f1cfad42",
+    "task_id": "sovereign-rds-control-plane"
+  },
+  "evidence": {
+    "authorized_evidence_classes": [
+      "CONTROL_PLANE_POLICY",
+      "DURABLE_SESSION_STATE"
+    ],
+    "evidence_required": [
+      "resolved authoritative rule sources",
+      "active validator inventory",
+      "creation profile decision"
+    ],
+    "excluded_evidence_classes": [
+      "CI_RUNTIME_EVIDENCE",
+      "CURRENT_REVIEW_PACKET",
+      "FINAL_PACKAGE_EVIDENCE",
+      "MODEL_TRIAL_EVIDENCE",
+      "PRIOR_REVIEW_RESULTS",
+      "PRIVATE_CREATION_DESIGN",
+      "PUBLIC_REFERENCE",
+      "SOLUTION_ORACLE",
+      "SOLVER_VISIBLE_TASK",
+      "VERIFIER_PRIVATE"
+    ],
+    "mandatory_exact_reads": [
+      "TERMINUS_3_AI_INSTRUCTIONS.md",
+      ".terminus/AGENT_SYSTEM.md",
+      ".terminus/agents/CREATION_CONTROLLER.md",
+      ".terminus/agents/CREATION_PIPELINE.md",
+      ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+      ".terminus/reviewers/REVIEWER_CHECKLIST.md"
+    ],
+    "retrieval_mode": "EXACT_ONLY"
+  },
+  "ignored_input_count": 41,
+  "inputs": {
+    "optional": {
+      "NETWORK_ENVIRONMENT_CONSTRAINTS": "Public network during image build for package installation; runtime grading is deterministic with no live AWS RDS API calls, no cloud credentials, and no privileged containers. PostgreSQL 16 runs in the task compose topology.",
+      "REQUESTED_DOMAIN": "Sovereign RDS-compatible control plane: PostgreSQL instance lifecycle, WAL/PITR, parameter groups, replicas, Multi-AZ failover, event outbox",
+      "REQUESTED_PROFILE": "large_system_strict"
+    },
+    "required": {
+      "CREATION_REQUEST": "Create / complete the Edition 3 large_system_strict task sovereign-rds-control-plane: an inherited Python and PostgreSQL sovereign RDS-compatible control plane covering DB instance lifecycle fencing, WAL-backed PITR, parameter-group dynamic vs pending-reboot apply modes, read-replica promotion with lag/LSN fencing, Multi-AZ failover lease fencing, and EventBridge-style transactional event outbox notifications with deterministic published outputs. Verification remains owned by the project through Cursor/Harbor after freeze."
+    }
+  },
+  "invocation_id": "inv_4c4e5187e99fa96b6b654ef4dde4e488ab40be02e69039e5743e6ac8c1d03b37",
+  "learning": {
+    "context_hash": "sha256:307e06b6be8eee79e941256cc80e7b4b8e6d8edb9a73269dbba59257a864107b",
+    "lessons": [],
+    "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+    "raw_feedback_exposed": false,
+    "raw_historical_findings_exposed": false,
+    "registry_heads": {
+      "feedback": "sha256:8dd19b0617b094661caf5fe0a5b30e437703843b5f05ce63a7a75586710575c6",
+      "findings": "GENESIS",
+      "lessons": "GENESIS",
+      "patterns": "GENESIS",
+      "remediations": "GENESIS"
+    },
+    "remediations": []
+  },
+  "missing_required_inputs": [],
+  "output_contract": {
+    "allowed_status_values": [
+      "RULES_RESOLVED",
+      "POLICY_CONFLICT",
+      "BLOCKED"
+    ],
+    "deterministic_validators": [
+      ".terminus/validate_agent_system.py"
+    ],
+    "optional_fields": [
+      "RULE_DELTA"
+    ],
+    "persisted_artifacts": [
+      "CREATION_RULE_CONTEXT"
+    ],
+    "required_fields": [
+      "CONTROL_PLANE_COMMIT",
+      "RULE_SOURCES",
+      "ACTIVE_VALIDATORS",
+      "CREATION_PROFILE",
+      "NETWORK_ENVIRONMENT_CONSTRAINTS",
+      "KNOWN_POLICY_CONFLICTS"
+    ],
+    "semantic_reviewers": []
+  },
+  "readiness": "READY",
+  "retrieval": {
+    "query": null,
+    "retrieved_chars": 0,
+    "retrieved_context": [],
+    "status": "NOT_REQUESTED"
+  },
+  "routing": {
+    "failure_routes": {
+      "MISSING_RULE_SOURCE": "Creation Controller",
+      "POLICY_CONFLICT": "Creation Controller -> policy conflict ledger -> blocked affected gate"
+    },
+    "stale_on": [
+      "governing task-rule change",
+      "active validator change",
+      "creation profile change",
+      "network/environment policy change"
+    ],
+    "success_transition": "WORK_PACKAGE_RESEARCH"
+  },
+  "schema_version": "1.0",
+  "stage": {
+    "lifecycle": "creation",
+    "owner": "Creation Controller",
+    "role_class": "CONTROLLER",
+    "role_id": "CREATION_CONTROLLER",
+    "stage_id": "RULE_RESOLUTION"
+  }
+}
