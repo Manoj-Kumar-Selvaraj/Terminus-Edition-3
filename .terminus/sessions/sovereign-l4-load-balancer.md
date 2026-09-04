@@ -5,36 +5,31 @@ Session schema version: `2.4`
 ## Identity
 
 - Task: `sovereign-l4-load-balancer`
-- Controller state: `QUALITY_INTERLOCK` redispatched after Q2
+- Controller state: `STC-001 remediated locally` → pending freeze + Q6 budget decision
 - Working branch: `main`
 - Pull request: `none`
-- Current task commit: `cfcf72ba068a866afe589546700d7ae84355f689`
+- Current task commit: `cfcf72ba068a866afe589546700d7ae84355f689` (working tree has STC-001 docs)
 - Creation profile: `large_system_strict`
 
 ## Current gates
 
 | Gate | Status | Evidence |
 | --- | --- | --- |
-| Complexity | PASS | f2p includes Q2 fail_open + CP-restart cases |
-| Runtime authenticity | PASS | prior |
-| Q4 Spec-Test Contract | REVISE @ 3ab868d3 (superseded) | remediations landed on cfcf72ba |
-| Q6 Production Logic | PASS @ 3ab868d3 (artifact; re-run on cfcf72ba) | prior artifact |
-| Quality Interlock | PENDING @ cfcf72ba | redispatched after session bind fix |
-| Oracle = 1 | PASS @ cfcf72ba | `jobs/2026-09-04__10-54-42` mean **1.000** |
-| NOP = 0 | PASS @ cfcf72ba | `jobs/2026-09-04__11-02-11` mean **0.000** |
-| PRE_LLMaJ | BLOCKED | waits on QI PASS for cfcf72ba lineage |
+| Q4 Spec-Test Contract | REVISE @ cfcf72ba | STC-001 `/v1/nodes` — docs remediated in working tree |
+| Q6 Production Logic | PASS artifact @ cfcf72ba | unpublished; scope will change if `operations.md` lands |
+| Quality Interlock | FAIL | do not redispatch until Q6 budget decision |
+| Oracle / NOP | PASS @ cfcf72ba | 1.000 / 0.000 |
 
 ## Decisions that must survive chat changes
 
-- Task freeze on origin/main: `cfcf72ba068a866afe589546700d7ae84355f689`.
-- Do not treat run `33757931942` as QI PASS.
-- Q2 closed STC-UNT-001 (fail_open remote-only) and STC-UNT-002 (CP-restart active_generation + session fence).
-- Session Current task commit must equal freeze `cfcf72ba` for collect_interlock freshness.
+- STC-001 fix: document `GET /v1/nodes` in `instruction.md` + `operations.md` (`node_id`, `session_id`, `connected` minimum).
+- Q6 budget **2/2 exhausted** (including cancelled concurrency claims). **HUMAN_DECISION_REQUIRED** before AUTOMATED QI.
+- Do not treat cancelled runs as QI PASS.
 
 ## Next action
 
-Await QUALITY_INTERLOCK for freeze `cfcf72ba` (request may be re-issued with matching session bind).
+Commit/push STC-001 docs freeze after owner confirms Q6 path: (A) accept residual risk / authorize budget exception for one more Q6, or (B) MANUAL Q6 / other policy-legal re-entry.
 
 ## Current blocker
 
-Awaiting automated QI results.
+Q6 budget exhausted — need owner decision before QI redispatch.

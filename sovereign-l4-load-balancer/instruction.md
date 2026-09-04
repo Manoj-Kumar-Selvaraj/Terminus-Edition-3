@@ -14,7 +14,7 @@
 - Stop new assignment to deregistered targets while allowing owned connections to drain until their deadline.
 - Emit at most one valid PROXY protocol v2 header per backend connection when source identity preservation is enabled.
 - Recover dataplane state from verified local checkpoints without advancing authority from torn or invalid control frames.
-- Expose bounded readiness, status, rollout, metrics, and audit views, including status connection-count summaries, without payload data or unbounded labels.
+- Expose bounded readiness, status, rollout, metrics, audit, and `GET /v1/nodes` live-session inventory (JSON array entries include at least `node_id`, `session_id`, and `connected`) without payload data or unbounded labels.
 - Keep the deterministic 24-node, three-zone inventory and loopback echo, slow, half-close, reset, and PROXY inspection lab self-contained.
 - Do not add HTTP routing, WAF/CDN behavior, DNS cutover, host route or firewall mutation, or cloud provisioning.
 - Follow all contracts in `/app/sovereign-lb/docs` and keep repeated apply, reconnect, prepare, activate, drain, and recovery operations idempotent.
