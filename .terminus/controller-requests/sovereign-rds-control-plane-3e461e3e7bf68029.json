@@ -1,0 +1,306 @@
+{
+  "control_plane_commit": "474f2b09fcda1848ef64d894a1b702be4f923b2b",
+  "expected_repository_head": "aeb5a8f0639643dfe4e6501f6dcb33db38ac1539",
+  "inputs": {
+    "ACTIVE_FORMAT_VALIDATORS": [
+      ".terminus/validate_agent_system.py",
+      "flat Edition 3 layout"
+    ],
+    "APPROVED_OPERATIONAL_REQUIREMENTS": [
+      "Lifecycle: allow `ModifyDBInstance` only while status is `AVAILABLE`; allocated storage must strictly increase; reject `DeleteDBInstance` when `DeletionProtection` is true even if a final snapshot id is supplied; on reboot, reload config, apply pending static parameters, and clear `pending_reboot_parameters` only after boot validation succeeds.",
+      "WAL / PITR: ingest archives with timeline and sequence continuity (flag gaps); bind base-backup LSN/timeline; partially replay WAL to the restore target; accept targets only when `EarliestRestorableTime <= target <= LatestRestorableTime`.",
+      "Parameter groups: apply dynamic parameters immediately, mark static ones pending reboot, merge overrides into family defaults; `ResetDBParameterGroup` sets attached instances to `parameter_group_status=pending-reboot` and `pending_reboot_parameters=true`.",
+      "Promotion: require `replication_lag_bytes <= MaximumAllowedLagBytes` (10485760) and LSN catch-up; revoke the old primary write lease and mark that former primary `READ_ONLY`; then atomically swap writer/reader endpoints. Promotion must not flush VIP routes or send gratuitous ARP (those steps are failover-only).",
+      "Failover: acquire a TTL-fenced leader lease first; decide health from direct DB TCP reachability (ignore control-plane pool lag alone); on floating VIP migration flush routes, send gratuitous ARP, and record evidence per the failover contract.",
+      "Outbox / isolation: enqueue EventBridge rows in the same DB transaction as instance state changes; match subscriptions by `SourceType` and event category; use deterministic `EventIdentifier` hashes; write `event_delivery_audit` after max retries; enforce account, region, and `tenant_id` isolation on describe/list projections.",
+      "Outputs: publish `/app/rds/out/rds-snapshot.json` with canonical sorted keys and `report_digest` over the stable field subset defined in the operator contract; also emit UTF-8 `/app/rds/out/instances.jsonl`, `/app/rds/out/events.jsonl`, and `/app/rds/out/health.json` (companions are required artifacts; they do not carry digests and are not separately graded for line/key ordering beyond existing as well-formed UTF-8 JSON/JSONL)."
+    ],
+    "APPROVED_SOLVER_VISIBLE_REQUIREMENT_CONTRACT": ".terminus/contracts/sovereign-rds-control-plane/solver-visible-requirements.json",
+    "APPROVED_WORK_PACKAGE": {
+      "id": "WP1_SOVEREIGN_RDS_CONTROL_PLANE",
+      "objective": "Complete a Go and Python sovereign RDS-compatible control plane that manages database instance lifecycles, WAL-backed point-in-time recovery (PITR), parameter group dynamic vs pending-reboot fencing, read replica stream promotion, multi-AZ failover fencing, and EventBridge-style event outbox notifications.",
+      "persona": "A cloud platform engineer building an on-premise sovereign database control plane replacing AWS RDS.",
+      "scope_exclusions": [
+        "Terraform resource provisioning (stackyard-terraform-control-plane)",
+        "Low-level storage engine MVCC or WAL format implementation (stonevault)",
+        "L4 network load balancing / proxying (sovereign-l4-load-balancer)",
+        "Backup vault policy enforcement (aws-backup-restore-assurance-plane)",
+        "Logical CDC log capture or applying (tenant-catalog-logical-cdc-plane)",
+        "Live AWS RDS API calls or external cloud access"
+      ]
+    },
+    "BEHAVIORAL_SURFACES": [
+      "DBInstance modification requests enforce status = AVAILABLE before processing changes",
+      "Allocated storage changes validate new size is strictly greater than current allocated storage",
+      "DeletionProtection = true rejects DeleteDBInstance calls regardless of final snapshot settings",
+      "RebootDBInstance with pending static parameters reloads configuration and applies parameters",
+      "WAL segment ingestion validates sequence continuity, timeline ID, and flags archive gaps",
+      "Point-in-Time Recovery synthesizes exact target timestamp using partial WAL replay",
+      "Snapshot restore validates redo_lsn and timeline_id compatibility with base backup",
+      "RestoreDBInstanceToPointInTime enforces target timestamp within restorable retention window",
+      "ModifyDBParameterGroup with static parameters sets PendingRebootParameters without immediate apply",
+      "DBParameterGroup merges instance-specific parameter overrides with default family parameters",
+      "PendingRebootParameters flag is cleared only after all modified static parameters pass boot validation",
+      "ResetDBParameterGroup sets instance parameter_group_status to pending-reboot",
+      "PromoteReadReplica checks replication lag is within MaximumAllowedLagBytes and not UNKNOWN",
+      "Replica promotion waits for flush_lsn to reach primary write_lsn before declaring primary",
+      "Replica promotion revokes write lease on old primary to prevent split-brain dual primary",
+      "Replica promotion updates read and write endpoints atomically in DNS/routing table",
+      "Automatic Multi-AZ failover requires lease expiration or leader lease acquisition before failover",
+      "Multi-AZ failover fencing prevents standby promotion while former primary lease is valid",
+      "Health probe evaluator distinguishes direct instance port probe from control plane DB connection pool lag",
+      "VIP migration during failover flushes route tables and issues gratuitous ARP announcements",
+      "Outbox events are enqueued inside the same database transaction as instance state changes",
+      "EventBridge subscriptions filter events by SourceType and SourceIdentifier correctly",
+      "Event notification retries reuse deterministic EventIdentifier hashes to prevent duplicates",
+      "Failed event deliveries record failure evidence in event_delivery_audit on max retries",
+      "Instance status transitions write atomic transaction WAL checkpoints before DB commit",
+      "Control plane restart checks transaction checkpoints to skip completed operations and PITR restores",
+      "Instance describe and list APIs enforce multi-tenant account, region, and tenant_id isolation",
+      "State snapshot reports format canonical JSON with sorted keys for stable SHA-256 digest calculation",
+      "Readiness status reports READY only when all instances, replication links, and outbox queues are healthy",
+      "Identical control plane runs produce identical report digests"
+    ],
+    "CLEAN_SYSTEM_ARCHITECTURE": {
+      "components": [
+        "RDS control plane API daemon (rdsd) with HTTP endpoints for DBInstances, DBParameterGroups, DBSnapshots, and EventSubscriptions",
+        "Control plane CLI (rdsctl) for operator commands and automated management",
+        "Instance lifecycle orchestrator (provisioning, modifying, stopping, starting, rebooting, deleting)",
+        "WAL archive collector and PITR recovery target synthesizer",
+        "Parameter group manager with dynamic/static parameter application classification",
+        "Replica topology manager and streaming replication lag monitor",
+        "Failover coordinator with leader election, lease fencing, and VIP migration",
+        "Event outbox processor with subscription filter engine",
+        "Deterministic RDS state and telemetry fixture generator",
+        "Local offline RDS protocol simulator for end-to-end testing"
+      ],
+      "data_volume": "Generate 14,800 deterministic primary records across DB instances, parameter groups, WAL manifests, snapshots, events, failover logs, and metrics.",
+      "entrypoints": [
+        "rdsd",
+        "rds-worker",
+        "rdsctl",
+        "generate-estate"
+      ],
+      "language_stack": [
+        "go",
+        "python",
+        "sql",
+        "json",
+        "yaml",
+        "bash"
+      ],
+      "scale_fit": "Target 4,500-7,000 reachable canonical environment LOC; generated estate data, tests, solution, docs, comments, blanks, and duplicate filler do not count.",
+      "state_model": "PostgreSQL 16 for control plane metadata, instance state, parameter groups, snapshot manifests, WAL segments, event outbox, leases, and audit trail."
+    },
+    "CONTROLLER_STATE": {
+      "blocked_reason": "HOSTED_DETERMINISTIC_VALIDATION requires Harbor/oracle+NOP after publish",
+      "last_ledger_task_commit": "8fb4d92f932d8c0c34a126b3040b4fb5f1cfad42",
+      "last_stage": "RUNTIME_AUTHENTICITY",
+      "next_stage": "DETERMINISTIC_VALIDATION"
+    },
+    "CREATION_PROFILE": "large_system_strict",
+    "CREATION_REQUEST": "Create / complete the Edition 3 large_system_strict task sovereign-rds-control-plane: an inherited Python and PostgreSQL sovereign RDS-compatible control plane covering DB instance lifecycle fencing, WAL-backed PITR, parameter-group dynamic vs pending-reboot apply modes, read-replica promotion with lag/LSN fencing, Multi-AZ failover lease fencing, and EventBridge-style transactional event outbox notifications with deterministic published outputs. Verification remains owned by the project through Cursor/Harbor after freeze.",
+    "CREATION_RULE_CONTEXT": {
+      "ACTIVE_VALIDATORS": [
+        ".terminus/validate_agent_system.py",
+        ".terminus/validate_stage_contracts.py",
+        ".terminus/validate_task_complexity.py",
+        ".terminus/validate_environment_complexity.py",
+        ".terminus/validate_runtime_authenticity.py",
+        ".terminus/validate_business_module_diversity.py",
+        ".terminus/validate_review_freshness.py",
+        ".terminus/validate_quality_interlock.py",
+        ".github/workflows/terminus-edition-3-ci.yml",
+        ".github/workflows/terminus-creator-complexity.yml",
+        ".github/workflows/terminus-production-authenticity.yml"
+      ],
+      "CONTROL_PLANE_COMMIT": "857d474d50bdd78b168bd3e013fa6927a2af81b6",
+      "CREATION_PROFILE": "large_system_strict",
+      "KNOWN_POLICY_CONFLICTS": [],
+      "NETWORK_ENVIRONMENT_CONSTRAINTS": "Public network during image build for package installation; runtime grading is deterministic with no live AWS RDS API calls, no cloud credentials, and no privileged containers. PostgreSQL 16 runs in the task compose topology.",
+      "RULE_SOURCES": [
+        "TERMINUS_3_AI_INSTRUCTIONS.md",
+        ".terminus/AGENT_SYSTEM.md",
+        ".terminus/agents/CREATION_CONTROLLER.md",
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+        ".terminus/reviewers/REVIEWER_CHECKLIST.md",
+        ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+        ".terminus/agents/STAGE_CONTRACTS.md",
+        ".terminus/agents/stage_contracts.json"
+      ]
+    },
+    "CURRENT_INSTRUCTION": "sovereign-rds-control-plane/instruction.md",
+    "CURRENT_ORACLE": "sovereign-rds-control-plane/solution/solve.sh",
+    "CURRENT_TASK": "sovereign-rds-control-plane",
+    "CURRENT_TASK_COMMIT": "8fb4d92f932d8c0c34a126b3040b4fb5f1cfad42",
+    "CURRENT_TASK_TREE": "sovereign-rds-control-plane",
+    "CURRENT_TIME_BUDGET": {
+      "enforcement": "ADVISORY_ONLY",
+      "guidance_seconds": 25200,
+      "hard_limit": null,
+      "policy_version": "1.1",
+      "quality_gates_may_be_skipped_for_time": false,
+      "time_extension_required": false
+    },
+    "CURRENT_VERIFIER": "sovereign-rds-control-plane/tests/test_outputs.py",
+    "DEFECT_GRAPH": ".terminus/designs/sovereign-rds-control-plane.json",
+    "DEFECT_TOPOLOGY": {
+      "manifestations": 28,
+      "path": ".terminus/designs/sovereign-rds-control-plane.json",
+      "profile": "large_system_strict",
+      "root_cause_clusters": 7,
+      "status": "DESIGN_READY",
+      "validator": "PASS"
+    },
+    "ENVIRONMENT_TREE": "sovereign-rds-control-plane/environment",
+    "FORMAT_STATUS": "FORMAT_PASS",
+    "FROZEN_TASK_COMMIT": "8fb4d92f932d8c0c34a126b3040b4fb5f1cfad42",
+    "IMPLEMENTATION_EVIDENCE": {
+      "environment": "sovereign-rds-control-plane/environment",
+      "solution": "sovereign-rds-control-plane/solution/solve.sh"
+    },
+    "INSTRUCTION": "sovereign-rds-control-plane/instruction.md",
+    "NETWORK_ENVIRONMENT_CONSTRAINTS": "Public network during image build for package installation; runtime grading is deterministic with no live AWS RDS API calls, no cloud credentials, and no privileged containers. PostgreSQL 16 runs in the task compose topology.",
+    "ORACLE": "sovereign-rds-control-plane/solution/solve.sh",
+    "PRODUCTION_AUTHENTICITY_PROFILE": ".terminus/designs/sovereign-rds-control-plane-production.json",
+    "PRODUCTION_CHARACTERISTIC_EVIDENCE": ".terminus/designs/sovereign-rds-control-plane.json",
+    "QUALITY_INTERLOCK": {
+      "q4_review": ".terminus/reviews/sovereign-rds-control-plane/8fb4d92f/sovereign-rds-control-plane-8fb4d92f-spec-test-contract-907fb71891.json",
+      "q4_verdict": "PASS",
+      "q6_review": ".terminus/reviews/sovereign-rds-control-plane/8fb4d92f/sovereign-rds-control-plane-8fb4d92f-production-logic-714a3c097a.json",
+      "q6_verdict": "PASS",
+      "status": "UNBLOCKED",
+      "task_commit": "8fb4d92f932d8c0c34a126b3040b4fb5f1cfad42"
+    },
+    "REFERENCED_SOLVER_VISIBLE_CONTRACTS": [
+      "environment/rds/docs/architecture.md",
+      "environment/rds/docs/failover-replica-contract.md",
+      "environment/rds/docs/operator-contract.md",
+      "environment/rds/docs/parameter-group-contract.md",
+      "environment/rds/docs/pitr-wal-contract.md"
+    ],
+    "REQUESTED_DOMAIN": "Sovereign RDS-compatible control plane: PostgreSQL instance lifecycle, WAL/PITR, parameter groups, replicas, Multi-AZ failover, event outbox",
+    "REQUESTED_PROFILE": "large_system_strict",
+    "RUNTIME_REACHABILITY_EVIDENCE": {
+      "compose": "sovereign-rds-control-plane/environment/docker-compose.yaml",
+      "entrypoints": [
+        "/app/rds/bin/rdsd",
+        "/app/rds/bin/rds-worker",
+        "/app/rds/bin/rdsctl"
+      ]
+    },
+    "SOLVER_VISIBLE_CONTRACTS": [
+      ".terminus/contracts/sovereign-rds-control-plane/solver-visible-requirements.json",
+      "environment/rds/docs/architecture.md",
+      "environment/rds/docs/failover-replica-contract.md",
+      "environment/rds/docs/operator-contract.md",
+      "environment/rds/docs/parameter-group-contract.md",
+      "environment/rds/docs/pitr-wal-contract.md"
+    ],
+    "SOLVER_VISIBLE_DOC_PLAN": [
+      "environment/rds/docs/architecture.md",
+      "environment/rds/docs/failover-replica-contract.md",
+      "environment/rds/docs/operator-contract.md",
+      "environment/rds/docs/parameter-group-contract.md",
+      "environment/rds/docs/pitr-wal-contract.md"
+    ],
+    "SOLVER_VISIBLE_REQUIREMENTS": [
+      "Lifecycle: allow `ModifyDBInstance` only while status is `AVAILABLE`; allocated storage must strictly increase; reject `DeleteDBInstance` when `DeletionProtection` is true even if a final snapshot id is supplied; on reboot, reload config, apply pending static parameters, and clear `pending_reboot_parameters` only after boot validation succeeds.",
+      "WAL / PITR: ingest archives with timeline and sequence continuity (flag gaps); bind base-backup LSN/timeline; partially replay WAL to the restore target; accept targets only when `EarliestRestorableTime <= target <= LatestRestorableTime`.",
+      "Parameter groups: apply dynamic parameters immediately, mark static ones pending reboot, merge overrides into family defaults; `ResetDBParameterGroup` sets attached instances to `parameter_group_status=pending-reboot` and `pending_reboot_parameters=true`.",
+      "Promotion: require `replication_lag_bytes <= MaximumAllowedLagBytes` (10485760) and LSN catch-up; revoke the old primary write lease and mark that former primary `READ_ONLY`; then atomically swap writer/reader endpoints. Promotion must not flush VIP routes or send gratuitous ARP (those steps are failover-only).",
+      "Failover: acquire a TTL-fenced leader lease first; decide health from direct DB TCP reachability (ignore control-plane pool lag alone); on floating VIP migration flush routes, send gratuitous ARP, and record evidence per the failover contract.",
+      "Outbox / isolation: enqueue EventBridge rows in the same DB transaction as instance state changes; match subscriptions by `SourceType` and event category; use deterministic `EventIdentifier` hashes; write `event_delivery_audit` after max retries; enforce account, region, and `tenant_id` isolation on describe/list projections.",
+      "Outputs: publish `/app/rds/out/rds-snapshot.json` with canonical sorted keys and `report_digest` over the stable field subset defined in the operator contract; also emit UTF-8 `/app/rds/out/instances.jsonl`, `/app/rds/out/events.jsonl`, and `/app/rds/out/health.json` (companions are required artifacts; they do not carry digests and are not separately graded for line/key ordering beyond existing as well-formed UTF-8 JSON/JSONL)."
+    ],
+    "SPEC_ALIGNMENT_STATUS": "ALIGNED",
+    "STARTER_ENVIRONMENT": {
+      "docs": [
+        "environment/rds/docs/architecture.md",
+        "environment/rds/docs/failover-replica-contract.md",
+        "environment/rds/docs/operator-contract.md",
+        "environment/rds/docs/parameter-group-contract.md",
+        "environment/rds/docs/pitr-wal-contract.md"
+      ],
+      "entrypoints": [
+        "/app/rds/bin/rdsd",
+        "/app/rds/bin/rds-worker",
+        "/app/rds/bin/rdsctl"
+      ],
+      "task_root": "sovereign-rds-control-plane"
+    },
+    "STARTER_NOP_STATE": "sovereign-rds-control-plane/environment",
+    "SUBSTANTIVE_LOC_REPORT": {
+      "defects": 28,
+      "f2p_cases": 30,
+      "p2p_cases": 4,
+      "root_causes": 7,
+      "status": "PASS",
+      "substantive_loc": 3575,
+      "validator": "validate_task_complexity.py"
+    },
+    "SYSTEM_ARCHITECTURE": {
+      "components": [
+        "RDS control plane API daemon (rdsd) with HTTP endpoints for DBInstances, DBParameterGroups, DBSnapshots, and EventSubscriptions",
+        "Control plane CLI (rdsctl) for operator commands and automated management",
+        "Instance lifecycle orchestrator (provisioning, modifying, stopping, starting, rebooting, deleting)",
+        "WAL archive collector and PITR recovery target synthesizer",
+        "Parameter group manager with dynamic/static parameter application classification",
+        "Replica topology manager and streaming replication lag monitor",
+        "Failover coordinator with leader election, lease fencing, and VIP migration",
+        "Event outbox processor with subscription filter engine",
+        "Deterministic RDS state and telemetry fixture generator",
+        "Local offline RDS protocol simulator for end-to-end testing"
+      ],
+      "data_volume": "Generate 14,800 deterministic primary records across DB instances, parameter groups, WAL manifests, snapshots, events, failover logs, and metrics.",
+      "entrypoints": [
+        "rdsd",
+        "rds-worker",
+        "rdsctl",
+        "generate-estate"
+      ],
+      "language_stack": [
+        "go",
+        "python",
+        "sql",
+        "json",
+        "yaml",
+        "bash"
+      ],
+      "scale_fit": "Target 4,500-7,000 reachable canonical environment LOC; generated estate data, tests, solution, docs, comments, blanks, and duplicate filler do not count.",
+      "state_model": "PostgreSQL 16 for control plane metadata, instance state, parameter groups, snapshot manifests, WAL segments, event outbox, leases, and audit trail."
+    },
+    "TASK_WRITING_PROFILE": {
+      "avoid": [
+        "walkthrough",
+        "bug catalog",
+        "canary strings",
+        "oracle hints",
+        "verifier names"
+      ],
+      "shape": "concise absolute-path bullets <=20",
+      "voice": "cloud platform engineer operational handoff"
+    },
+    "TEST_CLASSIFICATION_MAP": ".terminus/designs/sovereign-rds-control-plane-test-map.json",
+    "VALIDATED_HUMAN_WRITING_CALIBRATION": {
+      "coverage": "DEGRADED",
+      "pair": ".terminus/research/sovereign-rds-control-plane-dataset-calibration.json",
+      "pair_id": "hwpair-541bdfa4854b4c2b26fa",
+      "profile": ".terminus/research/sovereign-rds-control-plane-task-writing-profile.json",
+      "status": "VALID"
+    },
+    "VERIFICATION_EVIDENCE": {
+      "complexity_validator": "PASS",
+      "f2p": 30,
+      "p2p": 4,
+      "runtime_authenticity_validator": "PASS",
+      "tests": "sovereign-rds-control-plane/tests/test_outputs.py"
+    },
+    "VERIFIER": "sovereign-rds-control-plane/tests"
+  },
+  "schema_version": "1.0",
+  "stage_id": "RULE_RESOLUTION",
+  "task_commit": "9b9ec8da3f8f46ad0f51858d805f003f133df1ab",
+  "task_id": "sovereign-rds-control-plane"
+}
