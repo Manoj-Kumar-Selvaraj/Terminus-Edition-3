@@ -5,55 +5,49 @@ Session schema version: `2.4`
 ## Identity
 
 - Task: `terraform-aws-eks-addon-trust-rollout`
-- Controller state: `QUALITY_INTERLOCK` (`AUTOMATED_QUALITY`; prior run failed collect; Q4+Q6 REVISE executed)
-- Working branch: `main` (authoritative tip `origin/main` @ `921df988`)
+- Controller state: `QUALITY_INTERLOCK` REVISE/ROUTE `Q4_REVISE` → producer remediation ready to commit
+- Working branch: `main` (authoritative tip `origin/main` @ `dcaa39e0`)
 - Pull request: `none`
-- Current task commit: `f649fbfd0f14603138e6e6293f0067587016f09a` (clean)
+- Current task commit: `f649fbfd0f14603138e6e6293f0067587016f09a` (dirty pending remediation commit)
 - Agent-system policy: `2.5`
 - Specialist prompt policy: `2.2`
 - Specialist protocol policy: `2.2`
 - Pre-LLMaJ panel policy: `2.2`
 - Comprehensive reviewer policy: `1.0`
 - Reviewer checklist snapshot: `2026-08-08-user-supplied`
-- Effective control-plane commit: `df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe`
+- Effective control-plane commit for QI ledger authority: `df7ef7569e2947b9f0bf7cf89ed4dec6c2a5a1fe` (note: `controller_cli control-plane` at HEAD may report `474f2b09`; continue with QI-bound CP for ROUTE)
 - Creation profile: `large_system_strict`
 
 ## Deterministic evidence (canonical)
 
-- Failed attempt (wrong expected head local tip): run `32992772304` / job `98254220455` / request `362361ef…` — Failure ~12s (git 128); superseded.
-- Successful hosted run: **run_id `32994383329`**, run_number `32`, job_id `98259684042`, request_commit `a4e03e611fc209f4fde138249deeebcfe77ab7ca`, branch `terminus-deterministic-request/terraform-aws-eks-addon-trust-rollout/16806e597df1911d`
-- Locator: `.terminus/deterministic-run-locators/terraform-aws-eks-addon-trust-rollout/a4e03e611fc209f4fde138249deeebcfe77ab7ca.json` (status=completed, conclusion=success)
-- Main record commit: `921df988` — `Record terraform-aws-eks-addon-trust-rollout DETERMINISTIC_VALIDATION hosted result`
-- Canonical outputs: `ORACLE_REWARD=1`, `NOP_REWARD=0`, F2P matrix len=30, P2P matrix len=4, disposition `ADVANCE`
+- Hosted DETERMINISTIC_VALIDATION PASS: run `32994383329` / job `98259684042` / record `921df988`
 - Invocation: `inv_314e1fd1cf1dffdeb95031939ba4d90a9d47cd11477f0c1fec85267185794c10`
 
-## Quality interlock evidence (not yet on ledger)
+## Quality interlock (canonical on main)
 
-- Automated run: **run_id `32997757518`**, run_number `2`, head `921df988`, conclusion **failure**
-- Jobs: q4/execute `98271399793` success; q6/execute `98271399729` success; collect_interlock `98274363162` **failure**; record_interlock skipped
-- Collect failure: session missing required policy identity lines (now corrected in this checkpoint draft)
-- Q4 artifact verdict **REVISE** (1/3): `terraform-aws-eks-addon-trust-rollout-f649fbfd-spec-test-contract-33c1250a36` — regulated workload identity conflict; phantom apps/batch UpgradeProtected; compressed-rubric instruction
-- Q6 artifact verdict **REVISE** (1/2): `terraform-aws-eks-addon-trust-rollout-f649fbfd-production-logic-64677be1c7` — unread 12.5k estate corpus; unreachable modules; toy drain/interruption; below strict reachable LOC
-- Packets/reviews were not persisted to `main` (`publish_result: false` on execute; collect never reached persist)
-- Do **not** treat green q4/q6 jobs as QUALITY_INTERLOCK PASS; do not redispatch solely to verdict-shop after REVISE
+- Recovered REVISE recorded: tip `dcaa39e0` / inv `inv_89c29c1f0eae345d06ed739442fdefca5d7cc5420ced3dce59963630c17b0a89`
+- Source run `32997757518` (Q4+Q6 REVISE; collect originally failed on session identities)
+- Q4: `...-spec-test-contract-33c1250a36` REVISE
+- Q6: `...-production-logic-64677be1c7` REVISE
+- controller next @ CP `df7ef756`: `ROUTE` / `Q4_REVISE` / "smallest responsible spec/verifier producer"
+- Do **not** redispatch AUTOMATED_QUALITY until remediation lands under a fresh task commit
+
+## Producer remediation (local worktree, uncommitted)
+
+Worktree: `.terminus/tmp/eks-q4-remediate-wt` @ parent `dcaa39e0`
+
+Addressed STC-01/02/03/04 and Q6-1/2/3/4: settlement-ledger alignment, instruction regroup + apps/batch UpgradeProtected, real drain/interruption, deleted dead corpora/modules, expanded reachable graded path (~2.4k py + terraform/k8s).
 
 ## Current gates
 
 | Gate | Status | Evidence |
 | --- | --- | --- |
-| Creation chain through RUNTIME_AUTHENTICITY | PASS | ledger on main |
-| DETERMINISTIC_VALIDATION | PASS | hosted run 32994383329 + record 921df988 |
-| Q4 Spec-Test Contract Reviewer | REVISE | `.terminus/reviews/terraform-aws-eks-addon-trust-rollout/f649fbfd/terraform-aws-eks-addon-trust-rollout-f649fbfd-spec-test-contract-33c1250a36.json` @ run 32997757518 |
-| Q6 Production Logic Auditor | REVISE | `.terminus/reviews/terraform-aws-eks-addon-trust-rollout/f649fbfd/terraform-aws-eks-addon-trust-rollout-f649fbfd-production-logic-64677be1c7.json` @ run 32997757518 |
-| Quality Interlock | REVISE | recovered StageResult pending push |
-| Later gates | NOT_REACHED | blocked on quality interlock record + remediation |
-
-## Next action
-
-1. **Authorization required:** commit + push this session checkpoint to `origin/main` so `validate_review_freshness` can pass identity checks.
-2. Prefer completing QUALITY_INTERLOCK recording of the existing REVISE pair (session fix + restore packets/reviews + record) over a blind second model dispatch; if only full `terminus-quality-lifecycle.yml` redispatch is available, note Q4 budget remaining 2/3 and Q6 remaining 1/2.
-3. After REVISE is canonical on the ledger, route producer remediation under a fresh task-commit authority, then re-run automated Q4+Q6.
+| DETERMINISTIC_VALIDATION | PASS (stale after task change) | run 32994383329 @ f649fbfd |
+| Q4 Spec-Test Contract Reviewer | REVISE | `...-spec-test-contract-33c1250a36` |
+| Q6 Production Logic Auditor | REVISE | `...-production-logic-64677be1c7` |
+| Quality Interlock | REVISE/ROUTE | ledger seq 17 @ dcaa39e0 |
+| Producer remediation | READY_TO_COMMIT | dirty task tree in worktree |
 
 ## Current blocker
 
-authorization-required — publish updated `.terminus/sessions/terraform-aws-eks-addon-trust-rollout.md` (policy identities) to `origin/main` before QUALITY_INTERLOCK collect/record can succeed.
+authorization-required — commit + push task remediation under `terraform-aws-eks-addon-trust-rollout/` (fresh TASK_COMMIT), then re-run DETERMINISTIC_VALIDATION and AUTOMATED_QUALITY (Q4 budget 2/3, Q6 budget 1/2).

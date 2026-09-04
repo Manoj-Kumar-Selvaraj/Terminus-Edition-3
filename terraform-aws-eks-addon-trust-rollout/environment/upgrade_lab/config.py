@@ -7,6 +7,7 @@ from pathlib import Path
 
 
 def _resolve_dir(env_key: str, default_str: str, relative_fallback: str) -> Path:
+    """Resolve a lab directory from env override, container path, or source tree."""
     if env_key in os.environ:
         return Path(os.environ[env_key])
     root = Path(__file__).resolve().parents[1]
@@ -29,7 +30,9 @@ class LabConfig:
         default_factory=lambda: _resolve_dir("UPGRADE_DATA_DIR", "/app/data", "data")
     )
     var_dir: Path = field(
-        default_factory=lambda: _resolve_dir("UPGRADE_VAR_DIR", "/app/var/upgrade", "var/upgrade")
+        default_factory=lambda: _resolve_dir(
+            "UPGRADE_VAR_DIR", "/app/var/upgrade", "var/upgrade"
+        )
     )
     output_dir: Path = field(
         default_factory=lambda: _resolve_dir("UPGRADE_OUTPUT_DIR", "/app/output", "output")
@@ -38,17 +41,22 @@ class LabConfig:
         default_factory=lambda: _resolve_dir("UPGRADE_K8S_DIR", "/app/k8s", "k8s")
     )
     terraform_dir: Path = field(
-        default_factory=lambda: _resolve_dir("UPGRADE_TF_DIR", "/app/terraform", "terraform")
+        default_factory=lambda: _resolve_dir(
+            "UPGRADE_TF_DIR", "/app/terraform", "terraform"
+        )
     )
     workspace_dir: Path = field(
-        default_factory=lambda: _resolve_dir("UPGRADE_WORKSPACE_DIR", "/app/terraform/workspaces/upgrade", "terraform/workspaces/upgrade")
+        default_factory=lambda: _resolve_dir(
+            "UPGRADE_WORKSPACE_DIR",
+            "/app/terraform/workspaces/upgrade",
+            "terraform/workspaces/upgrade",
+        )
     )
     account_id: str = "123456789012"
     cluster_name: str = "regulated-payments-eks"
     aws_region: str = "us-east-1"
     checkpoint_file: str = "checkpoint.json"
-    telemetry_file: str = "telemetry_history.json"
-    interruption_file: str = "interruption_events.json"
+    interruption_events_file: str = "interruption_events.json"
 
     def ensure_directories(self) -> None:
         """Ensure runtime directories exist."""
@@ -69,6 +77,18 @@ class LabConfig:
     def checkpoint_path(self) -> Path:
         """Path to upgrade rollout state checkpoint."""
         return self.var_dir / self.checkpoint_file
+
+    @property
+    def interruption_events_path(self) -> Path:
+        """Path to curated interruption event inventory."""
+        return self.data_dir / self.interruption_events_file
+
+    def resolve_interruption_file(self, defaults: dict | None = None) -> Path:
+        """Resolve interruption events file using defaults override when present."""
+        name = self.interruption_events_file
+        if isinstance(defaults, dict):
+            name = defaults.get("interruption_events_file") or name
+        return self.data_dir / str(name)
 
 
 def load_config() -> LabConfig:

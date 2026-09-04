@@ -16,6 +16,7 @@ from upgrade_lab.placement_engine import evaluate_regulated_placement
 from upgrade_lab.drain_simulator import simulate_node_drain
 from upgrade_lab.interruption_handler import simulate_node_interruption
 from upgrade_lab.report_publisher import publish_upgrade_report
+from upgrade_lab.addon_readiness import poll_addon_readiness, verify_step_completion
 
 
 def run_rollout(
@@ -49,4 +50,6 @@ __all__ = [
     "simulate_node_drain",
     "simulate_node_interruption",
     "publish_upgrade_report",
+    "poll_addon_readiness",
+    "verify_step_completion",
 ]

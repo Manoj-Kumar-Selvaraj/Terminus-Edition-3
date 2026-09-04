@@ -325,6 +325,9 @@ def plan_policy_errors(
             continue
         if ng["tags"].get("UpgradeProtected") != "true":
             errors.append(f"{pool} node group must be UpgradeProtected")
+        labels = ng.get("labels") or {}
+        if labels.get("nodepool") != pool:
+            errors.append(f"{pool} node group label mismatch")
 
     # Regulated placement
     reg = graph.get("regulated") or {}
@@ -450,6 +453,177 @@ def _pdb_coverage(state: dict, required: list[dict]) -> tuple[bool, list[str]]:
         if got.get("min_available") != req.get("min_available"):
             missing.append(f"pdb {req['name']} minAvailable mismatch")
     return (not missing), missing
+
+
+def _resolve_replicas(service: str, pdb: dict | None, deployments: list[dict], defaults: dict) -> int:
+    if pdb is not None:
+        selector = pdb.get("selector") or {}
+        namespace = pdb.get("namespace") or "default"
+        for dep in deployments:
+            if (dep.get("namespace") or "default") != namespace:
+                continue
+            labels = dep.get("labels") or {}
+            if selector and all(labels.get(k) == v for k, v in selector.items()):
+                try:
+                    return max(0, int(dep.get("replicas") or 0))
+                except (TypeError, ValueError):
+                    return 0
+            if dep.get("name") == pdb.get("name"):
+                try:
+                    return max(0, int(dep.get("replicas") or 0))
+                except (TypeError, ValueError):
+                    return 0
+    fallback = (defaults.get("core_service_replicas") or {}).get(service)
+    try:
+        return max(0, int(fallback or 0))
+    except (TypeError, ValueError):
+        return 0
+
+
+def _simulate_drain(
+    defaults: dict,
+    state: dict,
+    required_pdbs: list[dict],
+) -> tuple[dict, dict[str, bool], bool]:
+    """Mirror environment drain_simulator: PDB floors + replica capacity."""
+    drain_node = defaults.get("drain_node")
+    core_services = list(defaults.get("core_services") or [])
+    availability = {name: False for name in core_services}
+    deployments = list(state.get("deployments") or [])
+    submitted = {(p.get("namespace"), p.get("name")): p for p in (state.get("pdbs") or [])}
+    pdb_index: dict[str, dict] = {}
+    for req in required_pdbs:
+        got = submitted.get((req.get("namespace"), req.get("name")))
+        if got is not None:
+            pdb_index[str(req.get("name"))] = {
+                **got,
+                "required_min_available": req.get("min_available"),
+                "selector": got.get("selector") or req.get("selector") or {},
+            }
+
+    total_evicted = 0
+    total_blocked = 0
+    pdb_respected = True
+    for service in core_services:
+        pdb = pdb_index.get(service)
+        replicas = _resolve_replicas(service, pdb, deployments, defaults)
+        if pdb is not None:
+            try:
+                floor = int(pdb.get("min_available", pdb.get("required_min_available") or 0))
+            except (TypeError, ValueError):
+                floor = 0
+        else:
+            floor = 1 if replicas > 0 else 0
+        pods_on_node = 1 if replicas > 0 else 0
+        max_evictable = max(0, replicas - floor)
+        if pods_on_node == 0:
+            availability[service] = False
+            continue
+        if max_evictable >= pods_on_node:
+            remaining = replicas - pods_on_node
+            total_evicted += pods_on_node
+            respected = remaining >= floor
+            available = remaining >= max(floor, 1) if floor else remaining > 0
+        else:
+            total_blocked += pods_on_node
+            respected = False
+            available = replicas >= max(floor, 1) if floor else replicas > 0
+            remaining = replicas
+        if pdb is not None and not respected:
+            pdb_respected = False
+        availability[service] = bool(available)
+
+    core_available = all(availability.get(svc, False) for svc in core_services) and pdb_respected
+    return (
+        {
+            "node": drain_node,
+            "core_available": core_available,
+            "evicted_count": total_evicted,
+            "blocked_count": total_blocked,
+        },
+        availability,
+        pdb_respected,
+    )
+
+
+def _simulate_interruption(
+    graph: dict,
+    placement_results: dict,
+    regulated_policy: dict,
+    defaults: dict,
+) -> dict:
+    """Mirror environment interruption_handler using curated events file."""
+    reg_caps = {
+        str(c).lower()
+        for c in ((graph.get("regulated") or {}).get("capacity_types") or [])
+    }
+    placement_ok = bool(placement_results) and all(
+        isinstance(v, dict) and v.get("ok") for v in placement_results.values()
+    )
+    placement_od = placement_ok and all(
+        str(v.get("capacity_type") or "").lower() == "on-demand"
+        for v in placement_results.values()
+    )
+    regulated_nodepool = str(
+        ((regulated_policy.get("nodepool") or {}).get("name"))
+        or (graph.get("regulated") or {}).get("name")
+        or "regulated-on-demand"
+    )
+    regulated_workloads = [
+        str(wl.get("name"))
+        for wl in (regulated_policy.get("workloads") or [])
+        if isinstance(wl, dict) and wl.get("name")
+    ] or list(placement_results.keys())
+
+    events_name = defaults.get("interruption_events_file") or "interruption_events.json"
+    events_path = _data_dir() / str(events_name)
+    events: list[dict] = []
+    if events_path.is_file():
+        try:
+            payload = json.loads(events_path.read_text(encoding="utf-8"))
+            if isinstance(payload, list):
+                events = [e for e in payload if isinstance(e, dict)]
+        except (OSError, json.JSONDecodeError):
+            events = []
+
+    if not events:
+        still = reg_caps == {"on-demand"} and placement_ok and placement_od
+        return {"handled": False, "regulated_still_on_demand": still}
+
+    still_on_demand = True
+    handled = True
+    relevant = 0
+    for event in events:
+        pool = str(event.get("nodepool") or "")
+        affected = event.get("affected_workloads") or []
+        targets = pool == regulated_nodepool or any(
+            name in regulated_workloads for name in affected
+        )
+        if not targets:
+            continue
+        relevant += 1
+        capacity = str(event.get("capacity_type") or "").lower()
+        action = str(event.get("action") or "").lower()
+        plan_od = reg_caps == {"on-demand"}
+        allows_spot = "spot" in reg_caps
+        if capacity == "spot" or action in {"rebalance", "terminate", "interrupt"}:
+            if allows_spot or not plan_od or not placement_ok or not placement_od:
+                still_on_demand = False
+        elif capacity == "on-demand":
+            if not (plan_od and placement_ok and placement_od):
+                still_on_demand = False
+        else:
+            handled = False
+            still_on_demand = False
+
+    if relevant == 0:
+        still_on_demand = reg_caps == {"on-demand"} and placement_ok and placement_od
+        handled = True
+
+    return {
+        "handled": handled,
+        "regulated_still_on_demand": still_on_demand and handled,
+    }
 
 
 def run_rollout(
@@ -630,20 +804,20 @@ def run_rollout(
         installed[name] = {"installed": planned.get("addon_version"), "status": "ACTIVE"}
         _save_ckpt()
 
-    # Availability after rollout
-    for svc in defaults.get("core_services") or []:
-        report["availability"][svc] = True
-
-    # Drain simulation with PDBs
-    drain_node = defaults.get("drain_node")
-    # With minAvailable PDBs, one replica can be evicted; core stays up
-    report["drain_result"] = {
-        "node": drain_node,
-        "core_available": True,
-        "evicted_count": 1,
-        "blocked_count": 1,
-    }
-    report["pdb_respected"] = True
+    # Availability + drain simulation from PDB thresholds and replica capacity
+    drain_result, availability, pdb_respected = _simulate_drain(
+        defaults,
+        state,
+        pdbs.get("required") or [],
+    )
+    report["drain_result"] = drain_result
+    report["availability"] = availability
+    report["pdb_respected"] = pdb_respected
+    if not pdb_respected or not drain_result.get("core_available"):
+        report["reason"] = "drain_availability"
+        report["report_digest"] = _report_digest(report)
+        _write_report(report)
+        return report
 
     # Regulated workloads
     for wl in regulated_policy.get("workloads") or []:
@@ -689,16 +863,20 @@ def run_rollout(
             _write_report(report)
             return report
 
-    # Interruption: regulated stays on-demand if capacity types correct
-    reg_caps = set((graph.get("regulated") or {}).get("capacity_types") or [])
-    still = reg_caps == {"on-demand"} and all(
-        v["ok"] for v in report["regulated_placement"].values()
+    # Interruption: evaluate curated events against plan capacity + placement
+    interruption = _simulate_interruption(
+        graph,
+        report["regulated_placement"],
+        regulated_policy,
+        defaults,
     )
     report["interruption"] = {
-        "handled": True,
-        "regulated_still_on_demand": still,
+        "handled": bool(interruption.get("handled")),
+        "regulated_still_on_demand": bool(
+            interruption.get("regulated_still_on_demand")
+        ),
     }
-    if not still:
+    if not report["interruption"]["regulated_still_on_demand"]:
         report["reason"] = "interruption_placement"
         report["report_digest"] = _report_digest(report)
         _write_report(report)
@@ -714,6 +892,8 @@ def run_rollout(
 
 
 def _report_digest(report: dict) -> str:
+    drain = report.get("drain_result") or {}
+    interruption = report.get("interruption") or {}
     stable = {
         "status": report.get("status"),
         "reason": report.get("reason"),
@@ -722,14 +902,24 @@ def _report_digest(report: dict) -> str:
         "steps": report.get("steps") or [],
         "availability": report.get("availability") or {},
         "pdb_respected": report.get("pdb_respected", False),
-        "drain_result": report.get("drain_result") or {},
+        "drain_result": {
+            "node": drain.get("node"),
+            "core_available": bool(drain.get("core_available", False)),
+            "evicted_count": int(drain.get("evicted_count") or 0),
+            "blocked_count": int(drain.get("blocked_count") or 0),
+        },
         "irsa_bindings": {
             k: {"subject": v.get("subject"), "ok": v.get("ok")}
             for k, v in sorted((report.get("irsa_bindings") or {}).items())
         },
         "cross_service_denied": report.get("cross_service_denied", False),
         "regulated_placement": report.get("regulated_placement") or {},
-        "interruption": report.get("interruption") or {},
+        "interruption": {
+            "handled": bool(interruption.get("handled", False)),
+            "regulated_still_on_demand": bool(
+                interruption.get("regulated_still_on_demand", False)
+            ),
+        },
     }
     return _stable_digest(stable)
 

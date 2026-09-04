@@ -56,7 +56,6 @@ COPY bin/ /app/bin/
 RUN mkdir -p /app/var/upgrade /app/output \
     && sed -i 's/\r$//' /app/bin/* \
     && chmod +x /app/bin/* \
-    && /app/bin/generate-fixtures \
     && chmod -R go-w /app/docs /app/data /app/evidence /app/upgrade_lab
 
 CMD ["/bin/bash", "-l"]
