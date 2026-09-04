@@ -1,0 +1,195 @@
+{
+  "schema_version": "3.0",
+  "role": "Production Logic Auditor",
+  "review_id": "sovereign-l4-load-balancer-a29ea18d-production-logic-c94dfa2651",
+  "task": "sovereign-l4-load-balancer",
+  "task_commit": "a29ea18dfdfb4c1177cdfdede7065f811d889429",
+  "control_plane_commit": "37a2137a90a7e527f3a2028a7a691fce5d7ade96",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "828f84c63f4e37642ab42740b22aa95646ddaa42972f30902e9fe9a034e5458c",
+  "review_scope_hash": "cacc1062d08b3e934fbd1d6e46cf916764ad4df6168ab4d48da481251efe35cf",
+  "context_packet": ".terminus/reviews/sovereign-l4-load-balancer/a29ea18d/sovereign-l4-load-balancer-a29ea18d-production-logic-c94dfa2651.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Solver-visible Go control plane and C++ dataplane form a reachable, coupled L4 LB with real apply/rollout/recovery, epoll proxy, health/eligibility/drain, and fleet operator workflows; substantive reachable runtime LOC clears the large_system_strict floor without HIGH toy or padding risk.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/task.toml",
+      "observation": "Advanced systems task with Go/C++ languages, separate verifier mode, and /app/sovereign-lb artifact; environment is the production evidence surface."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/Dockerfile",
+      "observation": "Builds toolchain, copies sovereign-lb, runs bin/build, ENTRYPOINT lb-control-plane \u2014 real runtime packaging rather than a stub image."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/bin/build",
+      "observation": "Operator build entrypoint compiles Go control-plane/lbctl and CMake/Ninja dataplane into build/bin."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/cmd/lb-control-plane/main.go",
+      "observation": "Entrypoint wires management HTTP and dataplane control TCP listener to api.Service with durable state root."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/cmd/lbctl/main.go",
+      "observation": "Operator CLI covers apply/status/nodes/audit/ready/fleet/scenarios/health/retention/recovery plus local fleet/scenario validation."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/internal/api/service.go",
+      "observation": "386-line service Open recovers authority, loads fleet/scenarios, Apply validates/compiles/stores/begins rollout with idempotency, Router exposes /v1/* and /ready; promoteActive couples retention leases to generation flips."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/internal/api/control.go",
+      "observation": "Per-node framed control sessions register hello, accept prepared/active/rejected/status, drive rollout phase transitions and dispatch activate."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/internal/model/validate.go",
+      "observation": "Material branching on listeners/groups/targets/health/limits/policies; not constant-output shells."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/internal/rollout/coordinator.go",
+      "observation": "Two-phase prepare/activate quorum state machine with session mismatch, deadline abort, and rejection handling."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/internal/revision/store.go",
+      "observation": "Durable revision authority with idempotency records, stale/conflict errors, and atomic JSON persistence."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/internal/snapshot/compiler.go",
+      "observation": "Canonical sorted snapshot compile with SHA-256 digest used as generation identity across planes."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/internal/snapshot/repository.go",
+      "observation": "Atomic generation directories with digest verification, CURRENT pointer, and verified generation enumeration."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/internal/recovery/bootstrap.go",
+      "observation": "Startup recovery loads generations, falls back CURRENT, validates authority alignment \u2014 persistence/restart behavior."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/internal/ops/reconcile.go",
+      "observation": "Fleet membership and generation alignment reconcile expected inventory vs live registry with zone coverage/quorum signals."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/internal/readiness/evaluator.go",
+      "observation": "Readiness couples active generation loadability, connected node generation match, and rollout-phase gates."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/internal/retention/manager.go",
+      "observation": "Lease-based generation retention/collect interacts with promoteActive and repository deletion."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/internal/health/aggregate.go",
+      "observation": "Multi-node health sample aggregation with stale eviction and effective target summary for operator health API."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/dataplane/src/main.cpp",
+      "observation": "Dataplane entrypoint loads node config/checkpoint, starts control/status/probe/drain threads and proxy.run."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/dataplane/src/proxy.cpp",
+      "observation": "Dense but real epoll L4 proxy: listener reconcile, accept, backend connect, bidirectional transfer, PROXY v2, idle/connect expiry."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/dataplane/src/control.cpp",
+      "observation": "Control client hello/prepare/activate/status with digest-checked snapshot prepare, drain transition on activate, reject path."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/dataplane/src/prober.cpp",
+      "observation": "Active TCP prober with send/expect payloads, thresholds wired through HealthTracker."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/dataplane/src/eligibility.cpp",
+      "observation": "Zone-aware eligibility with fail-open and drain deadline interactions for target selection."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/dataplane/src/drain.cpp",
+      "observation": "Generation drain retains retired snapshots while connections hold shared_ptr references."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/dataplane/src/snapshot.cpp",
+      "observation": "217-line snapshot decode/validate mirrors control-plane model constraints on the dataplane."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/config/fleet.json",
+      "observation": "24-node inventory across three zones with distinct control/status endpoints feeds quorum-oriented operator workflows."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/config/desired.json",
+      "observation": "Representative desired state with multiple listeners/groups, policies, health, and prepare/activate quorum 13."
+    },
+    {
+      "type": "file",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/tools/lab/backends.py",
+      "observation": "213-line lab backends implement echo/slow/half-close/reset/PROXY-inspect behaviors used by operator lab workflows."
+    },
+    {
+      "type": "artifact",
+      "ref": "sovereign-l4-load-balancer/environment/sovereign-lb/**/*.{go,cpp,hpp,py}",
+      "observation": "Line inventory: Go ~2471, C++ src ~652, headers ~370, Python lab ~362 (~3855 total). Go+C++ alone ~3123 substantive reachable runtime LOC before lab/tools; domain modules are mostly non-clone and entrypoint-reachable."
+    }
+  ],
+  "findings": [],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "Do not treat Complexity Governor or production-authenticity validator PASS as substitute evidence for this role",
+    "Do not expand Q6 scope into verifier/tests/instruction-only surfaces",
+    "Preserve review_scope_hash binding to task.toml + environment/ tree"
+  ],
+  "next_gate": "QUALITY_INTERLOCK",
+  "role_output": {
+    "CORE_LOGIC_DEPTH": "HIGH",
+    "RUNTIME_REACHABILITY": "HIGH",
+    "MODULE_DIVERSITY": "HIGH",
+    "CROSS_COMPONENT_COUPLING": "HIGH",
+    "TOY_LOGIC_RISK": "LOW",
+    "PADDING_RISK": "LOW",
+    "SUBSTANTIVE_LOC_ASSESSMENT": "Counted solver-visible Go/C++/Python under environment/sovereign-lb at ~3855 physical LOC (~2471 Go + ~652 C++ src + ~370 headers + ~362 lab Python). Excluding declaration-only headers and thin metrics/audit shells, Go+dataplane implementation alone is ~3123 LOC of reachable runtime/config logic, above the large_system_strict >=3000 substantive reachable floor. C++ is line-dense but implements real epoll/proxy/control/health paths rather than filler. Config node profiles are near-templates (~11 lines x 24) but are small relative to core logic and map to fleet inventory/zones/quorum, not opaque LOC padding.",
+    "MAJOR_MODULES": [
+      "cmd/lb-control-plane + internal/api: management HTTP, apply pipeline, control-plane sessions",
+      "internal/model+snapshot+revision+persistence: desired validation, canonical generations, authority",
+      "internal/rollout+nodes+ops+readiness+retention+recovery+health: distributed rollout and operability",
+      "cmd/lbctl + fleet/catalog: operator workflows over management and local config",
+      "dataplane proxy/connection/selector/eligibility/health/prober/drain/control/checkpoint/status: L4 runtime",
+      "tools/lab backends+fleet_simulator: representative lab traffic/backends"
+    ],
+    "PARTIAL_FIX_TRAPS": [
+      "Fixing apply/compile without dataplane prepare/activate digest/protocol handling leaves rollouts incomplete",
+      "Fixing health aggregation without eligibility/drain/proxy selection leaves traffic behavior broken",
+      "Fixing retention without promoteActive/rollout generation coupling leaves generation GC inconsistent",
+      "Fixing fleet reconcile without readiness/quorum paths leaves operator ready/status invariants wrong",
+      "Fixing only single-node paths while fleet quorum expects multi-zone membership creates silent operability failures"
+    ],
+    "REMOVAL_TEST": "Removing ~25% of core (e.g. dataplane proxy/connection or control-plane apply/rollout/revision/repository) would eliminate L4 forwarding or immutable generation rollout entirely; removing health/eligibility/drain or recovery/retention would materially shrink failure and restart behavior. Behavior loss would be domain-critical, not cosmetic.",
+    "REQUIRED_CHANGES": []
+  }
+}
