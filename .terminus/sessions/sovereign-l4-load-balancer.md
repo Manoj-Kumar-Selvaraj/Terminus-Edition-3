@@ -5,7 +5,7 @@ Session schema version: `2.4`
 ## Identity
 
 - Task: `sovereign-l4-load-balancer`
-- Controller state: `FROZEN_CANDIDATE` — STC-001 freeze pushed path; Q6 budget ACCEPT_RISK recorded
+- Controller state: `QUALITY_INTERLOCK` collect failed after successful Q4+Q6 execute
 - Working branch: `main`
 - Pull request: `none`
 - Current task commit: `a29ea18dfdfb4c1177cdfdede7065f811d889429`
@@ -21,24 +21,24 @@ Session schema version: `2.4`
 
 | Gate | Status | Evidence |
 | --- | --- | --- |
-| Q4 Spec-Test Contract | REVISE @ cfcf72ba (stale for freeze) | STC-001 remediated at `a29ea18d`; needs fresh Q4 (budget 2/3 used, 1 left) |
-| Q6 Production Logic | PASS artifact @ cfcf72ba (unpublished; not reusable) | role_contract_hash stale vs current; operations.md scope changed; need fresh Q6 after cancelled-claim void |
-| Quality Interlock | PENDING redispatch | ACCEPT_RISK `hd_1e0e3dbff38a1c888931de5d71481322663adcb447df58cfa49a5cd367fed2a2` authorizes void of cancelled Q6 receipt 33841667900-1 |
-| Oracle / NOP | PASS @ cfcf72ba | 1.000 / 0.000 — rebind after QI if freeze advances |
+| Q4 Spec-Test Contract | EXECUTED @ a29ea18d (unpublished) | run 33847572952 q4 job success; not on main |
+| Q6 Production Logic | EXECUTED @ a29ea18d (unpublished) | run 33847572952 q6 job success; not on main |
+| Quality Interlock | FAIL (collect) | Persist: Unexpected lifecycle mutations on dir `a29ea18d/`; record skipped |
+| Oracle / NOP | PASS @ cfcf72ba | 1.000 / 0.000 |
 
 ## Decisions that must survive chat changes
 
-- STC-001: `GET /v1/nodes` documented in `instruction.md` + `operations.md` at freeze `a29ea18d`.
-- Owner **ACCEPT_RISK** for Q6 budget exhaustion (`ACCEPT_Q6_BUDGET_EXHAUSTION_RISK`) bound to task commit `a29ea18d`; authorizes treating cancelled concurrency receipt `33841667900-1` as non-counting.
-- Do not fabricate QI PASS; do not treat cancelled run as PASS.
-- Prior Q4 residual ACCEPT_RISK at `38225c53` remains historical only.
+- STC-001 freeze `a29ea18d` on origin/main.
+- Owner ACCEPT_RISK `hd_1e0e3dbff38a1c888931de5d71481322663adcb447df58cfa49a5cd367fed2a2` voided cancelled Q6 receipt 33841667900-1.
+- Do not fabricate QI PASS. Do not redispatch AUTOMATED QI while durable budgets are exhausted after this run.
+- Collect bug: persist treats untracked review directory path as unexpected mutation.
 
 ## Next action
 
-1. Push freeze + human-decision ledger + session to `origin/main`.
-2. On `terminus-quality-budget`, remove `q-runs/sovereign-l4-load-balancer/q6/33841667900-1.json` under the recorded decision.
-3. Redispatch AUTOMATED `QUALITY_INTERLOCK` for task commit `a29ea18d` (Q4 last slot + Q6 remaining slot).
+1. `gh auth login` then download artifacts from run 33847572952.
+2. Publish exact Q4+Q6 packet/result for a29ea18d to main (no new budget claims).
+3. Canonical QUALITY_INTERLOCK record on that evidence commit.
 
 ## Current blocker
 
-Awaiting durable budget void + QI redispatch after push.
+Reviews unpublished; artifact download needs GitHub CLI auth. Budgets re-claimed by successful Q4/Q6 execute.
