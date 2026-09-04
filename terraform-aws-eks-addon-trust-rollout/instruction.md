@@ -1,20 +1,3 @@
-- Complete the inherited Terraform and Kubernetes EKS add-on trust rollout system at `/app` using contracts in `/app/docs` and incident evidence in `/app/evidence` so add-on controllers, IRSA subjects, PodDisruptionBudgets, and regulated placement achieve policy-compliant upgrade readiness.
-- Execute and validate through the public operator CLI command at `/app/bin/addon-trust-rollout`.
-- Plan Terraform under `/app/terraform` so the generated plan at `/app/var/upgrade/plan.json` includes all required add-ons matching target versions in `/app/data/compatibility_matrix.json`.
-- Configure `resolve_conflicts_on_update = 'PRESERVE'` for all EKS add-ons in the Terraform plan.
-- Support SSM parameter tags for controller add-ons to extract version overrides and conflict resolution modes.
-- Configure each IRSA role in Terraform to trust exactly one service account subject matching `/app/data/trust_observations.json` and reject wildcards or forbidden subjects.
-- Ensure IAM role policies contain no wildcard actions (`*` or `ebs:*`) and role names follow required naming conventions.
-- Supply required PodDisruptionBudgets in `/app/k8s` matching required names, namespaces, and minAvailable thresholds in `/app/data/pdbs.json`.
-- Preserve `CriticalAddonsOnly=true:NoSchedule` taints and nodepool labels on the system node group.
-- Simulate system node draining while enforcing PodDisruptionBudget minAvailable limits and maintaining core service availability.
-- Enforce explicit nodepool selectors and capacity-type constraints for regulated workloads, restricting placement to private on-demand node pools.
-- Enforce Karpenter NodePool CRD requirements to ensure regulated capacity excludes spot instances.
-- Simulate spot/on-demand node interruptions and verify regulated workloads remain on on-demand capacity after rebalancing.
-- Validate add-on rollout prerequisites before advancing each add-on, executing rollouts in exact compatibility matrix order.
-- Poll and verify add-on readiness before marking steps complete, reporting status `READY` only when all readiness conditions pass.
-- Audit cross-service trust to prevent IAM role ARN sharing across distinct add-ons.
-- Merge inline policies and standalone role policy attachments in plan normalization.
-- Guard resources tagged `UpgradeProtected=true` against delete or replace actions in the Terraform plan.
-- Record step-by-step rollout state checkpoints to enable atomic restart recovery upon interruption.
-- Publish deterministic reports to `/app/output/upgrade-report.json` with canonical formatting, sorted keys, stable semantic fields, and repeatable SHA-256 report digests.
+Complete the inherited Terraform and Kubernetes EKS add-on trust rollout at `/app` using contracts in `/app/docs` and incident evidence in `/app/evidence`, then execute validation through `/app/bin/addon-trust-rollout`. Plan under `/app/terraform` so `/app/var/upgrade/plan.json` covers every add-on at the target versions in `/app/data/compatibility_matrix.json`, with `resolve_conflicts_on_update = 'PRESERVE'`, SSM parameter tags for controller version and conflict overrides, IRSA roles that each trust exactly one service-account subject from `/app/data/trust_observations.json` (no wildcards or forbidden subjects), IAM policies without wildcard actions, and merge of inline plus attached role policies during plan normalization. Guard resources tagged `UpgradeProtected=true` against delete or replace, and preserve that tag plus `nodepool` labels on the system, apps, and batch node groups while keeping the system group’s `CriticalAddonsOnly=true:NoSchedule` taint.
+
+Supply PodDisruptionBudgets in `/app/k8s` that match `/app/data/pdbs.json`, simulate system-node drains that enforce those `minAvailable` budgets and keep core services available, and place the regulated `settlement-ledger` workload from `/app/data/regulated_policy.json` only on private on-demand capacity (including Karpenter NodePool CRD constraints). Simulate spot/on-demand interruptions so regulated work stays on on-demand after rebalancing, advance add-ons only after prerequisites in exact compatibility-matrix order with readiness polling (`READY` only when every check passes), deny shared IRSA role ARNs across add-ons, checkpoint rollout state for restart recovery, and publish canonical `/app/output/upgrade-report.json` with sorted keys, stable semantic fields, and a repeatable SHA-256 digest.
