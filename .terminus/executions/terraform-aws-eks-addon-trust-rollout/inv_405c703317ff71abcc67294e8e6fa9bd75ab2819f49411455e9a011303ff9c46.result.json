@@ -1,0 +1,213 @@
+{
+  "authority": {
+    "control_plane_commit": "474f2b09fcda1848ef64d894a1b702be4f923b2b",
+    "policy_versions": {},
+    "task_commit": "b47114233973404b5f4f98fe4a25167bb66ad038",
+    "task_id": "terraform-aws-eks-addon-trust-rollout"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:78d4fc0699a5c14e536c5e8c6bfe589d02de9f083156df08a20972a0ac76ae87",
+      "kind": "COMMIT",
+      "ref": "commit:b47114233973404b5f4f98fe4a25167bb66ad038"
+    }
+  ],
+  "invocation_id": "inv_405c703317ff71abcc67294e8e6fa9bd75ab2819f49411455e9a011303ff9c46",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "474f2b09fcda1848ef64d894a1b702be4f923b2b",
+      "policy_versions": {},
+      "task_commit": "b47114233973404b5f4f98fe4a25167bb66ad038",
+      "task_id": "terraform-aws-eks-addon-trust-rollout"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CONTROL_PLANE_POLICY",
+        "PRIVATE_CREATION_DESIGN",
+        "SOLVER_VISIBLE_TASK",
+        "VERIFIER_PRIVATE"
+      ],
+      "evidence_required": [
+        "removal/reachability analysis",
+        "scale authenticity",
+        "test organicity",
+        "behavioral breadth"
+      ],
+      "excluded_evidence_classes": [
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "PUBLIC_REFERENCE",
+        "SOLUTION_ORACLE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+        ".terminus/agents/CREATOR_PROMPTS.md"
+      ],
+      "retrieval_mode": "EXACT_ONLY"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "DEFECT_GRAPH": ".terminus/designs/terraform-aws-eks-addon-trust-rollout.json",
+        "ENVIRONMENT_TREE": "terraform-aws-eks-addon-trust-rollout/environment",
+        "INSTRUCTION": "terraform-aws-eks-addon-trust-rollout/instruction.md",
+        "PRODUCTION_CHARACTERISTIC_EVIDENCE": ".terminus/designs/terraform-aws-eks-addon-trust-rollout-production.json",
+        "RUNTIME_REACHABILITY_EVIDENCE": {
+          "entrypoint": "/app/bin/addon-trust-rollout",
+          "fixture_generator": "/app/bin/generate-fixtures"
+        },
+        "SUBSTANTIVE_LOC_REPORT": {
+          "defects": 28,
+          "f2p_cases": 30,
+          "p2p_cases": 4,
+          "root_causes": 7,
+          "status": "PASS",
+          "validator": "validate_task_complexity.py"
+        },
+        "TEST_CLASSIFICATION_MAP": ".terminus/designs/terraform-aws-eks-addon-trust-rollout-test-map.json"
+      }
+    },
+    "invocation_id": "inv_405c703317ff71abcc67294e8e6fa9bd75ab2819f49411455e9a011303ff9c46",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "PASS",
+        "REVISE",
+        "SCENARIO_TOO_SMALL"
+      ],
+      "deterministic_validators": [
+        ".terminus/validate_task_complexity.py <task>"
+      ],
+      "optional_fields": [
+        "MEANINGFUL_RESOURCE_COUNT"
+      ],
+      "persisted_artifacts": [],
+      "required_fields": [
+        "SUBSTANTIVE_LOC",
+        "REACHABLE_PRODUCTION_LOC",
+        "PRODUCTION_CHARACTERISTICS",
+        "DEFECT_MANIFESTATIONS",
+        "CONNECTED_MANIFESTATIONS",
+        "ROOT_CAUSE_CLUSTERS",
+        "F2P_COUNT",
+        "P2P_COUNT",
+        "F2P_ORGANICITY",
+        "EDGE_BOUNDARY_COVERAGE",
+        "NEGATIVE_FAILURE_COVERAGE",
+        "PADDING_RISK",
+        "TEST_DUPLICATION_RISK",
+        "INSTRUCTION_CHECKLIST_RISK",
+        "REQUIRED_CHANGES"
+      ],
+      "semantic_reviewers": []
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "REVISE": "smallest responsible producer",
+        "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH"
+      },
+      "stale_on": [
+        "solver-visible environment change",
+        "defect-graph change",
+        "verifier/test-map change",
+        "instruction change affecting complexity claims"
+      ],
+      "success_transition": "RUNTIME_AUTHENTICITY"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A10 Complexity Governor",
+      "role_class": "REVIEWER",
+      "role_id": "A10_COMPLEXITY_GOVERNOR",
+      "stage_id": "COMPLEXITY_GATE"
+    }
+  },
+  "outputs": {
+    "CONNECTED_MANIFESTATIONS": 28,
+    "DEFECT_MANIFESTATIONS": 28,
+    "EDGE_BOUNDARY_COVERAGE": "PASS",
+    "F2P_COUNT": 30,
+    "F2P_ORGANICITY": "PASS",
+    "INSTRUCTION_CHECKLIST_RISK": "LOW",
+    "NEGATIVE_FAILURE_COVERAGE": "PASS",
+    "P2P_COUNT": 4,
+    "PADDING_RISK": "LOW",
+    "PRODUCTION_CHARACTERISTICS": [
+      "Terraform workspace and upgrade module generator",
+      "Terraform plan parser and policy validator",
+      "IRSA trust policy parser and subject fence verifier",
+      "Compatibility matrix and prerequisite dependency evaluator",
+      "Kubernetes manifest parser and PodDisruptionBudget analyzer",
+      "Regulated workload placement and Karpenter node pool evaluator",
+      "System node drain simulator and pod eviction engine",
+      "Interruption simulator and capacity fence analyzer",
+      "Rollout state machine coordinator with step-by-step checkpointing",
+      "Deterministic report publisher and SHA-256 digest calculator"
+    ],
+    "REACHABLE_PRODUCTION_LOC": "PASS via validate_task_complexity.py",
+    "REQUIRED_CHANGES": [],
+    "ROOT_CAUSE_CLUSTERS": 7,
+    "SUBSTANTIVE_LOC": "validator-enforced PASS retained after remediation",
+    "TEST_DUPLICATION_RISK": "LOW"
+  },
+  "record_id": "rec_a9373062879a3bd48b1e3b702e9cd2a381377bd33e37007f5b61ab1156a0acdc",
+  "role_id": "A10_COMPLEXITY_GOVERNOR",
+  "schema_version": "1.0",
+  "stage_id": "COMPLEXITY_GATE",
+  "status": "PASS",
+  "task_lineage": {
+    "input_task_commit": "b47114233973404b5f4f98fe4a25167bb66ad038",
+    "output_task_commit": "b47114233973404b5f4f98fe4a25167bb66ad038",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "RUNTIME_AUTHENTICITY",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 1,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}
