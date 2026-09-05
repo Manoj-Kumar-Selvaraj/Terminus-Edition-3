@@ -1,0 +1,141 @@
+{
+  "schema_version": "3.0",
+  "role": "Production Logic Auditor",
+  "review_id": "terraform-aws-eks-addon-trust-rollout-b4711423-production-logic-1a4132ec4b",
+  "task": "terraform-aws-eks-addon-trust-rollout",
+  "task_commit": "b47114233973404b5f4f98fe4a25167bb66ad038",
+  "control_plane_commit": "474f2b09fcda1848ef64d894a1b702be4f923b2b",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "828f84c63f4e37642ab42740b22aa95646ddaa42972f30902e9fe9a034e5458c",
+  "review_scope_hash": "f9dbe38307f846f7b64624fabcabe4e5cd04a41a62757234b53e57a1b7f31aa3",
+  "context_packet": ".terminus/reviews/terraform-aws-eks-addon-trust-rollout/b4711423/terraform-aws-eks-addon-trust-rollout-b4711423-production-logic-1a4132ec4b.packet.json",
+  "verdict": "PASS",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Solver-visible core is a coherent multi-stage EKS add-on trust upgrade control plane: Terraform plan ingestion, multi-policy validation, IRSA fencing, ordered rollout with checkpoints, PDB/drain simulation, regulated placement, and interruption handling are reachable from the operator entrypoint, materially differentiated, and cross-coupled with distinct failure reasons. Substantive reachable runtime/config exceeds a production floor once unused SSM inventory markers are discounted; toy/padding risk is not HIGH.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/environment/bin/addon-trust-rollout",
+      "observation": "Operator entrypoint runs terraform init/validate/plan, writes plan.json, and invokes upgrade_lab.run_rollout; exit maps to READY vs non-READY report status."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/environment/upgrade_lab/rollout_coordinator.py",
+      "observation": "execute_rollout sequences matrix integrity, plan normalize/validate, k8s PDB coverage, IRSA/cross-service checks, ordered addon steps with CheckpointManager, drain simulation, regulated placement, interruption simulation, then digest publish; each stage can fail-closed with a distinct reason."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/environment/upgrade_lab/plan_normalizer.py",
+      "observation": "Parses terraform show -json resource_changes into addons, IAM roles/policies/subjects, node groups/taints, regulated capacity markers, and protected delete/replace actions with nontrivial branching."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/environment/upgrade_lab/plan_validator.py",
+      "observation": "Enforces addon version/conflict, IRSA subject/name/forbidden-action allow-lists, system taint/labels/UpgradeProtected, companion pools, regulated on-demand/private-only, and protected-action policies."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/environment/upgrade_lab/irsa_verifier.py",
+      "observation": "Validates SA role-arn bindings against plan-derived ARNs and audits cross-service role ARN uniqueness."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/environment/upgrade_lab/drain_simulator.py",
+      "observation": "Computes per-core-service eviction capacity from PDB minAvailable (int/percent) and deployment/defaults replicas; sets availability and pdb_respected."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/environment/upgrade_lab/placement_engine.py",
+      "observation": "Evaluates regulated workloads against NodePool capacity requirements and EC2NodeClass private-subnet selectors."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/environment/upgrade_lab/interruption_handler.py",
+      "observation": "Loads curated interruption events and gates regulated_still_on_demand on plan capacity types plus placement health."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/environment/terraform/modules/upgrade/main.tf",
+      "observation": "Starter Terraform defines broken IRSA subjects/policies, outdated addon pins, OVERWRITE conflicts, untainted unprotected node groups, and spot/public regulated markers consumed by the plan normalizer."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/environment/terraform/modules/upgrade/addons.tf",
+      "observation": "Additional aws_ssm_parameter inventory/order/flag resources are planned but lack ControllerAddon/RegulatedNodePool tags required by ingest_ssm_parameter, so they do not drive lab graph fields."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/environment/data/compatibility_matrix.json",
+      "observation": "Six addons with ordered prerequisites form a real dependency graph consumed by matrix_evaluator and the coordinator loop."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/environment/evidence/failed-upgrade.log",
+      "observation": "Incident log cites prerequisite, IRSA, PDB/drain, spot placement, and UpgradeProtected failures matching lab reason channels."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/task.toml",
+      "observation": "Task metadata names systems/reliability work with terraform/hcl/python/yaml artifacts under /app/terraform, /app/k8s, /app/var/upgrade, /app/output."
+    }
+  ],
+  "findings": [
+    {
+      "id": "Q6-1",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "padding vs substantive reachable runtime/config; ignore unreachable/unnecessary inventory inflation",
+      "evidence_refs": [
+        "terraform-aws-eks-addon-trust-rollout/environment/terraform/modules/upgrade/addons.tf",
+        "terraform-aws-eks-addon-trust-rollout/environment/terraform/modules/upgrade/irsa.tf",
+        "terraform-aws-eks-addon-trust-rollout/environment/terraform/modules/upgrade/nodepools.tf",
+        "terraform-aws-eks-addon-trust-rollout/environment/upgrade_lab/plan_normalizer.py"
+      ],
+      "why_it_matters": "SSM inventory/order/contract parameters inflate Terraform LOC without feeding normalize_terraform_plan graph fields used by validators and later stages; residual padding risk but not dominant over the Python control plane.",
+      "minimal_remediation": "Either wire inventory tags into the normalizer/validators or drop unused SSM inventory resources so scale is only from consumed plan/k8s/lab logic.",
+      "regression_risk": "Low if removal is limited to unused SSM markers; do not remove aws_eks_addon/IAM/node_group/regulated markers in main.tf."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [],
+  "do_not_change": [
+    "upgrade_lab rollout pipeline coupling and distinct failure reasons",
+    "operator entrypoint terraform plan -> run_rollout contract",
+    "compatibility matrix prerequisite graph and IRSA/PDB/placement/interruption invariants",
+    "review_scope_hash provenance binding for this Q6 packet"
+  ],
+  "next_gate": "QUALITY_INTERLOCK",
+  "role_output": {
+    "CORE_LOGIC_DEPTH": "HIGH",
+    "RUNTIME_REACHABILITY": "HIGH",
+    "MODULE_DIVERSITY": "HIGH",
+    "CROSS_COMPONENT_COUPLING": "HIGH",
+    "TOY_LOGIC_RISK": "LOW",
+    "PADDING_RISK": "MEDIUM",
+    "SUBSTANTIVE_LOC_ASSESSMENT": "Approximately 2600 LOC of reachable Python under upgrade_lab/ plus bin/addon-trust-rollout; plus consumed Terraform (workspace + modules/upgrade/main.tf resources the normalizer ingests), k8s manifests loaded by apply_k8s_manifests, and curated data JSON loaded by the coordinator. Combined substantive reachable runtime/config is above ~3000 LOC. Secondary SSM inventory in addons.tf/irsa.tf/nodepools.tf (~250+ LOC) is planned but largely ignored by ingest_ssm_parameter and is not counted as substantive. Docs are context, not logic. Domain state is curated ops fixtures (matrix/trust/snapshot/events), appropriate for a control-plane lab rather than bulk business-record scale.",
+    "MAJOR_MODULES": [
+      "bin/addon-trust-rollout + upgrade_lab.app/cli: operator/TF plan entrypoints",
+      "plan_normalizer: terraform show -json -> typed upgrade graph",
+      "plan_validator: multi-policy plan gates",
+      "matrix_evaluator + addon_readiness + checkpoint_manager: ordered rollout state machine",
+      "irsa_verifier: SA binding + cross-service isolation",
+      "k8s_parser + pdb_analyzer + drain_simulator: manifest/PDB/drain capacity",
+      "placement_engine + interruption_handler: regulated fencing under events",
+      "report_publisher + digests: stable graded report + SHA-256",
+      "terraform/modules/upgrade + workspaces/upgrade: planned IAM/addon/nodepool starter surface",
+      "k8s/* + data/* + evidence/*: manifests, policy datasets, incident evidence"
+    ],
+    "PARTIAL_FIX_TRAPS": [
+      "Fixing addon versions alone still fails IRSA subject/policy and cross-service checks",
+      "Correct IRSA without PDB names/minAvailable and drain capacity still fails drain_availability",
+      "On-demand Terraform regulated markers without matching NodePool/workload selectors fail placement or interruption",
+      "Partial rollout progress is checkpointed; prerequisite/readiness failures leave non-READY reports with specific reasons",
+      "UpgradeProtected/taint/label gaps fail plan_policy independently of addon pins"
+    ],
+    "REMOVAL_TEST": "Removing ~25% of solver-visible core (e.g. plan_validator+irsa_verifier, or drain+placement+interruption, or the coordinator state machine) collapses whole readiness classes and report fields. Removing only unused SSM inventory markers would not materially change lab outcomes, confirming residual padding there, but not that the remaining system is toy.",
+    "REQUIRED_CHANGES": []
+  }
+}

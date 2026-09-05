@@ -1,0 +1,437 @@
+{
+  "schema_version": "3.0",
+  "role": "Spec-Test Contract Reviewer",
+  "review_id": "terraform-aws-eks-addon-trust-rollout-b4711423-spec-test-contract-4bfe143d08",
+  "task": "terraform-aws-eks-addon-trust-rollout",
+  "task_commit": "b47114233973404b5f4f98fe4a25167bb66ad038",
+  "control_plane_commit": "474f2b09fcda1848ef64d894a1b702be4f923b2b",
+  "protocol_policy_version": "2.2",
+  "prompt_policy_version": "2.2",
+  "role_policy_version": "1.1",
+  "role_contract_hash": "9607c7323be7db66eb7b520db4498f29efc686073e6f3d565c8e2c99ad26a34c",
+  "context_packet": ".terminus/reviews/terraform-aws-eks-addon-trust-rollout/b4711423/terraform-aws-eks-addon-trust-rollout-b4711423-spec-test-contract-4bfe143d08.packet.json",
+  "verdict": "REVISE",
+  "confidence": "HIGH",
+  "evidence_status": "SUFFICIENT",
+  "summary": "Bidirectional alignment fails: grader-private Terraform tag vocabularies (controller SSM tags, AddonTrust, regulated nodepool tags) are enforced but absent from solver-visible instruction/docs; PDB selectors and non-ebs IAM Resource/service-wildcard bans are contracted but untested or only partially tested; defaults.allowed_policy_prefixes conflicts with the no-wildcard IAM rule.",
+  "evidence": [
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/instruction.md",
+      "observation": "Two-paragraph Edition 3 work request naming docs/evidence, plan.json, PRESERVE, SSM controller tags (unnamed keys), IRSA single-subject/no wildcards, no wildcard IAM actions, policy merge, UpgradeProtected/nodepool/taint, PDBs matching pdbs.json, drain, regulated placement, interruption, matrix order/readiness, shared-ARN deny, checkpoint, canonical upgrade-report with sorted keys and digest."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/environment/docs/addon-trust-rollout-contract.md",
+      "observation": "Delegated contract requires single SA subjects, no wildcard Action/Resource, no shared trust, UpgradeProtected no delete/replace, PDBs/SAs/regulated placement, report field list without irsa_bindings.role_arn, plan.json path."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/environment/docs/irsa-policy-contract.md",
+      "observation": "Forbids wildcard/missing/multi subjects, system:nodes, wildcard actions including service wildcards like ebs:*, and shared role ARNs."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/environment/docs/report-schema.md",
+      "observation": "Lists irsa_bindings values as {subject, ok, role_arn}, conflicting with addon-trust-rollout-contract.md omitting role_arn."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/environment/data/defaults.json",
+      "observation": "forbidden_policy_actions is [*, iam:*, AdministratorAccess]; allowed_policy_prefixes includes elasticloadbalancing:*, ec2:Describe*, and similar service wildcards for load_balancer/karpenter."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/environment/data/pdbs.json",
+      "observation": "required PDB objects include selector matchLabels that instruction says manifests must match."
+    },
+    {
+      "type": "test",
+      "ref": "terraform-aws-eks-addon-trust-rollout/tests/test_outputs.py",
+      "observation": "F2P asserts ControllerAddon/AddonVersion/ResolveConflicts tags; AddonTrust-tagged roles; role_names; PDB name/namespace and minAvailable but not selectors despite test_f2p_pdbs_match_required_names_namespaces_selectors; ebs_csi-only endswith :* action ban; regulated graph private_only/capacity_types; P2P path/API checks are largely tautological."
+    },
+    {
+      "type": "file",
+      "ref": "terraform-aws-eks-addon-trust-rollout/tests/fixtures/upgrade_lab/__init__.py",
+      "observation": "normalize_plan/plan_policy_errors require undocumented tag keys ControllerAddon, AddonVersion, ResolveConflicts, AddonTrust, RegulatedNodePool/Component, CapacityTypes, PrivateSubnetsOnly, NodePoolName; _pdb_coverage ignores selectors; Resource wildcards not rejected except Action==* and Resource==*."
+    },
+    {
+      "type": "rule",
+      "ref": ".terminus/agents/QUALITY_AGENT_PROMPTS.md#Q4",
+      "observation": "Material phantoms, untested requirements, and grading-relevant ambiguities each require REVISE; exhaustive forward/reverse matrices and omission sweep required before PASS/REVISE."
+    }
+  ],
+  "findings": [
+    {
+      "id": "STC-001",
+      "severity": "BLOCKER",
+      "status": "OBSERVED",
+      "criterion": "No material phantom verifier contracts",
+      "evidence_refs": [
+        "terraform-aws-eks-addon-trust-rollout/tests/test_outputs.py",
+        "terraform-aws-eks-addon-trust-rollout/tests/fixtures/upgrade_lab/__init__.py",
+        "terraform-aws-eks-addon-trust-rollout/instruction.md",
+        "terraform-aws-eks-addon-trust-rollout/environment/docs/addon-trust-rollout-contract.md"
+      ],
+      "why_it_matters": "Controller add-ons are only recognized when aws_ssm_parameter tags use exact keys ControllerAddon, AddonVersion, and ResolveConflicts; those key names never appear in instruction.md or /app/docs, so a fair solver cannot discover the graded encoding.",
+      "minimal_remediation": "Document the required SSM tag keys and semantics in instruction or a referenced docs contract, or stop asserting those private keys.",
+      "regression_risk": "Changing tag vocabulary without updating inherited Terraform/fixtures will break oracle and F2P READY paths."
+    },
+    {
+      "id": "STC-002",
+      "severity": "BLOCKER",
+      "status": "OBSERVED",
+      "criterion": "No material phantom verifier contracts",
+      "evidence_refs": [
+        "terraform-aws-eks-addon-trust-rollout/tests/fixtures/upgrade_lab/__init__.py",
+        "terraform-aws-eks-addon-trust-rollout/tests/test_outputs.py",
+        "terraform-aws-eks-addon-trust-rollout/environment/docs/irsa-policy-contract.md"
+      ],
+      "why_it_matters": "IRSA discovery, forbidden-subject checks, policy merge, and naming all key off the undocumented AddonTrust tag; without it plan_policy reports missing roles and F2P fails.",
+      "minimal_remediation": "Publish AddonTrust (and any required companion tags) in the solver-visible IRSA/docs contract, or grade roles via an already-documented identifier.",
+      "regression_risk": "Retagging roles may invalidate SA annotation ARN pairing tests."
+    },
+    {
+      "id": "STC-003",
+      "severity": "BLOCKER",
+      "status": "OBSERVED",
+      "criterion": "No material phantom verifier contracts",
+      "evidence_refs": [
+        "terraform-aws-eks-addon-trust-rollout/tests/fixtures/upgrade_lab/__init__.py",
+        "terraform-aws-eks-addon-trust-rollout/tests/test_outputs.py",
+        "terraform-aws-eks-addon-trust-rollout/instruction.md",
+        "terraform-aws-eks-addon-trust-rollout/environment/docs/addon-trust-rollout-contract.md"
+      ],
+      "why_it_matters": "plan_policy_errors requires graph.regulated.name/capacity_types/private_only populated only from SSM tags RegulatedNodePool/Component, CapacityTypes, PrivateSubnetsOnly, and NodePoolName\u2014none documented in solver-visible contracts\u2014while F2P asserts those graph fields.",
+      "minimal_remediation": "Document the Terraform/SSM encoding for regulated private on-demand fencing, or derive regulated posture solely from documented Karpenter/workload manifests already graded.",
+      "regression_risk": "Removing TF-side regulated checks without retaining CRD/workload assertions could weaken placement coverage."
+    },
+    {
+      "id": "STC-004",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Every material requirement meaningfully tested",
+      "evidence_refs": [
+        "terraform-aws-eks-addon-trust-rollout/instruction.md",
+        "terraform-aws-eks-addon-trust-rollout/environment/data/pdbs.json",
+        "terraform-aws-eks-addon-trust-rollout/tests/test_outputs.py",
+        "terraform-aws-eks-addon-trust-rollout/tests/fixtures/upgrade_lab/__init__.py"
+      ],
+      "why_it_matters": "Instruction requires PDBs that match pdbs.json, which includes selectors; test_f2p_pdbs_match_required_names_namespaces_selectors and _pdb_coverage only check name/namespace/minAvailable, so wrong selectors still pass.",
+      "minimal_remediation": "Assert each required PDB selector matchLabels equals pdbs.json, and/or fail _pdb_coverage on selector mismatch.",
+      "regression_risk": "Strict selector checks will fail submissions that only fix names/minAvailable."
+    },
+    {
+      "id": "STC-005",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "Every material requirement meaningfully tested",
+      "evidence_refs": [
+        "terraform-aws-eks-addon-trust-rollout/instruction.md",
+        "terraform-aws-eks-addon-trust-rollout/environment/docs/irsa-policy-contract.md",
+        "terraform-aws-eks-addon-trust-rollout/environment/docs/addon-trust-rollout-contract.md",
+        "terraform-aws-eks-addon-trust-rollout/tests/test_outputs.py",
+        "terraform-aws-eks-addon-trust-rollout/tests/fixtures/upgrade_lab/__init__.py"
+      ],
+      "why_it_matters": "Contracts forbid wildcard IAM Action and Resource (including service wildcards); verifier only bans defaults.forbidden_policy_actions plus ebs_csi actions ending in :*, so Resource=* and non-ebs service:* policies can still READY.",
+      "minimal_remediation": "Extend plan_policy_errors and F2P assertions to reject Resource wildcards and service-wildcard actions for every AddonTrust role, aligned with the published rule.",
+      "regression_risk": "May fail policies that relied on undocumented allowlist wildcards in defaults.json."
+    },
+    {
+      "id": "STC-006",
+      "severity": "HIGH",
+      "status": "OBSERVED",
+      "criterion": "No grading-relevant ambiguity",
+      "evidence_refs": [
+        "terraform-aws-eks-addon-trust-rollout/instruction.md",
+        "terraform-aws-eks-addon-trust-rollout/environment/docs/irsa-policy-contract.md",
+        "terraform-aws-eks-addon-trust-rollout/environment/data/defaults.json",
+        "terraform-aws-eks-addon-trust-rollout/tests/fixtures/upgrade_lab/__init__.py"
+      ],
+      "why_it_matters": "defaults.allowed_policy_prefixes lists service wildcards (e.g. elasticloadbalancing:*, ec2:Describe*) while instruction/docs forbid wildcard actions; graders ignore the allowlist, leaving conflicting authorities for accepted IAM shape.",
+      "minimal_remediation": "Remove wildcard entries from allowed_policy_prefixes or explicitly redefine the no-wildcard rule and enforce one authoritative allowlist.",
+      "regression_risk": "Clarifying either direction changes which IAM documents pass policy gates."
+    },
+    {
+      "id": "STC-007",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Grading-relevant statements unambiguous",
+      "evidence_refs": [
+        "terraform-aws-eks-addon-trust-rollout/environment/docs/report-schema.md",
+        "terraform-aws-eks-addon-trust-rollout/environment/docs/addon-trust-rollout-contract.md",
+        "terraform-aws-eks-addon-trust-rollout/tests/fixtures/upgrade_lab/__init__.py"
+      ],
+      "why_it_matters": "report-schema.md requires irsa_bindings.*.role_arn while addon-trust-rollout-contract.md omits it and digest hashing drops role_arn; nested field obligation is unclear though top-level READY checks still pass.",
+      "minimal_remediation": "Make both docs and digest/schema tests agree on whether role_arn is required in published bindings.",
+      "regression_risk": "Low if digest subset stays stable."
+    },
+    {
+      "id": "STC-008",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "Material output formatting requirements tested or non-blocking serialization",
+      "evidence_refs": [
+        "terraform-aws-eks-addon-trust-rollout/instruction.md",
+        "terraform-aws-eks-addon-trust-rollout/tests/test_outputs.py",
+        "terraform-aws-eks-addon-trust-rollout/tests/fixtures/upgrade_lab/__init__.py"
+      ],
+      "why_it_matters": "Instruction asks for upgrade-report.json with sorted keys; lab writes indent-only JSON without sort_keys, and tests only check digest/hex form\u2014incidental serialization, not currently pass/fail.",
+      "minimal_remediation": "Either assert canonical key ordering on the published file or rephrase instruction to require digest canonicalization only.",
+      "regression_risk": "Enforcing file-level sort_keys may churn report bytes without semantic change."
+    },
+    {
+      "id": "STC-009",
+      "severity": "LOW",
+      "status": "OBSERVED",
+      "criterion": "P2P boundaries are meaningful preservation checks",
+      "evidence_refs": [
+        "terraform-aws-eks-addon-trust-rollout/tests/test_outputs.py"
+      ],
+      "why_it_matters": "test_p2p_report_schema_and_plan_paths_preserved and test_p2p_cli_entrypoint_and_api_signatures_compatible mostly assert in-process constants/callables rather than submitted artifact preservation.",
+      "minimal_remediation": "Bind P2P to submitted report/plan path existence or public CLI --help/contract fixtures; drop tautologies.",
+      "regression_risk": "Advisory only unless P2P is treated as sole preservation evidence."
+    }
+  ],
+  "missing_evidence": [],
+  "change_scope": [
+    "instruction.md and/or environment/docs/* to publish graded tag/encoding contracts and resolve IAM/report ambiguities",
+    "tests/test_outputs.py and tests/fixtures/upgrade_lab/__init__.py to remove phantoms or align assertions with documented rules (PDB selectors; IAM Action/Resource wildcards)",
+    "environment/data/defaults.json allowed_policy_prefixes consistency with IAM wildcard policy"
+  ],
+  "do_not_change": [
+    "task_commit binding and unrelated environment data inventories except where required to resolve STC-006",
+    "Oracle/NOP harness reward wiring in tests/test.sh",
+    "Legitimate F2P behaviors already mirrored by instruction (matrix versions, PRESERVE, UpgradeProtected, drain/interruption, digest READY gates)"
+  ],
+  "next_gate": "Q1/Q2/Q3 producer remediation then fresh Q4 on same task commit criteria",
+  "role_output": {
+    "REQUIREMENT_TEST_MATRIX": [
+      {
+        "requirement": "Plan all compatibility_matrix add-ons at target versions into /app/var/upgrade/plan.json via /app/terraform",
+        "tests": [
+          "test_f2p_plan_policy_enforces_required_addons",
+          "test_f2p_addon_versions_match_compatibility_matrix"
+        ],
+        "coverage": "complete"
+      },
+      {
+        "requirement": "resolve_conflicts_on_update=PRESERVE for eks_addon resources",
+        "tests": [
+          "test_f2p_resolve_conflicts_must_be_preserve"
+        ],
+        "coverage": "complete"
+      },
+      {
+        "requirement": "SSM parameter tags convey controller version and conflict overrides",
+        "tests": [
+          "test_f2p_ssm_parameter_tags_supply_controller_versions"
+        ],
+        "coverage": "partial_phantom_keys"
+      },
+      {
+        "requirement": "IRSA roles trust exactly one required subject; no wildcards/forbidden subjects",
+        "tests": [
+          "test_f2p_irsa_assume_role_policy_condition_parsing",
+          "test_f2p_irsa_role_trusts_exact_single_service_account",
+          "test_f2p_forbidden_subjects_like_system_nodes_rejected"
+        ],
+        "coverage": "complete_with_phantom_AddonTrust"
+      },
+      {
+        "requirement": "IRSA role_names from trust_observations.json",
+        "tests": [
+          "test_f2p_irsa_role_names_match_expected_naming"
+        ],
+        "coverage": "complete_discoverable_from_data"
+      },
+      {
+        "requirement": "IAM policies without wildcard actions (and docs: Resource)",
+        "tests": [
+          "test_f2p_wildcard_iam_policy_actions_rejected"
+        ],
+        "coverage": "partial"
+      },
+      {
+        "requirement": "Merge inline+attached policies in plan normalization",
+        "tests": [
+          "test_f2p_plan_normalizer_merges_inline_and_attached_policies"
+        ],
+        "coverage": "complete"
+      },
+      {
+        "requirement": "UpgradeProtected resources not deleted/replaced; preserve tags/labels/taint on node groups",
+        "tests": [
+          "test_f2p_upgrade_protected_resources_guarded_against_deletion",
+          "test_f2p_system_node_group_labels_verified",
+          "test_f2p_system_node_group_taints_and_labels_validated"
+        ],
+        "coverage": "complete"
+      },
+      {
+        "requirement": "PDBs in /app/k8s match pdbs.json including selectors",
+        "tests": [
+          "test_f2p_pdbs_match_required_names_namespaces_selectors",
+          "test_f2p_pdb_min_available_thresholds_enforced"
+        ],
+        "coverage": "partial_selectors_absent"
+      },
+      {
+        "requirement": "System drain respects minAvailable; core services available",
+        "tests": [
+          "test_f2p_drain_simulation_respects_pdb_availability"
+        ],
+        "coverage": "complete"
+      },
+      {
+        "requirement": "settlement-ledger on private on-demand including Karpenter NodePool CRD",
+        "tests": [
+          "test_f2p_regulated_workloads_require_explicit_nodepools",
+          "test_f2p_regulated_capacity_types_enforce_ondemand",
+          "test_f2p_regulated_node_pools_restricted_to_private_subnets",
+          "test_f2p_karpenter_nodepool_crd_capacity_enforced"
+        ],
+        "coverage": "complete_with_phantom_TF_tags"
+      },
+      {
+        "requirement": "Interruption simulation keeps regulated on on-demand",
+        "tests": [
+          "test_f2p_interruption_simulation_preserves_ondemand"
+        ],
+        "coverage": "complete"
+      },
+      {
+        "requirement": "Advance add-ons in matrix prerequisite order with readiness; READY only if all checks pass",
+        "tests": [
+          "test_f2p_addons_rollout_in_matrix_specified_order",
+          "test_f2p_rollout_prerequisites_validated_before_step",
+          "test_f2p_addon_readiness_verified_before_step_completion",
+          "test_f2p_readiness_status_ready_when_all_checks_pass"
+        ],
+        "coverage": "complete"
+      },
+      {
+        "requirement": "Deny shared IRSA role ARNs across add-ons",
+        "tests": [
+          "test_f2p_cross_service_trust_denies_shared_role_arns"
+        ],
+        "coverage": "complete"
+      },
+      {
+        "requirement": "Checkpoint rollout for restart recovery",
+        "tests": [
+          "test_f2p_rollout_state_checkpointing_enables_restart"
+        ],
+        "coverage": "complete"
+      },
+      {
+        "requirement": "Publish canonical upgrade-report.json with stable fields, sorted keys, SHA-256 digest",
+        "tests": [
+          "test_f2p_report_formatting_is_canonical_and_complete",
+          "test_f2p_report_digest_computed_over_stable_fields",
+          "test_f2p_identical_runs_produce_identical_digests"
+        ],
+        "coverage": "partial_sorted_keys_untested"
+      },
+      {
+        "requirement": "SA role-arn annotations match IRSA (docs)",
+        "tests": [
+          "baseline irsa_bindings via run_rollout"
+        ],
+        "coverage": "complete"
+      },
+      {
+        "requirement": "Fail closed on plan policy violations (P2P/lab)",
+        "tests": [
+          "test_p2p_policy_violations_fail_closed_without_corruption",
+          "test_p2p_offline_lab_execution_requires_no_external_aws"
+        ],
+        "coverage": "complete"
+      }
+    ],
+    "PHANTOM_TEST_CONTRACTS": [
+      "Exact SSM tags ControllerAddon/AddonVersion/ResolveConflicts for controller add-ons (STC-001)",
+      "IAM role tag AddonTrust as sole IRSA index key (STC-002)",
+      "Regulated TF/SSM tags RegulatedNodePool|Component, CapacityTypes, PrivateSubnetsOnly, NodePoolName (STC-003)"
+    ],
+    "UNTESTED_REQUIREMENTS": [
+      "PDB selector matchLabels must match pdbs.json (STC-004)",
+      "No IAM Resource wildcards; no service-wildcard actions for non-ebs IRSA roles (STC-005)",
+      "Published upgrade-report.json object key sorting as stated in instruction (STC-008 advisory)"
+    ],
+    "AMBIGUITIES": [
+      "defaults.allowed_policy_prefixes wildcards vs instruction/docs no-wildcard IAM rule (STC-006)",
+      "irsa_bindings.role_arn present in report-schema.md, omitted in addon-trust-rollout-contract.md, stripped from digest (STC-007)"
+    ],
+    "INSTRUCTION_SHAPE": "PASS",
+    "INSTRUCTION_REQUIREMENT_COMPLETENESS": "INSUFFICIENT",
+    "DELEGATED_CONTRACT_CHECK": [
+      {
+        "doc": "environment/docs/addon-trust-rollout-contract.md",
+        "classification": "legitimate_technical_contract",
+        "notes": "Core rollout/IRSA/PDB/report obligations; missing tag encoding details graded by verifier."
+      },
+      {
+        "doc": "environment/docs/irsa-policy-contract.md",
+        "classification": "legitimate_technical_contract",
+        "notes": "Subject/action/cross-service rules; Resource wildcard not enforced."
+      },
+      {
+        "doc": "environment/docs/report-schema.md",
+        "classification": "legitimate_technical_contract",
+        "notes": "Schema conflicts slightly with sibling contract on role_arn."
+      },
+      {
+        "doc": "environment/docs/architecture.md",
+        "classification": "legitimate_technical_documentation",
+        "notes": "Subsystem layout; not a hidden repair map."
+      },
+      {
+        "doc": "environment/docs/rollout-lifecycle.md",
+        "classification": "legitimate_technical_contract",
+        "notes": "Order/prereq/readiness semantics aligned with tests."
+      },
+      {
+        "doc": "environment/evidence/failed-upgrade-trace.txt",
+        "classification": "incident_evidence",
+        "notes": "Supports current-state claims; names regulated-ebs-csi."
+      }
+    ],
+    "INSTRUCTION_DOC_BOUNDARY": "CLEAN",
+    "IMPLEMENTATION_DIAGNOSIS_LEAKAGE": "LOW",
+    "CURRENT_STATE_EVIDENCE": "PASS",
+    "SPEC_DUMP_RISK": "MEDIUM",
+    "BIDIRECTIONAL_ALIGNMENT": "FAIL",
+    "BLOCKING_FINDING_IDS": [
+      "STC-001",
+      "STC-002",
+      "STC-003",
+      "STC-004",
+      "STC-005",
+      "STC-006"
+    ],
+    "ADVISORY_FINDING_IDS": [
+      "STC-007",
+      "STC-008",
+      "STC-009"
+    ],
+    "EXHAUSTIVENESS": {
+      "REQUIREMENTS_ENUMERATED": "COMPLETE",
+      "VERIFIER_BEHAVIORS_ENUMERATED": "COMPLETE",
+      "FORWARD_MATRIX_COMPLETE": "YES",
+      "REVERSE_MATRIX_COMPLETE": "YES",
+      "INSTRUCTION_COMPLETENESS_COMPLETE": "YES",
+      "DELEGATED_CONTRACTS_COMPLETE": "YES",
+      "PROMPT_EXTENSION_WALK_COMPLETE": "YES",
+      "P2P_BOUNDARIES_COMPLETE": "YES",
+      "F2P_BOUNDARIES_COMPLETE": "YES",
+      "OUTPUT_INTERFACES_COMPLETE": "YES",
+      "SECOND_PASS_OMISSION_SWEEP": "PASS",
+      "UNINSPECTED_SCOPE": [
+        "environment/terraform/ (Dockerfile COPY target absent from workspace)",
+        "environment/bin/ (absent from workspace)",
+        "environment/upgrade_lab/ (absent; verifier semantics taken from tests/fixtures/upgrade_lab)"
+      ]
+    }
+  }
+}
