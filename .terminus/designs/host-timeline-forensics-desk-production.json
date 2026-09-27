@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "task": "host-timeline-forensics-desk",
+  "profile": "large_system_strict",
+  "production_authenticity": {
+    "current_state_evidence_required": false,
+    "stateful_dataset": {
+      "schema": "environment/data/seed_schema.sql",
+      "seed": "environment/data/seed.sql",
+      "primary_table": "seed_records",
+      "min_records": 14200,
+      "max_records": 14200,
+      "variance_queries": {
+        "tenant_variants": {"sql": "SELECT COUNT(DISTINCT tenant_id) FROM seed_records", "min": 20},
+        "case_variants": {"sql": "SELECT COUNT(DISTINCT case_id) FROM seed_records WHERE case_id IS NOT NULL", "min": 240},
+        "endpoint_variants": {"sql": "SELECT COUNT(DISTINCT endpoint_id) FROM seed_records WHERE endpoint_id IS NOT NULL", "min": 600},
+        "platform_variants": {"sql": "SELECT COUNT(DISTINCT platform) FROM seed_records", "min": 3},
+        "site_variants": {"sql": "SELECT COUNT(DISTINCT site_id) FROM seed_records", "min": 4},
+        "source_variants": {"sql": "SELECT COUNT(DISTINCT source_id) FROM seed_records", "min": 6},
+        "disposition_variants": {"sql": "SELECT COUNT(DISTINCT disposition) FROM seed_records", "min": 6},
+        "mode_variants": {"sql": "SELECT COUNT(DISTINCT acquisition_mode) FROM seed_records", "min": 2},
+        "record_family_variants": {"sql": "SELECT COUNT(DISTINCT record_type) FROM seed_records", "min": 13}
+      }
+    },
+    "runtime_data_source": "The same deterministic SQL seed contract is loaded into PostgreSQL by the environment bootstrap; SQLite is used only by the control-plane validator to inspect the seed artifact.",
+    "synthetic_data_boundary": "All records and payload bytes are synthetic; no real host, account, identity, credential, or forensic evidence is included."
+  }
+}
