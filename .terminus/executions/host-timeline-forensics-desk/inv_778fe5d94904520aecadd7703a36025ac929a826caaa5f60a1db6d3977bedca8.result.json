@@ -1,0 +1,374 @@
+{
+  "authority": {
+    "control_plane_commit": "474f2b09fcda1848ef64d894a1b702be4f923b2b",
+    "policy_versions": {},
+    "task_commit": "3fc0ab5c03002927c7bcb9567de7833dad20350a",
+    "task_id": "host-timeline-forensics-desk"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:2cdfc8b2ec1b31445bf57247130997342b62442fc481106dc43bf9fc929468d1",
+      "kind": "COMMIT",
+      "ref": "commit:3fc0ab5c03002927c7bcb9567de7833dad20350a"
+    },
+    {
+      "content_hash": "sha256:18ff09012cc7e4e1f8b55790a54a52fc41f8fca4aa67ed3b9ac16fae20c58df3",
+      "kind": "COMMIT",
+      "ref": "commit:474f2b09fcda1848ef64d894a1b702be4f923b2b"
+    }
+  ],
+  "invocation_id": "inv_778fe5d94904520aecadd7703a36025ac929a826caaa5f60a1db6d3977bedca8",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "474f2b09fcda1848ef64d894a1b702be4f923b2b",
+      "policy_versions": {},
+      "task_commit": "3fc0ab5c03002927c7bcb9567de7833dad20350a",
+      "task_id": "host-timeline-forensics-desk"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CONTROL_PLANE_POLICY",
+        "PRIVATE_CREATION_DESIGN",
+        "PUBLIC_REFERENCE",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "component/resource graph",
+        "runtime/operator reachability plan",
+        "state/persistence model",
+        "production-characteristic rationale"
+      ],
+      "excluded_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/CREATOR_AGENT_REGISTRY.md",
+        ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+        ".terminus/agents/CREATOR_PROMPTS.md",
+        ".terminus/agents/A2_PHASE_PROMPTS.md"
+      ],
+      "retrieval_mode": "FILTERED_HYBRID"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {
+        "DOMAIN_REFERENCE_ARCHITECTURE": [
+          {
+            "relevance": "Live and offline forensic analysis spans filesystem, event-log, volatile-state, binary, and dead-disk evidence; used as domain-shape reference, not copied as a design.",
+            "title": "Velociraptor forensic analysis documentation",
+            "url": "https://docs.velociraptor.app/docs/forensic/"
+          },
+          {
+            "relevance": "Super-timeline production composes collection filters, parsers, analysis, and output modules; used to understand source diversity and analyst-facing timeline workflows.",
+            "title": "Plaso documentation",
+            "url": "https://plaso.readthedocs.io/en/latest/"
+          },
+          {
+            "relevance": "Shows the operational importance of trusted event-source identity across distributed collection roles.",
+            "title": "Velociraptor issue #5009",
+            "url": "https://github.com/Velocidex/velociraptor/issues/5009"
+          },
+          {
+            "relevance": "Shows restart-sensitive publication risk for result indexes.",
+            "title": "Velociraptor issue #5033",
+            "url": "https://github.com/Velocidex/velociraptor/issues/5033"
+          },
+          {
+            "relevance": "Shows why a bounded/aborted content hash must not be mistaken for a complete evidence digest.",
+            "title": "Velociraptor issue #4993",
+            "url": "https://github.com/Velocidex/velociraptor/issues/4993"
+          },
+          {
+            "relevance": "Shows that equivalent forensic facts arrive through platform-specific structured and unstructured sources, with different source coverage across operating systems.",
+            "title": "Plaso issue #5217",
+            "url": "https://github.com/log2timeline/plaso/issues/5217"
+          },
+          {
+            "relevance": "Shows that recovered, corrupt, and incomplete event traits affect analyst interpretation and should remain distinguishable.",
+            "title": "Plaso issue #5155",
+            "url": "https://github.com/log2timeline/plaso/issues/5155"
+          },
+          {
+            "relevance": "Shows that ingestion status and actual indexed-event coverage can diverge in a real forensic timeline pipeline.",
+            "title": "Timesketch issue #3889",
+            "url": "https://github.com/google/timesketch/issues/3889"
+          }
+        ]
+      },
+      "required": {
+        "APPROVED_OPERATIONAL_REQUIREMENTS": [
+          "The clean system has case, endpoint, source, collection-plan, attempt, evidence-item, custody-event, and export identities with explicit ownership and stable references.",
+          "Collection plans distinguish authorized live endpoint sources from imported offline bundles and bind each requested source to policy, platform capability, time/budget limits, and case scope.",
+          "A collection attempt has explicit lifecycle and terminal dispositions for complete, partial, unavailable, rejected, cancelled, and failed work; coverage derives from requested sources and these dispositions rather than only successful artifacts.",
+          "Every evidence item retains source, case, endpoint, collection, attempt, capture-time, content-integrity, and custody provenance sufficient to distinguish repeated observations from conflicting identity reuse.",
+          "Events and results are accepted only under their recorded source authority and active attempt; delayed, duplicate, conflicting, or superseded observations remain auditable and cannot silently regress accepted state.",
+          "The operational workflow is restartable: queue claims, leases, checkpoints, accepted result events, manifest publication, and export state have explicit durable ownership and recovery boundaries.",
+          "Case timelines preserve source timestamps and quality/provenance traits; coverage, custody, and export views are deterministic projections of committed case state.",
+          "Case holds, retention references, and authorization constrain evidence release and deletion without erasing the audit trail or invalidating still-referenced exports.",
+          "Operators can inspect readiness, collection progress, failures, coverage gaps, and export identity through stable CLI/API and machine-readable outputs; invalid requests do not mutate unrelated state.",
+          "The deterministic lab and seeded estate use synthetic evidence metadata only, require no real endpoint, account, credential, or network service, and support repeatable normal, partial, failure, restart, and cross-component operation."
+        ],
+        "APPROVED_WORK_PACKAGE": {
+          "DUPLICATE_RISK": "Keep authority, forensic provenance, custody, and collection coverage central; do not drift into a generic distributed queue, event-time window processor, security dashboard, timeline search product, or key-value storage engine.",
+          "ENGINEERING_OBJECTIVE": "Complete an inherited forensic collection control plane so case-scoped acquisition plans, endpoint/offline collection attempts, immutable evidence manifests, trust decisions, and collection-coverage reporting reconcile correctly through retries and restarts. The operator-facing product remains a host forensics desk with case evidence timelines and coverage views.",
+          "ID": "P1_DISTRIBUTED_FORENSIC_ACQUISITION_RECONCILIATION",
+          "PERSONA": "Incident-response evidence custodian coordinating authorized live-endpoint and offline-image collections across a mixed fleet.",
+          "PRESERVATION_OBLIGATIONS": [
+            "Existing case, endpoint, collection, and artifact identities remain stable.",
+            "Custody history is append-only; corrections never overwrite accepted evidence.",
+            "Offline bundles remain ingestible without network access and retain source identity.",
+            "Unauthorized, stale, malformed, or conflicting events fail closed without changing unrelated cases.",
+            "Retries and restarts neither lose accepted evidence nor create duplicate published evidence."
+          ],
+          "REQUIRED_END_STATE": "Operators submit a case-bound acquisition plan; each requested source reaches a truthful collected, partial, unavailable, or rejected disposition; evidence content and provenance are verifiable; workers and the coordinator can restart without duplicating logical evidence; and the case timeline, coverage report, custody history, and export agree with persisted state.",
+          "TASK_ID": "host-timeline-forensics-desk",
+          "TAXONOMY": "Security / Forensics"
+        },
+        "CREATION_RULE_CONTEXT": {
+          "ACTIVE_VALIDATORS": [
+            ".terminus/validate_agent_system.py",
+            ".terminus/validate_stage_contracts.py",
+            ".terminus/validate_task_complexity.py",
+            ".terminus/validate_environment_complexity.py",
+            ".terminus/validate_runtime_authenticity.py",
+            ".terminus/validate_business_module_diversity.py",
+            ".terminus/validate_review_freshness.py",
+            ".terminus/validate_quality_interlock.py",
+            ".github/workflows/terminus-edition-3-ci.yml",
+            ".github/workflows/terminus-creator-complexity.yml",
+            ".github/workflows/terminus-production-authenticity.yml"
+          ],
+          "CONTROL_PLANE_COMMIT": "474f2b09fcda1848ef64d894a1b702be4f923b2b",
+          "CREATION_PROFILE": "large_system_strict",
+          "KNOWN_POLICY_CONFLICTS": [],
+          "NETWORK_ENVIRONMENT_CONSTRAINTS": "Public network is the default; use only reproducible public-reference research and package dependencies. Never require real credentials, privileged containers, or nondeterministic external services in task grading. Include tmux and asciinema in the agent image and a separate verifier image.",
+          "RULE_SOURCES": [
+            "TERMINUS_3_AI_INSTRUCTIONS.md",
+            ".terminus/AGENT_SYSTEM.md",
+            ".terminus/agents/CREATION_CONTROLLER.md",
+            ".terminus/agents/CREATION_PIPELINE.md",
+            ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+            ".terminus/reviewers/REVIEWER_CHECKLIST.md",
+            ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+            ".terminus/agents/STAGE_CONTRACTS.md",
+            ".terminus/agents/stage_contracts.json"
+          ]
+        }
+      }
+    },
+    "invocation_id": "inv_778fe5d94904520aecadd7703a36025ac929a826caaa5f60a1db6d3977bedca8",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "ARCHITECTURE_READY",
+        "SCENARIO_TOO_SMALL",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [],
+      "optional_fields": [
+        "RESOURCE_GRAPH",
+        "DATA_VOLUME_PLAN",
+        "UNRESOLVED_RISKS"
+      ],
+      "persisted_artifacts": [],
+      "required_fields": [
+        "COMPONENT_GRAPH",
+        "ENTRYPOINTS",
+        "STATE_MODEL",
+        "SOLVER_VISIBLE_DOC_PLAN",
+        "PRODUCTION_CHARACTERISTICS",
+        "SCALE_FIT"
+      ],
+      "semantic_reviewers": [
+        "Task Architect"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "ARCHITECTURE_GAP": "A2 System Architect / Environment Builder",
+        "REQUIREMENT_GAP": "Creation Controller -> work-package/contract owner",
+        "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH"
+      },
+      "stale_on": [
+        "work-package change",
+        "material operational requirement change",
+        "creation-profile change"
+      ],
+      "success_transition": "DEFECT_TOPOLOGY"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A2 System Architect / Environment Builder",
+      "role_class": "PRODUCER",
+      "role_id": "A2_SYSTEM_ARCHITECT",
+      "stage_id": "SYSTEM_ARCHITECTURE"
+    }
+  },
+  "outputs": {
+    "COMPONENT_GRAPH": {
+      "control_plane": [
+        "case and membership registry",
+        "endpoint/capability inventory",
+        "policy revision and authorization service",
+        "collection-plan compiler"
+      ],
+      "evidence_plane": [
+        "evidence object store for synthetic opaque bytes",
+        "immutable evidence-item metadata and digest catalog",
+        "append-only custody ledger",
+        "attempt/result reconciler",
+        "case timeline and coverage projections"
+      ],
+      "execution_plane": [
+        "bounded durable collection queue",
+        "worker lease and attempt manager",
+        "live collection adapter to local lab",
+        "offline bundle intake adapter",
+        "callback/event inbox and trust validator"
+      ],
+      "primary_flows": [
+        "actor -> case/policy authorization -> immutable plan -> source-specific request -> leased attempt -> trusted result inbox -> digest/provenance verification -> custody append -> coverage/timeline projection -> authorized export",
+        "offline bundle -> identity and manifest validation -> idempotent evidence intake -> custody append -> coverage/timeline projection",
+        "worker/coordinator restart -> expired-lease recovery -> attempt reconciliation -> committed queue/inbox replay -> deterministic projection refresh"
+      ],
+      "publication_plane": [
+        "authorized case inspection API",
+        "deterministic manifest/export builder",
+        "readiness and operator diagnostics"
+      ],
+      "shared_foundation": [
+        "PostgreSQL system-of-record database",
+        "local deterministic collection-lab service",
+        "filesystem-backed synthetic evidence/object area"
+      ]
+    },
+    "DATA_VOLUME_PLAN": "Use exactly 14,200 deterministic synthetic primary metadata records, varied across tenants/cases, operating systems, endpoint capabilities, live/offline sources, artifact families, collection outcomes, event-time offsets, custody transfers, holds, and export references. No real account, host identity, credential, customer evidence, or forensic content is included; any opaque bytes are generated synthetic payloads. Keep fixture state compact enough for fast offline reset while retaining cross-component joins and histories.",
+    "ENTRYPOINTS": [
+      "bin/forensicd: local API/control-plane service",
+      "bin/forensic-worker: bounded queue, lease renewal, result polling, and recovery worker",
+      "bin/casectl: operator CLI for case inspection, plan preview/submission, collection status, coverage, holds, and export",
+      "bin/collection-lab: deterministic offline live-endpoint simulator and callback source",
+      "bin/offline-intake: validates and imports synthetic offline collection bundles"
+    ],
+    "PRODUCTION_CHARACTERISTICS": [
+      "distinct control, execution, evidence, and publication responsibilities reached by real CLI/API/worker entrypoints",
+      "multi-tenant case ownership and authorization-before-data access",
+      "immutable policy and plan revisions with canonical intent digests",
+      "durable queueing, attempt fencing, bounded retries, idempotent inbox consumption and restart reconciliation",
+      "synthetic live and offline acquisition modalities with source authority and partial-result handling",
+      "content-addressed evidence metadata, append-only custody history, holds, retention references and deterministic exports",
+      "transactional database state plus recoverable filesystem object publication",
+      "structured operator diagnostics, health/readiness checks and reproducible local lab operation"
+    ],
+    "RESOURCE_GRAPH": {
+      "deployment_shape": "offline multi-container development stack; API and worker share the database, worker and API address the collection lab, and the verifier runs independently against a disposable seeded database/object directory",
+      "resource_interactions": [
+        "API authorizes and commits plans; worker claims them transactionally.",
+        "worker dispatches only through the local lab; authenticated lab results enter the durable inbox.",
+        "reconciler binds results to active attempts before evidence/custody state changes.",
+        "export reads one authorized database snapshot and publishes a manifest only after object verification.",
+        "readiness incorporates migrations, recovered claims, event backlog, worker freshness, and export/retention work."
+      ],
+      "runtime_processes": [
+        "forensic-api",
+        "forensic-worker",
+        "casectl/offline-intake",
+        "collection-lab"
+      ],
+      "stateful_resources": [
+        "PostgreSQL 16",
+        "synthetic evidence object directory",
+        "immutable export directory"
+      ]
+    },
+    "SCALE_FIT": "PRELIMINARY LARGE_SYSTEM_STRICT FIT: the work package naturally requires differentiated reachable modules for authorization, inventory, policy/plan compilation, scheduling/leases, source adapters, callback trust, evidence/custody, reconciliation, recovery, coverage/timeline projections, retention, export, and operator/API surfaces. A coherent implementation can exceed 3,000 substantive runtime/configuration LOC without an upper target. The representative estate can contain 14,200 deterministic synthetic primary metadata records across cases, endpoints, capabilities, source requests, collection attempts, evidence items, custody events, and event observations; evidence payloads remain synthetic and opaque. The architecture plausibly supports broad organic behavioral coverage, but A3 must show 20-30 manifestations from fewer root causes and at least 15 meaningful dependency edges without quota-driven test construction; return SCENARIO_TOO_SMALL if that cannot be demonstrated.",
+    "SOLVER_VISIBLE_DOC_PLAN": [
+      "docs/operator-contract.md: operator commands, request/response shapes, readiness and failure semantics",
+      "docs/case-and-policy-model.md: case ownership, policy revisions, authorization and holds",
+      "docs/collection-protocol.md: live/offline source requests, attempts, callbacks and event authority",
+      "docs/evidence-and-custody.md: evidence identity, digest/provenance fields, custody events and retention references",
+      "docs/database-recovery.md: transaction boundaries, lease fencing, restart and reconciliation contract",
+      "docs/reporting-and-export.md: coverage/timeline projections, output schemas, deterministic manifests and authorization ordering",
+      "docs/lab-protocol.md: deterministic local simulator contract and synthetic-only data boundary"
+    ],
+    "STATE_MODEL": {
+      "attempt_and_queue": "Every source request has one logical collection item and monotonically numbered attempts. Queue claims and leases are transactional and fenced by worker, attempt, token, and deadline. Retryable transport state is separate from terminal source disposition.",
+      "authoritative_store": "PostgreSQL is authoritative for case, endpoint inventory generation, policy revision, plans, attempts, leases, result inbox, evidence metadata, custody events, audit, and export jobs.",
+      "case_and_policy": "Cases have stable case_id, tenant/owner scope, lifecycle, hold state, and monotonic revision. Policy revisions are immutable and plan-bound. Authorization and hold checks precede case rows, counts, artifact metadata, and export reads.",
+      "collection_plan": "A plan binds case revision, actor, policy revision, endpoint/source identities, source mode (live or offline), requested artifact families, limits, deadlines, and a canonical digest. Submitted plans are immutable; changes create a new plan revision.",
+      "coverage_and_timeline": "Coverage is derived from requested source dispositions, including complete, partial, unavailable, rejected, cancelled, and failed. Timeline rows retain source time, normalized UTC time, uncertainty/quality traits, and evidence references; projections are rebuildable from committed records.",
+      "event_authority": "Raw callback bytes are authenticated before parsing. Delivery IDs are unique; identical delivery replay is idempotent and conflicting reuse is rejected. Events bind case, endpoint, collection item, active attempt, source authority, and payload digest.",
+      "evidence_and_custody": "Synthetic opaque evidence objects are content-addressed. Metadata binds digest, length, case, endpoint, source, plan, item, attempt, capture time, and validation traits. Custody transfers and hold/release decisions append to an immutable ledger; mutable status is a projection.",
+      "export_and_retention": "Export is a staged job with authorization and hold checks, deterministic ordered manifest, digest verification, atomic publish, and immutable export identity. Retention cannot delete an object while an active case/export reference or hold protects it.",
+      "recovery_boundary": "Queue claim, attempt/result transition, inbox consumption, custody append, audit, and checkpoint changes commit transactionally around reconcilable lab effects. Restart reclaims expired leases and reconciles lab-visible attempts before reissuing any source action."
+    },
+    "UNRESOLVED_RISKS": [
+      "A3 must avoid turning the architecture into one generic queue/retry defect per test; causal clusters should cross planning, trust, reconciliation, custody, and reporting boundaries.",
+      "Need a clear, solver-visible contract for how a synthetic payload digest is computed and how incomplete payload acquisition is represented without implying real-world cryptographic custody.",
+      "Define whether timeline ordering uses source time plus uncertainty or only normalized timestamps; requirements must be explicit without overspecifying the implementation.",
+      "Confirm the offline container topology remains performant under representative 14,200-record state and that no service requires public-network access during grading."
+    ]
+  },
+  "record_id": "rec_7c0e0345c70b933abffc8e4ef40f78dea5e94e191d6f6e9786e7b6bba2bd0a32",
+  "role_id": "A2_SYSTEM_ARCHITECT",
+  "schema_version": "1.0",
+  "stage_id": "SYSTEM_ARCHITECTURE",
+  "status": "ARCHITECTURE_READY",
+  "task_lineage": {
+    "input_task_commit": "3fc0ab5c03002927c7bcb9567de7833dad20350a",
+    "output_task_commit": "3fc0ab5c03002927c7bcb9567de7833dad20350a",
+    "task_changed": false
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "DEFECT_TOPOLOGY",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 2,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}

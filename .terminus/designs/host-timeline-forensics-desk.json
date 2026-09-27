@@ -1,0 +1,98 @@
+{
+  "schema_version": "1.0",
+  "task": "host-timeline-forensics-desk",
+  "profile": "large_system_strict",
+  "phase": "DEFECT_TOPOLOGY",
+  "status": "DESIGN_READY",
+  "work_package_id": "P1_DISTRIBUTED_FORENSIC_ACQUISITION_RECONCILIATION",
+  "architecture_record_id": "rec_7c0e0345c70b933abffc8e4ef40f78dea5e94e191d6f6e9786e7b6bba2bd0a32",
+  "root_cause_clusters": {
+    "RC1_IDENTITY_SCOPE_AND_POLICY_BINDING": "Case, endpoint, inventory-generation, policy-revision, and plan identities are not consistently bound across plan creation and later intake/release operations.",
+    "RC2_PLAN_EXPANSION_AND_BUDGET_SEMANTICS": "Source compatibility, explicit policy scope, limits, and deadlines are not compiled into one stable per-case acquisition plan.",
+    "RC3_LEASE_ATTEMPT_AND_RESTART_RECOVERY": "Queue claims, worker leases, attempt numbering, dispatch acknowledgement, and recovery checkpoints do not share one attempt-fenced lifecycle.",
+    "RC4_EVENT_TRUST_AND_MONOTONIC_RECONCILIATION": "Callback identity, raw-body authority, source/attempt binding, and state reduction are inconsistent under replay, conflict, and delayed observations.",
+    "RC5_EVIDENCE_INTEGRITY_AND_CUSTODY_ATOMICITY": "Evidence completeness, source-aware identity, object persistence, custody transitions, and accepted timeline visibility are not consistently committed together.",
+    "RC6_COVERAGE_EXPORT_RETENTION_AND_AUTHORIZATION": "Coverage, readiness, authorization, retention, and export projections are derived from incomplete or differently scoped state."
+  },
+  "defects": [
+    {"id":"D01","component":"case_and_endpoint_registry","observable_failure":"Two endpoint aliases from different ownership scopes resolve to one canonical key, allowing a collection request to attach to the wrong case owner.","root_cause":"RC1_IDENTITY_SCOPE_AND_POLICY_BINDING","partial_fix_trap":"Normalizing only the displayed endpoint name leaves the database identity and authorization lookup inconsistent."},
+    {"id":"D02","component":"collection_plan_compiler","observable_failure":"Reusing an idempotency key after policy revision or live/offline source mode changes returns the earlier plan as if its authority were unchanged.","root_cause":"RC1_IDENTITY_SCOPE_AND_POLICY_BINDING","partial_fix_trap":"Including requested source names but omitting policy and mode preserves a false idempotency match."},
+    {"id":"D03","component":"endpoint_inventory_and_capabilities","observable_failure":"A plan continues to rely on a prior capability generation after endpoint inventory has materially changed, so unsupported acquisition work is scheduled as compatible.","root_cause":"RC1_IDENTITY_SCOPE_AND_POLICY_BINDING","partial_fix_trap":"Refreshing inventory for display without binding the plan to its generation leaves execution using stale capability facts."},
+    {"id":"D04","component":"case_registry_and_hold_policy","observable_failure":"A case hold or ownership-scope change is not applied to an already-created plan when the plan is later released or exported.","root_cause":"RC1_IDENTITY_SCOPE_AND_POLICY_BINDING","partial_fix_trap":"Checking authorization only at plan creation fails to preserve current case authority at later release boundaries."},
+    {"id":"D05","component":"collection_plan_compiler","observable_failure":"An unsupported requested source family is dropped from the executable plan but remains absent from the operator-visible requested-source disposition.","root_cause":"RC2_PLAN_EXPANSION_AND_BUDGET_SEMANTICS","partial_fix_trap":"Rejecting unsupported sources during execution still leaves the approved plan and coverage denominator misleading."},
+    {"id":"D06","component":"collection_budget_and_scheduler","observable_failure":"A per-case evidence budget is enforced separately for each source, allowing a multi-source plan to exceed its aggregate limit.","root_cause":"RC2_PLAN_EXPANSION_AND_BUDGET_SEMANTICS","partial_fix_trap":"Per-source limit checks pass individually while the total requested acquisition exceeds the case contract."},
+    {"id":"D07","component":"live_and_offline_source_adapters","observable_failure":"Live and offline capture deadlines are normalized differently, so a late offline bundle can be accepted after the equivalent live attempt has expired.","root_cause":"RC2_PLAN_EXPANSION_AND_BUDGET_SEMANTICS","partial_fix_trap":"Fixing callback timestamps alone leaves offline intake using a different deadline interpretation."},
+    {"id":"D08","component":"policy_revision_service","observable_failure":"An explicitly empty source grant is treated like an unspecified grant and expands to the default source set.","root_cause":"RC2_PLAN_EXPANSION_AND_BUDGET_SEMANTICS","partial_fix_trap":"Defaulting absent policy fields without preserving the distinction between absent and empty turns a fail-closed policy into broader authority."},
+    {"id":"D09","component":"worker_lease_manager","observable_failure":"A worker renews an expired lease after its attempt has been superseded and continues to act as the owner of current collection work.","root_cause":"RC3_LEASE_ATTEMPT_AND_RESTART_RECOVERY","partial_fix_trap":"Checking the lease token without checking current attempt and deadline does not fence the former worker."},
+    {"id":"D10","component":"attempt_lifecycle","observable_failure":"After coordinator restart, the next retry reuses an attempt number that was already issued, making delayed evidence indistinguishable from the new attempt.","root_cause":"RC3_LEASE_ATTEMPT_AND_RESTART_RECOVERY","partial_fix_trap":"Rebuilding queue rows without recovering the monotonic attempt counter preserves a stale-event collision."},
+    {"id":"D11","component":"queue_claim_and_checkpoint_store","observable_failure":"A crash between queue claim and attempt ownership commit leaves a claimed item that recovery cannot safely distinguish from undispatched work.","root_cause":"RC3_LEASE_ATTEMPT_AND_RESTART_RECOVERY","partial_fix_trap":"Releasing expired claims alone may repeat a source effect whose dispatch acknowledgement was already accepted."},
+    {"id":"D12","component":"live_collection_adapter","observable_failure":"An ambiguous dispatch acknowledgement is retried as a new collection action rather than reconciled against the existing attempt identity.","root_cause":"RC3_LEASE_ATTEMPT_AND_RESTART_RECOVERY","partial_fix_trap":"Transport retry limits do not prevent duplicate logical collections when the first acknowledgement was lost."},
+    {"id":"D13","component":"callback_authenticator","observable_failure":"Callback JSON is parsed and fields are trusted before the exact raw-body signature has been verified.","root_cause":"RC4_EVENT_TRUST_AND_MONOTONIC_RECONCILIATION","partial_fix_trap":"Validating selected envelope fields after parsing does not authenticate the bytes that supplied them."},
+    {"id":"D14","component":"event_inbox","observable_failure":"A previously seen delivery identifier with a different payload is silently treated as an ordinary duplicate.","root_cause":"RC4_EVENT_TRUST_AND_MONOTONIC_RECONCILIATION","partial_fix_trap":"Delivery-ID deduplication without payload-digest comparison hides event identity conflicts."},
+    {"id":"D15","component":"attempt_result_reconciler","observable_failure":"A trusted event bound to the case but not to the endpoint, collection item, and active attempt updates the wrong acquisition state.","root_cause":"RC4_EVENT_TRUST_AND_MONOTONIC_RECONCILIATION","partial_fix_trap":"Case-level authentication does not establish authority for an individual source attempt."},
+    {"id":"D16","component":"attempt_result_reconciler","observable_failure":"A delayed lower-progress or partial observation regresses a source that was already accepted as complete.","root_cause":"RC4_EVENT_TRUST_AND_MONOTONIC_RECONCILIATION","partial_fix_trap":"Sorting events by arrival time cannot replace a monotonic state reducer with attempt and observation authority."},
+    {"id":"D17","component":"evidence_integrity_verifier","observable_failure":"A size-limited or interrupted content hash is presented as a complete digest for the evidence item.","root_cause":"RC5_EVIDENCE_INTEGRITY_AND_CUSTODY_ATOMICITY","partial_fix_trap":"Emitting a hash value without an explicit completeness disposition makes partial bytes look verified."},
+    {"id":"D18","component":"evidence_object_catalog","observable_failure":"Equal byte digests from separate cases or acquisition sources collapse their metadata into one identity and lose independent provenance.","root_cause":"RC5_EVIDENCE_INTEGRITY_AND_CUSTODY_ATOMICITY","partial_fix_trap":"Content deduplication without preserving case/source references confuses byte identity with evidence identity."},
+    {"id":"D19","component":"evidence_object_store_and_custody_ledger","observable_failure":"Custody metadata becomes visible before the corresponding evidence object is durable, leaving a committed reference to missing bytes after interruption.","root_cause":"RC5_EVIDENCE_INTEGRITY_AND_CUSTODY_ATOMICITY","partial_fix_trap":"Database transactionality alone cannot make an unflushed object-store write durable."},
+    {"id":"D20","component":"accepted_evidence_projection","observable_failure":"An untrusted or rejected source event is included in the case timeline even though no evidence item or custody transition was accepted.","root_cause":"RC5_EVIDENCE_INTEGRITY_AND_CUSTODY_ATOMICITY","partial_fix_trap":"Filtering only the final export still exposes rejected observations through ordinary case inspection."},
+    {"id":"D21","component":"coverage_projection","observable_failure":"Coverage reports only successful evidence items and omits requested sources that are partial, unavailable, rejected, or never scheduled.","root_cause":"RC6_COVERAGE_EXPORT_RETENTION_AND_AUTHORIZATION","partial_fix_trap":"Counting all evidence rows still cannot account for requested sources that produced no row."},
+    {"id":"D22","component":"readiness_and_reconciliation","observable_failure":"The service reports a case ready while accepted inbox events or attempt reconciliations remain pending.","root_cause":"RC6_COVERAGE_EXPORT_RETENTION_AND_AUTHORIZATION","partial_fix_trap":"A healthy API process does not establish that durable event and recovery backlogs are drained."},
+    {"id":"D23","component":"case_reporting_authorization","observable_failure":"Coverage counts or source facets are computed before case authorization, exposing the existence and volume of another case's evidence.","root_cause":"RC6_COVERAGE_EXPORT_RETENTION_AND_AUTHORIZATION","partial_fix_trap":"Filtering visible rows after aggregate calculation still leaks cross-case information."},
+    {"id":"D24","component":"manifest_exporter","observable_failure":"Equivalent evidence state produces byte-different manifests because item ordering or serialization is not canonical.","root_cause":"RC6_COVERAGE_EXPORT_RETENTION_AND_AUTHORIZATION","partial_fix_trap":"Hashing sorted top-level case names does not stabilize nested evidence and custody ordering."}
+  ],
+  "causal_edges": [
+    {"from":"D01","to":"D18"}, {"from":"D01","to":"D23"},
+    {"from":"D02","to":"D11"}, {"from":"D02","to":"D12"},
+    {"from":"D03","to":"D05"}, {"from":"D03","to":"D07"},
+    {"from":"D04","to":"D08"}, {"from":"D04","to":"D23"},
+    {"from":"D05","to":"D21"}, {"from":"D05","to":"D22"},
+    {"from":"D06","to":"D09"}, {"from":"D06","to":"D21"},
+    {"from":"D07","to":"D15"}, {"from":"D07","to":"D16"},
+    {"from":"D08","to":"D13"},
+    {"from":"D09","to":"D15"}, {"from":"D09","to":"D16"},
+    {"from":"D10","to":"D11"}, {"from":"D10","to":"D16"},
+    {"from":"D11","to":"D12"}, {"from":"D11","to":"D22"},
+    {"from":"D12","to":"D14"},
+    {"from":"D13","to":"D14"}, {"from":"D14","to":"D15"},
+    {"from":"D15","to":"D16"}, {"from":"D15","to":"D20"},
+    {"from":"D16","to":"D21"}, {"from":"D16","to":"D22"},
+    {"from":"D17","to":"D19"}, {"from":"D17","to":"D24"},
+    {"from":"D18","to":"D23"}, {"from":"D18","to":"D24"},
+    {"from":"D19","to":"D20"}, {"from":"D19","to":"D22"},
+    {"from":"D20","to":"D21"}, {"from":"D20","to":"D24"},
+    {"from":"D21","to":"D22"}, {"from":"D21","to":"D24"},
+    {"from":"D22","to":"D24"}, {"from":"D23","to":"D24"}
+  ],
+  "behavioral_surfaces": {
+    "normal": [
+      "authorized live collection and offline bundle intake for a case with heterogeneous endpoint capabilities",
+      "complete source dispositions reconcile to visible coverage and a verified case manifest",
+      "independent evidence items with equal bytes retain their separate acquisition provenance"
+    ],
+    "edge_boundary": [
+      "empty source grants differ from an omitted grant",
+      "aggregate case budget boundary across several individually eligible sources",
+      "deadline and capture-time interpretation at the live/offline boundary",
+      "same evidence bytes across cases and sources preserve distinct evidence identities"
+    ],
+    "negative_rejection": [
+      "unauthorized case or endpoint identity cannot be inferred through aggregates",
+      "unsupported source family remains explicitly rejected rather than disappearing",
+      "invalid raw-body signature, conflicting delivery reuse, stale attempt, and untrusted source are rejected",
+      "incomplete digest cannot be represented as complete evidence"
+    ],
+    "failure_recovery": [
+      "worker/coordinator interruption across claim, dispatch, callback, object durability, custody commit, and publication boundaries",
+      "ambiguous dispatch acknowledgement reconciles against the same attempt before any new source effect",
+      "expired lease and delayed event cannot regain authority after retry or terminal completion",
+      "case hold and retention references survive restart and prevent premature release/deletion"
+    ],
+    "cross_component": [
+      "policy revision and inventory generation affect source-plan compilation, scheduling, and later authorization",
+      "attempt-fenced event reconciliation controls evidence acceptance, timeline visibility, and coverage",
+      "object durability and custody ledger state jointly control readiness and export",
+      "authorization, case holds, coverage aggregates, and deterministic manifest publication share one case snapshot"
+    ]
+  },
+  "organic_f2p_surface_assessment": "SUFFICIENT, conditional on A2's approved architecture: the six causal clusters generate distinct plan/policy, scheduling/attempt, event-authority, evidence/custody, recovery, and reporting behaviors. The later verifier can derive 25-30 materially distinct F2P cases from these coupled operational surfaces without making one case per defect; A5 must re-evaluate organicity from solver-visible requirements and actual behavior, and the Complexity Governor may return SCENARIO_TOO_SMALL if implementation breadth does not arise naturally."
+}
