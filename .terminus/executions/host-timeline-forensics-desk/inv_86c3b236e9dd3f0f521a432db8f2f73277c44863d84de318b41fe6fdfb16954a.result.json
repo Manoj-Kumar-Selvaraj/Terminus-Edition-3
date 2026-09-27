@@ -1,0 +1,385 @@
+{
+  "authority": {
+    "control_plane_commit": "474f2b09fcda1848ef64d894a1b702be4f923b2b",
+    "policy_versions": {},
+    "task_commit": "3fc0ab5c03002927c7bcb9567de7833dad20350a",
+    "task_id": "host-timeline-forensics-desk"
+  },
+  "disposition": "ADVANCE",
+  "evidence_refs": [
+    {
+      "content_hash": "sha256:b50954f3150dd85bebe5bff3809f8a2553aa5e857d61caa79ca0b43fa25630e0",
+      "kind": "COMMIT",
+      "ref": "commit:51d5e1bdafad05454048b66c8db6e723f6394bec"
+    },
+    {
+      "content_hash": "sha256:18ff09012cc7e4e1f8b55790a54a52fc41f8fca4aa67ed3b9ac16fae20c58df3",
+      "kind": "COMMIT",
+      "ref": "commit:474f2b09fcda1848ef64d894a1b702be4f923b2b"
+    }
+  ],
+  "invocation_id": "inv_86c3b236e9dd3f0f521a432db8f2f73277c44863d84de318b41fe6fdfb16954a",
+  "invocation_snapshot": {
+    "acceptance_predicates": {},
+    "authority": {
+      "control_plane_commit": "474f2b09fcda1848ef64d894a1b702be4f923b2b",
+      "policy_versions": {},
+      "task_commit": "3fc0ab5c03002927c7bcb9567de7833dad20350a",
+      "task_id": "host-timeline-forensics-desk"
+    },
+    "evidence": {
+      "authorized_evidence_classes": [
+        "CONTROL_PLANE_POLICY",
+        "PRIVATE_CREATION_DESIGN",
+        "PUBLIC_REFERENCE",
+        "SOLVER_VISIBLE_TASK"
+      ],
+      "evidence_required": [
+        "reachable starter runtime",
+        "representative deterministic state",
+        "normal engineering docs/contracts",
+        "runtime/operator evidence where applicable"
+      ],
+      "excluded_evidence_classes": [
+        "CI_RUNTIME_EVIDENCE",
+        "CURRENT_REVIEW_PACKET",
+        "DURABLE_SESSION_STATE",
+        "FINAL_PACKAGE_EVIDENCE",
+        "MODEL_TRIAL_EVIDENCE",
+        "PRIOR_REVIEW_RESULTS",
+        "SOLUTION_ORACLE",
+        "VERIFIER_PRIVATE"
+      ],
+      "mandatory_exact_reads": [
+        "TERMINUS_3_AI_INSTRUCTIONS.md",
+        ".terminus/agents/CREATION_PIPELINE.md",
+        ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+        ".terminus/agents/CREATOR_PROMPTS.md",
+        ".terminus/agents/A2_PHASE_PROMPTS.md"
+      ],
+      "retrieval_mode": "FILTERED_HYBRID"
+    },
+    "ignored_input_count": 0,
+    "inputs": {
+      "optional": {},
+      "required": {
+        "CLEAN_SYSTEM_ARCHITECTURE": {
+          "component_graph": {
+            "control_plane": [
+              "case and membership registry",
+              "endpoint/capability inventory",
+              "policy revision and authorization service",
+              "collection-plan compiler"
+            ],
+            "evidence_plane": [
+              "evidence object store for synthetic opaque bytes",
+              "immutable evidence-item metadata and digest catalog",
+              "append-only custody ledger",
+              "attempt/result reconciler",
+              "case timeline and coverage projections"
+            ],
+            "execution_plane": [
+              "bounded durable collection queue",
+              "worker lease and attempt manager",
+              "live collection adapter to local lab",
+              "offline bundle intake adapter",
+              "callback/event inbox and trust validator"
+            ],
+            "publication_plane": [
+              "authorized case inspection API",
+              "deterministic manifest/export builder",
+              "readiness and operator diagnostics"
+            ],
+            "shared_foundation": [
+              "PostgreSQL system-of-record database",
+              "local deterministic collection-lab service",
+              "filesystem-backed synthetic evidence/object area"
+            ]
+          },
+          "data_volume": "Exactly 14,200 deterministic synthetic primary metadata records across tenants/cases, operating systems, endpoint capabilities, live/offline sources, artifact families, outcomes, custody transfers, holds, and export references. No real account, host identity, credential, customer evidence, or forensic content; opaque bytes are generated synthetic payloads.",
+          "deployment_shape": "Offline multi-container development stack: API and worker share the database; API and worker use the local collection lab; verifier is independent against disposable seeded database/object storage.",
+          "production_characteristics": [
+            "distinct control, execution, evidence, and publication responsibilities reached by CLI/API/worker entrypoints",
+            "multi-tenant case authorization before data access",
+            "immutable policy and plan revisions with canonical intent digests",
+            "durable queueing, attempt fencing, bounded retries, idempotent inbox, and restart reconciliation",
+            "synthetic live/offline acquisition with source authority and partial-result handling",
+            "content-addressed evidence metadata, append-only custody, holds, retention references, deterministic exports",
+            "transactional database state plus recoverable filesystem publication",
+            "structured diagnostics and reproducible local lab"
+          ],
+          "runtime_entrypoints": [
+            "bin/forensicd",
+            "bin/forensic-worker",
+            "bin/casectl",
+            "bin/collection-lab",
+            "bin/offline-intake"
+          ],
+          "source_record": "rec_7c0e0345c70b933abffc8e4ef40f78dea5e94e191d6f6e9786e7b6bba2bd0a32",
+          "source_task_commit": "3fc0ab5c03002927c7bcb9567de7833dad20350a",
+          "state_model": "PostgreSQL is authoritative for case, inventory generation, policy revision, plans, attempts, leases, inbox, evidence metadata, custody, audit, and export jobs. Queue claims and leases are fenced by worker, attempt, token, and deadline; retries are distinct from terminal source disposition. Events bind case, endpoint, collection item, active attempt, source authority, and payload digest. Synthetic opaque evidence metadata binds digest, length, case, endpoint, source, plan, item, attempt, capture time, and validation traits. Custody is append-only. Coverage derives from every requested source disposition. Export is an authorized staged job with deterministic ordered manifest, digest verification, atomic publication, and immutable identity. Restart reconciles expired leases, accepted attempts, inbox, and lab effects before redispatch."
+        },
+        "CREATION_RULE_CONTEXT": {
+          "ACTIVE_VALIDATORS": [
+            ".terminus/validate_agent_system.py",
+            ".terminus/validate_stage_contracts.py",
+            ".terminus/validate_task_complexity.py",
+            ".terminus/validate_environment_complexity.py",
+            ".terminus/validate_runtime_authenticity.py",
+            ".terminus/validate_business_module_diversity.py",
+            ".terminus/validate_review_freshness.py",
+            ".terminus/validate_quality_interlock.py",
+            ".github/workflows/terminus-edition-3-ci.yml",
+            ".github/workflows/terminus-creator-complexity.yml",
+            ".github/workflows/terminus-production-authenticity.yml"
+          ],
+          "CONTROL_PLANE_COMMIT": "474f2b09fcda1848ef64d894a1b702be4f923b2b",
+          "CREATION_PROFILE": "large_system_strict",
+          "KNOWN_POLICY_CONFLICTS": [],
+          "NETWORK_ENVIRONMENT_CONSTRAINTS": "Use reproducible public references and dependencies only. Do not require real credentials, privileged containers, or nondeterministic external services for grading. Include tmux and asciinema in the agent image and use a separate verifier image.",
+          "RULE_SOURCES": [
+            "TERMINUS_3_AI_INSTRUCTIONS.md",
+            ".terminus/AGENT_SYSTEM.md",
+            ".terminus/agents/CREATION_CONTROLLER.md",
+            ".terminus/agents/CREATION_PIPELINE.md",
+            ".terminus/agents/PRODUCTION_AUTHENTICITY.md",
+            ".terminus/reviewers/REVIEWER_CHECKLIST.md",
+            ".terminus/agents/QUALITY_AGENT_REGISTRY.md",
+            ".terminus/agents/STAGE_CONTRACTS.md",
+            ".terminus/agents/stage_contracts.json"
+          ]
+        },
+        "DEFECT_TOPOLOGY": {
+          "counts": {
+            "causal_edges": 40,
+            "components": 22,
+            "connected_manifestations": 24,
+            "cross_cluster_pairs": 12,
+            "manifestations": 24,
+            "root_causes": 6
+          },
+          "defect_topology_validator": "PASS; 24 manifestations, 40 directed edges, and all 24 manifestations connected.",
+          "manifest": ".terminus/designs/host-timeline-forensics-desk.json",
+          "profile": "large_system_strict",
+          "root_cause_clusters": {
+            "RC1_IDENTITY_SCOPE_AND_POLICY_BINDING": "Case, endpoint, inventory-generation, policy-revision, and plan identities are not consistently bound across creation, intake, and release.",
+            "RC2_PLAN_EXPANSION_AND_BUDGET_SEMANTICS": "Source compatibility, explicit policy scope, limits, and deadlines are not compiled into one stable per-case acquisition plan.",
+            "RC3_LEASE_ATTEMPT_AND_RESTART_RECOVERY": "Queue claims, worker leases, attempt numbering, dispatch acknowledgement, and recovery checkpoints do not share one attempt-fenced lifecycle.",
+            "RC4_EVENT_TRUST_AND_MONOTONIC_RECONCILIATION": "Callback identity, raw-body authority, source/attempt binding, and state reduction are inconsistent under replay, conflict, and delayed observations.",
+            "RC5_EVIDENCE_INTEGRITY_AND_CUSTODY_ATOMICITY": "Evidence completeness, source-aware identity, object persistence, custody transitions, and accepted timeline visibility are not consistently committed together.",
+            "RC6_COVERAGE_EXPORT_RETENTION_AND_AUTHORIZATION": "Coverage, readiness, authorization, retention, and export projections are derived from incomplete or differently scoped state."
+          },
+          "source_record": "rec_5be7e086e8134c70f135e8064af3b9651d7911e980246806f11accc7939dad7f",
+          "source_task_commit": "3fc0ab5c03002927c7bcb9567de7833dad20350a"
+        },
+        "SOLVER_VISIBLE_DOC_PLAN": [
+          "docs/operator-contract.md: operator commands, request/response shapes, readiness and failure semantics",
+          "docs/case-and-policy-model.md: case ownership, policy revisions, authorization and holds",
+          "docs/collection-protocol.md: live/offline source requests, attempts, callbacks and event authority",
+          "docs/evidence-and-custody.md: evidence identity, digest/provenance fields, custody events and retention references",
+          "docs/database-recovery.md: transaction boundaries, lease fencing, restart and reconciliation contract",
+          "docs/reporting-and-export.md: coverage/timeline projections, output schemas, deterministic manifests and authorization ordering",
+          "docs/lab-protocol.md: deterministic local simulator contract and synthetic-only data boundary"
+        ]
+      }
+    },
+    "invocation_id": "inv_86c3b236e9dd3f0f521a432db8f2f73277c44863d84de318b41fe6fdfb16954a",
+    "learning": {
+      "context_hash": "sha256:bb84a513aa2b6e4374d691759c4a6edf94169f479f4611e9091643b9f279ccfc",
+      "lessons": [],
+      "mode": "GENERALIZED_LESSONS_PLUS_OWNED_REMEDIATIONS",
+      "raw_feedback_exposed": false,
+      "raw_historical_findings_exposed": false,
+      "registry_heads": {
+        "feedback": "GENESIS",
+        "findings": "GENESIS",
+        "lessons": "GENESIS",
+        "patterns": "GENESIS",
+        "remediations": "GENESIS"
+      },
+      "remediations": []
+    },
+    "missing_required_inputs": [],
+    "output_contract": {
+      "allowed_status_values": [
+        "BUILT",
+        "SCENARIO_TOO_SMALL",
+        "ARCHITECTURE_GAP",
+        "BLOCKED"
+      ],
+      "deterministic_validators": [
+        ".terminus/validate_environment_complexity.py <task>",
+        ".terminus/validate_runtime_authenticity.py <task>",
+        ".terminus/validate_business_module_diversity.py <task> when applicable"
+      ],
+      "optional_fields": [
+        "RESOURCE_COUNT",
+        "UNRESOLVED_RISKS"
+      ],
+      "persisted_artifacts": [
+        "<task>/environment/"
+      ],
+      "required_fields": [
+        "COMPONENT_GRAPH",
+        "ENTRYPOINTS",
+        "SOLVER_VISIBLE_DOCS",
+        "INSTRUCTION_DOC_BOUNDARY",
+        "SUBSTANTIVE_LOC",
+        "PRODUCTION_CHARACTERISTICS",
+        "RUNTIME_REACHABILITY_NOTES",
+        "ENVIRONMENT_RULE_CHECKS"
+      ],
+      "semantic_reviewers": [
+        "Complexity Governor"
+      ]
+    },
+    "readiness": "READY",
+    "retrieval": {
+      "query": null,
+      "retrieved_chars": 0,
+      "retrieved_context": [],
+      "status": "NOT_REQUESTED"
+    },
+    "routing": {
+      "failure_routes": {
+        "ARCHITECTURE_GAP": "Creation Controller -> SYSTEM_ARCHITECTURE",
+        "FORMAT_ERROR": "Q7 Task Format Enforcer",
+        "SCENARIO_TOO_SMALL": "Creation Controller -> WORK_PACKAGE_RESEARCH",
+        "TOY_OR_PADDED_SYSTEM": "A2 System Architect / Environment Builder"
+      },
+      "stale_on": [
+        "architecture change",
+        "defect-topology change",
+        "solver-visible documentation plan change",
+        "environment rule change",
+        "solver-visible environment change"
+      ],
+      "success_transition": "REFERENCE_SOLUTION"
+    },
+    "schema_version": "1.0",
+    "stage": {
+      "lifecycle": "creation",
+      "owner": "A2 System Architect / Environment Builder",
+      "role_class": "PRODUCER",
+      "role_id": "A2_ENVIRONMENT_BUILDER",
+      "stage_id": "ENVIRONMENT_BUILD"
+    }
+  },
+  "outputs": {
+    "COMPONENT_GRAPH": {
+      "control_plane": [
+        "case and membership registry",
+        "endpoint/capability inventory",
+        "policy revisions and authorization",
+        "collection-plan compiler"
+      ],
+      "evidence_plane": [
+        "synthetic evidence object area",
+        "evidence metadata and integrity",
+        "append-only custody/audit",
+        "case timeline and coverage projections"
+      ],
+      "execution_plane": [
+        "durable queue",
+        "worker lease/attempt manager",
+        "deterministic live collection lab",
+        "offline bundle intake",
+        "authenticated event inbox and reconciliation"
+      ],
+      "publication_plane": [
+        "case/operator API",
+        "CLI",
+        "deterministic exports",
+        "readiness and diagnostics"
+      ],
+      "shared_foundation": [
+        "PostgreSQL 16",
+        "filesystem-backed synthetic objects",
+        "offline Docker Compose deployment"
+      ]
+    },
+    "ENTRYPOINTS": [
+      "bin/forensicd: FastAPI control-plane/API process",
+      "bin/forensic-worker: durable queue, collection dispatch, result reconciliation, and recovery worker",
+      "bin/casectl: operator case, plan, coverage, custody, hold, and export CLI",
+      "bin/collection-lab: deterministic local collection simulator",
+      "bin/offline-intake: offline bundle validation and intake"
+    ],
+    "ENVIRONMENT_RULE_CHECKS": {
+      "compileall": "PASS",
+      "defect_topology": "PASS: current manifest validates against approved A3 topology.",
+      "docker_compose_build_and_database_integration": "NOT RUN: Docker CLI is present but Docker Desktop Linux daemon pipe is unavailable; no PostgreSQL runtime was available.",
+      "environment_complexity": "PASS: 3,343 substantive LOC; topology 24 manifestations, 6 roots, 40 edges, 24 connected; strict lower bound satisfied.",
+      "import_and_contract_smoke": "PASS: API, worker, lab, offline intake, and pure contracts import without connecting to PostgreSQL.",
+      "ruff": "PASS",
+      "runtime_authenticity": "PASS: exactly 14,200 deterministic metadata records across all required variance dimensions; no real forensic content."
+    },
+    "INSTRUCTION_DOC_BOUNDARY": "The seven environment documents are solver-visible operator and protocol contracts. They do not contain hidden tests, oracle behavior, defect IDs, or private topology. The task instruction is a separate later-stage artifact; private design/topology remains under .terminus/designs/.",
+    "PRODUCTION_CHARACTERISTICS": [
+      "Multi-tenant case and evidence metadata with distinct tenant/case/endpoint/source identities.",
+      "Transactional PostgreSQL state across policy, plans, attempts, event inbox, evidence, custody, audit, and exports.",
+      "Deterministic 14,200-record synthetic metadata seed with 20 tenants, 240 cases, 600 endpoints, three platforms, four sites, six sources, two modes, six dispositions, and 13 record families.",
+      "Live-lab and offline-intake acquisition paths with source authority, attempt identity, partial outcomes, and restart/recovery surfaces.",
+      "Evidence integrity, custody history, coverage/timeline projections, readiness, and deterministic export responsibilities exposed through reachable CLI/API/worker modules.",
+      "Offline Compose topology and synthetic-only data; no real hosts, credentials, customer evidence, or external service dependency."
+    ],
+    "RESOURCE_COUNT": {
+      "container_services": 4,
+      "python_modules": 31,
+      "seed_primary_records": 14200,
+      "solver_visible_docs": 7,
+      "sql_migrations": 3
+    },
+    "RUNTIME_REACHABILITY_NOTES": {
+      "api": "bin/forensicd imports forensics.api; API service container initializes during ASGI lifespan/first service access, not module import.",
+      "lab": "bin/collection-lab enters forensics.lab and serves deterministic synthetic acquisition behavior.",
+      "local_verification": "Pure import/contract smoke, compileall, Ruff, environment complexity, and runtime-authenticity checks passed. PostgreSQL/Compose execution could not be tested because Docker Desktop's Linux engine pipe is unavailable; database-backed integration remains unverified.",
+      "operator_cli": "bin/casectl enters forensics.cli; bin/offline-intake enters forensics.offline_cli.",
+      "persistence": "PostgreSQL migrations are under sql/migrations; runtime seed/bootstrap uses the canonical deterministic SQL seed at data/seed.sql.",
+      "worker": "bin/forensic-worker invokes forensics.worker and shares database, queue, dispatcher, and reconciliation services."
+    },
+    "SOLVER_VISIBLE_DOCS": [
+      "docs/operator-contract.md",
+      "docs/case-and-policy-model.md",
+      "docs/collection-protocol.md",
+      "docs/evidence-and-custody.md",
+      "docs/database-recovery.md",
+      "docs/reporting-and-export.md",
+      "docs/lab-protocol.md"
+    ],
+    "SUBSTANTIVE_LOC": 3343,
+    "UNRESOLVED_RISKS": [
+      "Docker Compose image build and PostgreSQL migration/seed/runtime integration remain unverified until a Docker daemon is available.",
+      "The full verifier scope, F2P/P2P behavior matrix, and downstream complexity gate are deferred to VERIFIER_BUILD and later mandatory gates."
+    ]
+  },
+  "record_id": "rec_961ed403d581b557e9ef89ad94df3631a69d479e53035ad44da990cdc2f0ee19",
+  "role_id": "A2_ENVIRONMENT_BUILDER",
+  "schema_version": "1.0",
+  "stage_id": "ENVIRONMENT_BUILD",
+  "status": "BUILT",
+  "task_lineage": {
+    "input_task_commit": "3fc0ab5c03002927c7bcb9567de7833dad20350a",
+    "output_task_commit": "51d5e1bdafad05454048b66c8db6e723f6394bec",
+    "task_changed": true
+  },
+  "transition": {
+    "action": "ADVANCE",
+    "requires_state_validation": false,
+    "target": "REFERENCE_SOLUTION",
+    "target_kind": "STAGE"
+  },
+  "validation": {
+    "acceptance_predicates_satisfied": true,
+    "evidence_binding_satisfied": true,
+    "evidence_refs_count": 2,
+    "invocation_identity_valid": true,
+    "invocation_policy_valid": true,
+    "output_keys_valid": true,
+    "required_outputs_satisfied": true,
+    "retrieval_context_authorized": true,
+    "status_legal": true,
+    "task_commit_change_authorized": true,
+    "task_lineage_valid": true
+  }
+}
