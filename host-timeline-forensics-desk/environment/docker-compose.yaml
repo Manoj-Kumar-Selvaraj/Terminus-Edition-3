@@ -1,0 +1,57 @@
+services:
+  postgres:
+    image: postgres:16-bookworm@sha256:60f4761b9035e0b8d5218f701a8c3382f641bf12b1604822574cf5be3baeb537
+    environment:
+      POSTGRES_DB: forensics
+      POSTGRES_USER: forensics
+      POSTGRES_PASSWORD: local-forensics-only
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U forensics -d forensics"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+  collection-lab:
+    build: .
+    command: ["/app/bin/collection-lab"]
+    environment:
+      PYTHONPATH: /app
+  api:
+    build: .
+    command: ["/app/bin/forensicd"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      collection-lab:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql://forensics:local-forensics-only@postgres:5432/forensics
+      LAB_URL: http://collection-lab:8091
+      EVIDENCE_ROOT: /app/state/evidence
+      PYTHONPATH: /app
+    volumes:
+      - evidence:/app/state/evidence
+      - output:/app/out
+    ports:
+      - "8080:8080"
+  worker:
+    build: .
+    command: ["/app/bin/forensic-worker"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      collection-lab:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql://forensics:local-forensics-only@postgres:5432/forensics
+      LAB_URL: http://collection-lab:8091
+      EVIDENCE_ROOT: /app/state/evidence
+      PYTHONPATH: /app
+    volumes:
+      - evidence:/app/state/evidence
+      - output:/app/out
+volumes:
+  pgdata:
+  evidence:
+  output:

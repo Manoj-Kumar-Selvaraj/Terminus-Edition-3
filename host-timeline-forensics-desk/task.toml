@@ -1,0 +1,30 @@
+version = "2.0"
+name = "host-timeline-forensics-desk"
+category = "Security"
+subcategory = "Forensics"
+tags = ["digital-forensics", "evidence-custody", "endpoint-acquisition", "incident-response"]
+languages = ["python", "sql", "yaml", "bash"]
+difficulty = "advanced"
+expert_time_estimate_hours = 24
+artifacts = ["/app/out", "/app/state/evidence"]
+
+[metadata]
+author_name = "anonymous"
+author_email = "anonymous@example.com"
+custom_docker_compose = true
+is_multi_container = true
+
+[verifier]
+timeout_sec = 2400
+environment_mode = "separate"
+
+[agent]
+timeout_sec = 9000
+
+[environment]
+network_mode = "public"
+build_timeout_sec = 2400
+cpus = 2
+memory_mb = 8192
+storage_mb = 10240
+workdir = "/app"
