@@ -42,6 +42,7 @@ python3 -m pytest --ctrf /logs/verifier/ctrf.json \
   /tests/test_lifecycle_identity.py \
   /tests/test_lifecycle_delete.py \
   /tests/test_runner_and_cron.py \
+  /tests/test_q4_remediation.py \
   -rA
 status=$?
 
